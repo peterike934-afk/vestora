@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@bitcoinerlab/secp256k1": "^2.0.0",
     "@stripe/stripe-js": "^9.13.0",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.8",
@@ -23,7 +24,6 @@
     "react-dom": "^19.0.0",
     "recharts": "^2.15.4",
     "resend": "^6.18.1",
-    "stripe": "^22.5.0",
-    "tiny-secp256k1": "^2.2.4"
+    "stripe": "^22.5.0"
   }
 }
