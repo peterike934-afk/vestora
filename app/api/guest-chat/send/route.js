@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
+import { translateText } from '@/lib/translate'
 
 export async function POST(request) {
   const { threadId, sender, body } = await request.json()
-
   if (!threadId || !sender || !body?.trim()) {
     return Response.json({ error: 'Missing required fields.' }, { status: 400 })
   }
@@ -15,16 +15,38 @@ export async function POST(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
+  let translatedBody = null
+  let translatedLocale = null
+
+  if (sender === 'admin') {
+    const { data: thread } = await supabase
+      .from('guest_threads')
+      .select('locale')
+      .eq('id', threadId)
+      .single()
+
+    const targetLocale = thread?.locale || 'en'
+    const translated = await translateText(body.trim(), targetLocale)
+    if (translated) {
+      translatedBody = translated
+      translatedLocale = targetLocale
+    }
+  }
+
   const { data: message, error } = await supabase
     .from('guest_messages')
-    .insert({ thread_id: threadId, sender, body: body.trim() })
+    .insert({
+      thread_id: threadId,
+      sender,
+      body: body.trim(),
+      translated_body: translatedBody,
+      translated_locale: translatedLocale,
+    })
     .select()
     .single()
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  // Bump the thread's preview + the correct unread counter, mirroring
-  // how your existing message_threads view keeps itself current.
   const unreadField = sender === 'guest' ? 'unread_count' : 'guest_unread_count'
   const { data: current } = await supabase
     .from('guest_threads')

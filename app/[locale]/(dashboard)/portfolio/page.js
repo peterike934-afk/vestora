@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
+import { useMoneyFormatter } from '@/lib/formatting'
 import { getWallet, getInvestmentPlans, getUserInvestments, createInvestment, requestInvestmentWithdrawal, claimInvestmentGains } from '@/lib/queries'
 
 const s = {
@@ -45,41 +47,26 @@ const s = {
   modalActions: { display: 'flex', gap: '10px', marginTop: '4px' },
 }
 
-function formatUsd(n) {
-  return `$${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-// Mirrors the payout math in request_investment_withdrawal (Postgres) so
-// the user sees an accurate preview BEFORE submitting. The server
-// recalculates and is the actual source of truth — this is just a preview.
 function calculatePreview(inv, principalAmount) {
   const amt = Number(principalAmount) || 0
   if (amt <= 0) return null
-
   const isMatured = inv.is_matured
   const daysElapsed = (Date.now() - new Date(inv.started_at).getTime()) / 86400000
   const daysCounted = Math.min(daysElapsed, inv.term_days)
-
   let interestEarned = 0
   let fee = 0
-
   if (isMatured) {
     interestEarned = amt * ((inv.apy_percent / 100) * inv.term_days / 365)
   } else {
     fee = Number(inv.early_withdrawal_fee_usd) || 0
   }
-
   const payout = Math.max(amt + interestEarned - fee, 0)
-
   return { principal: amt, interestEarned, fee, payout, isMatured }
 }
 
-// Note: claimable amount comes straight from investments_with_value's
-// available_to_claim column (server-side truth) — not recalculated
-// here, so this can never drift out of sync with what the claim
-// function itself will actually pay out.
-
 function WithdrawModal({ investment, onClose, onSuccess }) {
+  const t = useTranslations('Portfolio')
+  const formatMoney = useMoneyFormatter()
   const [amount, setAmount] = useState(investment.available_to_withdraw?.toFixed(2) || '')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -90,22 +77,20 @@ function WithdrawModal({ investment, onClose, onSuccess }) {
   async function handleSubmit() {
     setError('')
     const amt = Number(amount)
-
     if (!amt || amt <= 0) {
-      setError('Enter a valid amount.')
+      setError(t('errors.validAmount'))
       return
     }
     if (amt > available) {
-      setError(`Only ${formatUsd(available)} is available to withdraw from this investment.`)
+      setError(t('errors.exceedsAvailable', { amount: formatMoney(available) }))
       return
     }
-
     setSubmitting(true)
     try {
       await requestInvestmentWithdrawal({ investmentId: investment.id, principalAmount: amt })
       onSuccess()
     } catch (err) {
-      setError(err.message || 'Failed to request withdrawal.')
+      setError(err.message || t('errors.withdrawFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -114,22 +99,18 @@ function WithdrawModal({ investment, onClose, onSuccess }) {
   return (
     <div style={s.modalOverlay} onClick={onClose}>
       <div style={s.modal} onClick={e => e.stopPropagation()}>
-        <div style={s.modalTitle}>Withdraw from {investment.plan_name}</div>
-        <div style={s.modalSub}>Available to withdraw: {formatUsd(available)}</div>
+        <div style={s.modalTitle}>{t('withdrawModal.title', { plan: investment.plan_name })}</div>
+        <div style={s.modalSub}>{t('withdrawModal.available', { amount: formatMoney(available) })}</div>
 
         {error && <div style={s.error}>{error}</div>}
 
         {preview?.isMatured ? (
-          <div style={s.maturedNotice}>
-            This investment has matured — no penalty or fee applies.
-          </div>
+          <div style={s.maturedNotice}>{t('withdrawModal.maturedNotice')}</div>
         ) : (
-          <div style={s.penaltyNotice}>
-            Withdrawing before maturity forfeits earned interest on this amount, plus a flat {formatUsd(investment.early_withdrawal_fee_usd)} fee.
-          </div>
+          <div style={s.penaltyNotice}>{t('withdrawModal.penaltyNotice', { fee: formatMoney(investment.early_withdrawal_fee_usd) })}</div>
         )}
 
-        <label style={s.label}>Amount to withdraw (USD)</label>
+        <label style={s.label}>{t('withdrawModal.amountLabel')}</label>
         <input
           style={s.input}
           type="number"
@@ -142,36 +123,36 @@ function WithdrawModal({ investment, onClose, onSuccess }) {
         {preview && (
           <div style={s.breakdown}>
             <div style={s.breakdownRow}>
-              <span style={s.breakdownLabel}>Principal withdrawn</span>
-              <span>{formatUsd(preview.principal)}</span>
+              <span style={s.breakdownLabel}>{t('withdrawModal.principalWithdrawn')}</span>
+              <span>{formatMoney(preview.principal)}</span>
             </div>
             <div style={s.breakdownRow}>
-              <span style={s.breakdownLabel}>{preview.isMatured ? 'Interest earned' : 'Interest forfeited'}</span>
+              <span style={s.breakdownLabel}>{preview.isMatured ? t('withdrawModal.interestEarned') : t('withdrawModal.interestForfeited')}</span>
               <span style={preview.isMatured ? s.breakdownValuePos : s.breakdownValueNeg}>
-                {preview.isMatured ? `+${formatUsd(preview.interestEarned)}` : formatUsd(0)}
+                {preview.isMatured ? `+${formatMoney(preview.interestEarned)}` : formatMoney(0)}
               </span>
             </div>
             {preview.fee > 0 && (
               <div style={s.breakdownRow}>
-                <span style={s.breakdownLabel}>Early withdrawal fee</span>
-                <span style={s.breakdownValueNeg}>−{formatUsd(preview.fee)}</span>
+                <span style={s.breakdownLabel}>{t('withdrawModal.earlyFee')}</span>
+                <span style={s.breakdownValueNeg}>−{formatMoney(preview.fee)}</span>
               </div>
             )}
             <div style={s.breakdownTotal}>
-              <span>You'll receive</span>
-              <span>{formatUsd(preview.payout)}</span>
+              <span>{t('withdrawModal.youllReceive')}</span>
+              <span>{formatMoney(preview.payout)}</span>
             </div>
           </div>
         )}
 
         <div style={s.modalActions}>
-          <button style={s.btnGhost} onClick={onClose}>Cancel</button>
+          <button style={s.btnGhost} onClick={onClose}>{t('cancel')}</button>
           <button
             style={{ ...s.btnGreen, flex: 1, ...(submitting ? s.btnDisabled : {}) }}
             disabled={submitting}
             onClick={handleSubmit}
           >
-            {submitting ? 'Requesting…' : 'Request withdrawal'}
+            {submitting ? t('withdrawModal.requesting') : t('withdrawModal.requestWithdrawal')}
           </button>
         </div>
       </div>
@@ -180,6 +161,8 @@ function WithdrawModal({ investment, onClose, onSuccess }) {
 }
 
 function ClaimGainsModal({ investment, onClose, onSuccess }) {
+  const t = useTranslations('Portfolio')
+  const formatMoney = useMoneyFormatter()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -192,7 +175,7 @@ function ClaimGainsModal({ investment, onClose, onSuccess }) {
       await claimInvestmentGains(investment.id)
       onSuccess()
     } catch (err) {
-      setError(err.message || 'Failed to claim gains.')
+      setError(err.message || t('errors.claimFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -201,26 +184,26 @@ function ClaimGainsModal({ investment, onClose, onSuccess }) {
   return (
     <div style={s.modalOverlay} onClick={onClose}>
       <div style={s.modal} onClick={e => e.stopPropagation()}>
-        <div style={s.modalTitle}>Claim gains from {investment.plan_name}</div>
-        <div style={s.modalSub}>Your principal stays invested — only earned interest moves to your wallet.</div>
+        <div style={s.modalTitle}>{t('claimModal.title', { plan: investment.plan_name })}</div>
+        <div style={s.modalSub}>{t('claimModal.subtitle')}</div>
 
         {error && <div style={s.error}>{error}</div>}
 
         <div style={s.breakdown}>
           <div style={s.breakdownTotal}>
-            <span>Available to claim</span>
-            <span style={s.breakdownValuePos}>{formatUsd(claimable)}</span>
+            <span>{t('claimModal.availableToClaim')}</span>
+            <span style={s.breakdownValuePos}>{formatMoney(claimable)}</span>
           </div>
         </div>
 
         <div style={s.modalActions}>
-          <button style={s.btnGhost} onClick={onClose}>Cancel</button>
+          <button style={s.btnGhost} onClick={onClose}>{t('cancel')}</button>
           <button
             style={{ ...s.btnGreen, flex: 1, ...((submitting || claimable <= 0) ? s.btnDisabled : {}) }}
             disabled={submitting || claimable <= 0}
             onClick={handleSubmit}
           >
-            {submitting ? 'Claiming…' : 'Claim gains'}
+            {submitting ? t('claimModal.claiming') : t('claimModal.claimGains')}
           </button>
         </div>
       </div>
@@ -229,6 +212,8 @@ function ClaimGainsModal({ investment, onClose, onSuccess }) {
 }
 
 export default function PortfolioPage() {
+  const t = useTranslations('Portfolio')
+  const formatMoney = useMoneyFormatter()
   const { user } = useUser()
   const [balance, setBalance] = useState(0)
   const [plans, setPlans] = useState([])
@@ -256,7 +241,7 @@ export default function PortfolioPage() {
       setPlans(planList)
       setInvestments(investmentList)
     } catch (err) {
-      setError(err.message || 'Failed to load portfolio data')
+      setError(err.message || t('errors.loadFailed'))
     } finally {
       setLoading(false)
     }
@@ -270,27 +255,27 @@ export default function PortfolioPage() {
     const amt = Number(amount)
 
     if (!selectedPlan) {
-      setError('Select a plan first.')
+      setError(t('errors.selectPlan'))
       return
     }
     if (!amt || amt < selectedPlan.min_amount) {
-      setError(`Minimum for ${selectedPlan.name} is ${formatUsd(selectedPlan.min_amount)}.`)
+      setError(t('errors.minForPlan', { plan: selectedPlan.name, amount: formatMoney(selectedPlan.min_amount) }))
       return
     }
     if (amt > balance) {
-      setError(`You can't invest more than your available balance (${formatUsd(balance)}).`)
+      setError(t('errors.exceedsBalance', { amount: formatMoney(balance) }))
       return
     }
 
     setSubmitting(true)
     try {
       await createInvestment({ planId: selectedPlan.id, amountUsd: amt })
-      setSuccess(`Invested ${formatUsd(amt)} into ${selectedPlan.name}.`)
+      setSuccess(t('investSuccess', { amount: formatMoney(amt), plan: selectedPlan.name }))
       setAmount('')
       setSelectedPlan(null)
       await loadData()
     } catch (err) {
-      setError(err.message || 'Investment failed.')
+      setError(err.message || t('errors.investFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -301,14 +286,14 @@ export default function PortfolioPage() {
 
   return (
     <div style={s.page}>
-      <h1 style={s.title}>Portfolio</h1>
-      <p style={s.sub}>Your active investments and available plans</p>
+      <h1 style={s.title}>{t('title')}</h1>
+      <p style={s.sub}>{t('subtitle')}</p>
 
       {error && <div style={s.error}>{error}</div>}
       {success && <div style={{ ...s.error, color: 'var(--green)', background: 'var(--green-dim)' }}>{success}</div>}
 
       <div style={s.card}>
-        <div style={s.cardTitle}>Choose a plan</div>
+        <div style={s.cardTitle}>{t('choosePlan')}</div>
         <div className="responsive-plan-grid" style={s.planGrid}>
           {plans.map(plan => (
             <div
@@ -318,13 +303,13 @@ export default function PortfolioPage() {
             >
               <div style={s.planName}>{plan.name}</div>
               <div style={s.planDesc}>{plan.description}</div>
-              <div style={s.planApy}>{plan.apy_percent}% APY</div>
-              <div style={s.planMeta}>{plan.term_days}-day term · min {formatUsd(plan.min_amount)}</div>
+              <div style={s.planApy}>{t('apyValue', { apy: plan.apy_percent })}</div>
+              <div style={s.planMeta}>{t('termMin', { days: plan.term_days, min: formatMoney(plan.min_amount) })}</div>
             </div>
           ))}
         </div>
 
-        <label style={s.label}>Amount to invest (available: {formatUsd(balance)})</label>
+        <label style={s.label}>{t('amountToInvest', { available: formatMoney(balance) })}</label>
         <input
           style={s.input}
           type="number"
@@ -337,34 +322,34 @@ export default function PortfolioPage() {
           disabled={submitting}
           onClick={handleInvest}
         >
-          {submitting ? 'Investing…' : 'Invest now'}
+          {submitting ? t('investing') : t('investNow')}
         </button>
       </div>
 
       <div style={s.card}>
-        <div style={s.cardTitle}>Your investments</div>
+        <div style={s.cardTitle}>{t('yourInvestments')}</div>
         {loading ? (
-          <div style={s.empty}>Loading…</div>
+          <div style={s.empty}>{t('loading')}</div>
         ) : investments.length === 0 ? (
-          <div style={s.empty}>No investments yet — pick a plan above to get started.</div>
+          <div style={s.empty}>{t('noInvestments')}</div>
         ) : (
           <>
             <div style={{ display: 'flex', gap: '32px', marginBottom: '20px' }}>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', marginBottom: '4px' }}>Total invested</div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text)' }}>{formatUsd(totalInvested)}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', marginBottom: '4px' }}>{t('totalInvested')}</div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text)' }}>{formatMoney(totalInvested)}</div>
               </div>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', marginBottom: '4px' }}>Current value</div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--green)' }}>{formatUsd(totalCurrentValue)}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', marginBottom: '4px' }}>{t('currentValue')}</div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--green)' }}>{formatMoney(totalCurrentValue)}</div>
               </div>
             </div>
             <div className="responsive-table-wrap">
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['Plan', 'Invested', 'Current value', 'APY', 'Days left', 'Status', ''].map(h => (
-                    <th key={h} style={s.th}>{h}</th>
+                  {['plan', 'invested', 'currentValue', 'apy', 'daysLeft', 'status', 'blank'].map(h => (
+                    <th key={h} style={s.th}>{h === 'blank' ? '' : t(`table.${h}`)}</th>
                   ))}
                 </tr>
               </thead>
@@ -377,8 +362,8 @@ export default function PortfolioPage() {
                   return (
                     <tr key={inv.id}>
                       <td style={{ ...s.td, fontWeight: '500' }}>{inv.plan_name}</td>
-                      <td style={s.td}>{formatUsd(inv.amount_usd)}</td>
-                      <td style={{ ...s.td, color: 'var(--green)', fontWeight: '600' }}>{formatUsd(inv.current_value)}</td>
+                      <td style={s.td}>{formatMoney(inv.amount_usd)}</td>
+                      <td style={{ ...s.td, color: 'var(--green)', fontWeight: '600' }}>{formatMoney(inv.current_value)}</td>
                       <td style={s.td}>{inv.apy_percent}%</td>
                       <td style={s.td}>{Math.ceil(inv.days_remaining)}</td>
                       <td style={s.td}>
@@ -387,7 +372,7 @@ export default function PortfolioPage() {
                           background: inv.status === 'active' ? 'var(--green-dim)' : inv.status === 'cancelled' ? 'var(--gold-dim)' : 'var(--bg4)',
                           color: inv.status === 'active' ? 'var(--green)' : inv.status === 'cancelled' ? 'var(--gold)' : 'var(--text3)',
                         }}>
-                          {inv.status}
+                          {t(`status.${inv.status}`, { default: inv.status })}
                         </span>
                       </td>
                       <td style={s.td}>
@@ -395,18 +380,18 @@ export default function PortfolioPage() {
                           <button
                             style={{ ...s.btnSmallGreen, ...(canClaim ? {} : s.btnSmallDisabled) }}
                             disabled={!canClaim}
-                            title={!canClaim ? 'No gains available to claim yet' : undefined}
+                            title={!canClaim ? t('noGainsYet') : undefined}
                             onClick={() => setClaimingInv(inv)}
                           >
-                            Claim gains
+                            {t('claimGains')}
                           </button>
                           <button
                             style={{ ...s.btnSmall, ...(canWithdraw ? {} : s.btnSmallDisabled) }}
                             disabled={!canWithdraw}
-                            title={!canWithdraw ? 'Nothing available to withdraw' : undefined}
+                            title={!canWithdraw ? t('nothingToWithdraw') : undefined}
                             onClick={() => setWithdrawingInv(inv)}
                           >
-                            Withdraw
+                            {t('withdraw')}
                           </button>
                         </div>
                       </td>
@@ -426,7 +411,7 @@ export default function PortfolioPage() {
           onClose={() => setWithdrawingInv(null)}
           onSuccess={() => {
             setWithdrawingInv(null)
-            setSuccess('Withdrawal requested — pending admin approval.')
+            setSuccess(t('withdrawRequestedMsg'))
             loadData()
           }}
         />
@@ -438,7 +423,7 @@ export default function PortfolioPage() {
           onClose={() => setClaimingInv(null)}
           onSuccess={() => {
             setClaimingInv(null)
-            setSuccess('Gains claim requested — pending admin approval.')
+            setSuccess(t('claimRequestedMsg'))
             loadData()
           }}
         />

@@ -2,12 +2,13 @@
 
 import { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { useReveal } from "@/hooks/useReveal";
 
-const STATS = [
-  { value: 18.4, suffix: "%", label: "Average annual return", note: "3-year average across all plans" },
-  { value: 2.1,  suffix: "B", prefix: "$", label: "Assets under management", note: "Across 40,000+ portfolios" },
-  { value: 42,   suffix: "K+", label: "Active investors", note: "In 28 countries" },
+const STAT_CONFIG = [
+  { value: 18.4, suffix: "%" },
+  { value: 2.1, suffix: "B", prefix: "$" },
+  { value: 42, suffix: "K+" },
 ];
 
 function CountUp({ value, prefix = "", suffix = "", decimals = 0, active }) {
@@ -38,22 +39,24 @@ function CountUp({ value, prefix = "", suffix = "", decimals = 0, active }) {
 export default function Performance() {
   const ref = useRef(null);
   const { fadeUp, staggerChild, isInView } = useReveal(ref);
+  const t = useTranslations("Performance");
+  const stats = t.raw("stats"); // [{ label, note }, ...] -- same order as STAT_CONFIG
 
   return (
     <section className="perf" ref={ref}>
       <div className="perf__inner">
         <motion.p className="section-eyebrow" animate={fadeUp(0)}>
-          Performance
+          {t("eyebrow")}
         </motion.p>
 
         <motion.h2 className="perf__headline" animate={fadeUp(1)}>
-          Numbers that speak<br />for themselves.
+          {t("headlineLine1")}<br />{t("headlineLine2")}
         </motion.h2>
 
         <div className="perf__stats">
-          {STATS.map((s, i) => (
+          {STAT_CONFIG.map((s, i) => (
             <motion.div
-              key={s.label}
+              key={stats[i].label}
               className="perf-stat"
               animate={staggerChild(i)}
             >
@@ -64,8 +67,8 @@ export default function Performance() {
                 decimals={s.suffix === "%" ? 1 : s.suffix === "B" ? 1 : 0}
                 active={isInView}
               />
-              <p className="perf-stat__label">{s.label}</p>
-              <p className="perf-stat__note">{s.note}</p>
+              <p className="perf-stat__label">{stats[i].label}</p>
+              <p className="perf-stat__note">{stats[i].note}</p>
             </motion.div>
           ))}
         </div>

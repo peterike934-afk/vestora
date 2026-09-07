@@ -1,14 +1,13 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { getInvestmentPlans } from "@/lib/queries";
-
-// Shown once, applies across every plan — not plan-specific, since
-// asset access isn't gated by tier in this product.
-const ASSET_CLASSES = ["Crypto", "Stocks", "Real Estate", "Bonds"];
+import { useReveal } from "@/hooks/useReveal";
+import { useLocale } from "next-intl";
 
 function formatAmount(n) {
   return `$${Number(n).toLocaleString()}`;
@@ -19,36 +18,37 @@ function formatRange(min, max) {
   return `${formatAmount(min)}+`;
 }
 
-function PricingCard({ plan, index, inView, highlighted, ctaHref, ctaLabel }) {
+function PricingCard({ plan, index, staggerChild, highlighted, ctaHref, ctaLabel }) {
+  const t = useTranslations("Pricing");
+  const assetClasses = t.raw("assetClasses");
+
   return (
     <motion.div
       className={`pricing-card ${highlighted ? "pricing-card--highlighted" : ""}`}
-      initial={{ opacity: 0, y: 24 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
+      animate={staggerChild(index)}
     >
-      {highlighted && <span className="pricing-card__badge">Most popular</span>}
+      {highlighted && <span className="pricing-card__badge">{t("mostPopular")}</span>}
 
       <h3 className="pricing-card__name">{plan.name}</h3>
       <p className="pricing-card__desc">{plan.description}</p>
 
       <div className="pricing-card__price">
         <span className="pricing-card__amount">{plan.apy_percent}%</span>
-        <span className="pricing-card__period">APY</span>
+        <span className="pricing-card__period">{t("apy")}</span>
       </div>
       <p style={{ fontSize: "13px", opacity: 0.7, marginTop: "-8px", marginBottom: "20px" }}>
-        Invest {formatRange(plan.min_amount, plan.max_amount)} · {plan.term_days}-day term
+        {t("investRange", { range: formatRange(plan.min_amount, plan.max_amount), days: plan.term_days })}
       </p>
 
-      <a
-        href={ctaHref}
+      
+       <a href={ctaHref}
         className={`btn ${highlighted ? "btn--primary" : "btn--ghost"} pricing-card__cta`}
       >
         {ctaLabel}
       </a>
 
       <ul className="pricing-card__features">
-        {ASSET_CLASSES.map((asset) => (
+        {assetClasses.map((asset) => (
           <li key={asset}>
             <Check size={15} strokeWidth={2.25} />
             <span>{asset}</span>
@@ -61,51 +61,40 @@ function PricingCard({ plan, index, inView, highlighted, ctaHref, ctaLabel }) {
 
 export default function Pricing() {
   const sectionRef = useRef(null);
-  const inView = useInView(sectionRef, { once: true, margin: "-80px" });
+  const { fadeUp, staggerChild } = useReveal(sectionRef);
+  const t = useTranslations("Pricing");
+  const locale = useLocale();
 
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
-  // null while checking, true/false once known — avoids briefly
-  // showing the wrong CTA before auth state resolves.
   const [isLoggedIn, setIsLoggedIn] = useState(null);
 
   useEffect(() => {
-    getInvestmentPlans()
+    getInvestmentPlans(locale)
       .then(setPlans)
       .catch(err => console.error("Failed to load plans:", err))
       .finally(() => setLoading(false));
 
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => setIsLoggedIn(!!data.user));
-  }, []);
+  }, [locale]);
+  
 
   const ctaHref = isLoggedIn ? "/portfolio" : "/signup";
-  const ctaLabel = isLoggedIn ? "Invest now" : "Create account";
+  const ctaLabel = isLoggedIn ? t("ctaInvestNow") : t("ctaCreateAccount");
+  const bandCtaLabel = isLoggedIn ? t("ctaGoToPortfolio") : t("ctaGetStarted");
 
-  // Middle plan (by sort order — min_amount ascending, same as
-  // getInvestmentPlans()) is treated as "most popular", matching the
-  // original static layout's middle-card emphasis.
   const highlightedIndex = Math.floor(plans.length / 2);
 
   return (
     <section className="pricing" id="pricing" ref={sectionRef}>
       <div className="pricing__inner">
-        <motion.p
-          className="pricing__eyebrow"
-          initial={{ opacity: 0, y: 10 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-        >
-          Investment plans
+        <motion.p className="pricing__eyebrow" animate={fadeUp(0)}>
+          {t("eyebrow")}
         </motion.p>
 
-        <motion.h2
-          className="pricing__headline"
-          initial={{ opacity: 0, y: 16 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        >
-          Real returns.<br />No hidden fees.
+        <motion.h2 className="pricing__headline" animate={fadeUp(1)}>
+          {t("headlineLine1")}<br />{t("headlineLine2")}
         </motion.h2>
 
         {!loading && (
@@ -115,7 +104,7 @@ export default function Pricing() {
                 key={plan.id}
                 plan={plan}
                 index={i}
-                inView={inView}
+                staggerChild={staggerChild}
                 highlighted={i === highlightedIndex}
                 ctaHref={ctaHref}
                 ctaLabel={ctaLabel}
@@ -124,20 +113,15 @@ export default function Pricing() {
           </div>
         )}
 
-        <motion.div
-          className="pricing__cta-band"
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
+        <motion.div className="pricing__cta-band" animate={fadeUp(2)}>
           <div>
-            <h3 className="pricing__cta-title">Still not sure?</h3>
+            <h3 className="pricing__cta-title">{t("stillNotSure")}</h3>
             <p className="pricing__cta-text">
-              {isLoggedIn ? "Head to your portfolio to explore plans." : "Create a free account — no card required to get started."}
+              {isLoggedIn ? t("bandTextLoggedIn") : t("bandTextLoggedOut")}
             </p>
           </div>
           <a href={ctaHref} className="btn btn--primary">
-            {isLoggedIn ? "Go to portfolio" : "Get started"}
+            {bandCtaLabel}
           </a>
         </motion.div>
       </div>

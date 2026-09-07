@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
+import { useMoneyFormatter, useDateFormatter } from '@/lib/formatting'
 import { getMyReferralCode, getMyReferrals, getSettings } from '@/lib/queries'
 
 const s = {
@@ -10,7 +12,6 @@ const s = {
   sub: { fontSize: '14px', color: 'var(--text2)', marginBottom: '28px' },
   card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '24px', marginBottom: '20px' },
   cardTitle: { fontSize: '15px', fontWeight: '600', color: 'var(--text)', marginBottom: '8px' },
-  cardDesc: { fontSize: '13px', color: 'var(--text3)', marginBottom: '20px' },
   codeBox: { display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '14px 18px', marginBottom: '14px' },
   codeText: { fontFamily: 'monospace', fontSize: '18px', fontWeight: '700', color: 'var(--green)', letterSpacing: '0.05em', flex: 1 },
   copyBtn: { padding: '8px 16px', background: 'var(--green)', border: 'none', borderRadius: '8px', color: '#000', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
@@ -26,11 +27,10 @@ const s = {
   empty: { textAlign: 'center', padding: '40px', color: 'var(--text3)', fontSize: '14px' },
 }
 
-function formatUsd(n) {
-  return `$${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
 export default function ReferralsPage() {
+  const t = useTranslations('Referrals')
+  const formatMoney = useMoneyFormatter()
+  const formatDate = useDateFormatter()
   const { user } = useUser()
   const [code, setCode] = useState('')
   const [referrals, setReferrals] = useState([])
@@ -60,16 +60,15 @@ export default function ReferralsPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const paidCount = referrals.filter(r => r.status === 'paid').length
   const pendingCount = referrals.filter(r => r.status === 'pending').length
   const totalEarned = referrals.filter(r => r.status === 'paid').reduce((sum, r) => sum + Number(r.referrer_bonus_usd), 0)
 
   if (!settings?.referral_program_enabled && !loading) {
     return (
       <div style={s.page}>
-        <h1 style={s.title}>Referrals</h1>
+        <h1 style={s.title}>{t('title')}</h1>
         <div style={s.card}>
-          <div style={s.empty}>The referral program isn't active right now.</div>
+          <div style={s.empty}>{t('programInactive')}</div>
         </div>
       </div>
     )
@@ -77,65 +76,65 @@ export default function ReferralsPage() {
 
   return (
     <div style={s.page}>
-      <h1 style={s.title}>Referrals</h1>
+      <h1 style={s.title}>{t('title')}</h1>
       <p style={s.sub}>
-        Invite friends — you get {formatUsd(settings?.referral_referrer_bonus_usd)}, they get {formatUsd(settings?.referral_referred_bonus_usd)}
+        {t('subtitle', { referrerBonus: formatMoney(settings?.referral_referrer_bonus_usd), referredBonus: formatMoney(settings?.referral_referred_bonus_usd) })}
       </p>
 
       <div style={s.card}>
-        <div style={s.cardTitle}>Your referral code</div>
+        <div style={s.cardTitle}>{t('yourCode')}</div>
         <div style={s.codeBox}>
           <span style={s.codeText}>{loading ? '········' : code}</span>
           <button style={s.copyBtn} onClick={handleCopy} disabled={loading}>
-            {copied ? 'Copied!' : 'Copy link'}
+            {copied ? t('copied') : t('copyLink')}
           </button>
         </div>
         <div style={s.linkBox}>
-          <span style={s.linkText}>{referralLink || 'Loading…'}</span>
+          <span style={s.linkText}>{referralLink || t('loading')}</span>
         </div>
       </div>
 
       <div style={s.statsRow}>
         <div style={s.stat}>
-          <div style={s.statLabel}>Total referred</div>
+          <div style={s.statLabel}>{t('totalReferred')}</div>
           <div style={s.statValue}>{loading ? '—' : referrals.length}</div>
         </div>
         <div style={s.stat}>
-          <div style={s.statLabel}>Pending</div>
+          <div style={s.statLabel}>{t('pending')}</div>
           <div style={s.statValue}>{loading ? '—' : pendingCount}</div>
         </div>
         <div style={s.stat}>
-          <div style={s.statLabel}>Earned so far</div>
-          <div style={{ ...s.statValue, color: 'var(--green)' }}>{loading ? '—' : formatUsd(totalEarned)}</div>
+          <div style={s.statLabel}>{t('earnedSoFar')}</div>
+          <div style={{ ...s.statValue, color: 'var(--green)' }}>{loading ? '—' : formatMoney(totalEarned)}</div>
         </div>
       </div>
 
       <div style={s.card}>
-        <div style={s.cardTitle}>Your referrals</div>
+        <div style={s.cardTitle}>{t('yourReferrals')}</div>
         {loading ? (
-          <div style={s.empty}>Loading…</div>
+          <div style={s.empty}>{t('loading')}</div>
         ) : referrals.length === 0 ? (
-          <div style={s.empty}>No referrals yet — share your link to get started.</div>
+          <div style={s.empty}>{t('noReferralsYet')}</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr>{['Name', 'Bonus', 'Status', 'Date'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
+              <tr>{['name', 'bonus', 'status', 'date'].map(h => <th key={h} style={s.th}>{t(`table.${h}`)}</th>)}</tr>
             </thead>
             <tbody>
               {referrals.map(r => (
                 <tr key={r.id}>
-                  <td style={s.td}>{r.referred_name || 'New investor'}</td>
-                  <td style={s.td}>{formatUsd(r.referrer_bonus_usd)}</td>
+                  <td style={s.td}>{r.referred_name || t('newInvestor')}</td>
+                  <td style={s.td}>{formatMoney(r.referrer_bonus_usd)}</td>
                   <td style={s.td}>
                     <span style={{
                       ...s.pill,
                       background: r.status === 'paid' ? 'var(--green-dim)' : 'var(--gold-dim)',
                       color: r.status === 'paid' ? 'var(--green)' : 'var(--gold)',
                     }}>
-                      {r.status}
+                      {t(`status.${r.status}`)}
                     </span>
                   </td>
-                  <td style={{ ...s.td, color: 'var(--text3)' }}>{new Date(r.created_at).toLocaleDateString()}</td>
+                  <td style={{ ...s.td, color: 'var(--text3)' }}>{formatDate(r.created_at)}</td>
                 </tr>
               ))}
             </tbody>

@@ -123,7 +123,7 @@ export default function Login() {
 
     const elapsed = Date.now() - overlayStartedAt
     if (elapsed < MIN_OVERLAY_MS) await wait(MIN_OVERLAY_MS - elapsed)
-    router.push('/dashboard')
+   router.push('/en/dashboard')
   }
 
   async function handleVerifyMfa(e) {
@@ -140,7 +140,7 @@ export default function Login() {
       await verifyMfaLogin(mfaFactorId, mfaCode)
       const elapsed = Date.now() - overlayStartedAt
       if (elapsed < MIN_OVERLAY_MS) await wait(MIN_OVERLAY_MS - elapsed)
-      router.push('/dashboard')
+     router.push('/en/dashboard')
     } catch (err) {
       setShowOverlay(false)
       setError(err.message || 'Invalid code — try again.')

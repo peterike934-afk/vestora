@@ -1,0 +1,570 @@
+{
+  "Nav": { "product": "Product", "pricing": "Pricing", "about": "About", "signIn": "Sign in", "getStarted": "Get started" },
+  "Footer": {
+    "tagline": "Grow your money with quiet confidence.",
+    "columns": { "product": "Product", "company": "Company", "legal": "Legal", "support": "Support" },
+    "links": { "features": "Features", "pricing": "Pricing", "security": "Security", "about": "About", "privacyPolicy": "Privacy Policy", "termsOfService": "Terms of Service", "cookiePolicy": "Cookie Policy", "helpCenter": "Help center", "contactUs": "Contact Us", "status": "Status" },
+    "rights": "All rights reserved."
+  },
+    "Hero": {
+    "eyebrow": "Investing, simplified",
+    "headlineLine1": "Grow your money",
+    "headlineLine2": "with quiet confidence.",
+    "subhead": "One portfolio. Real-time growth. No noise.",
+    "ctaPrimary": "Start investing",
+    "ctaSecondary": "See how it works"
+  },
+    "PortfolioCard": {
+    "totalPortfolio": "Total portfolio",
+    "thisMonth": "This month",
+    "availableCash": "Available cash"
+  },
+    "FeaturesGrid": {
+    "eyebrow": "Everything you need",
+    "headlineLine1": "Built for serious investors.",
+    "headlineLine2": "Simple enough for first-timers.",
+    "cards": [
+      { "title": "Transparent investment plans", "desc": "Fixed-term plans with a clear rate, minimum, and maturity date — know exactly what you're earning and when." },
+      { "title": "Real portfolio growth", "desc": "Watch your investment value grow day by day, calculated transparently from your actual start date and rate." },
+      { "title": "Verified deposits & withdrawals", "desc": "Every deposit and withdrawal is reviewed and confirmed by our team before it touches your balance, with a full record kept." },
+      { "title": "Two-factor authentication", "desc": "Secure your account with an authenticator app — once enabled, a code is required at every login." },
+      { "title": "Live support chat", "desc": "Message our team directly from your dashboard and get replies in real time — no ticket numbers, no waiting on email." },
+      { "title": "Full accountability", "desc": "Every action on your account — deposits, withdrawals, adjustments — is permanently logged. Nothing happens without a record." }
+    ]
+  },
+  "Features": {
+    "eyebrow": "What you can hold",
+    "headlineLine1": "Five asset classes.",
+    "headlineLine2": "One account.",
+    "items": [
+      { "label": "Stocks", "title": "Equities, without the spreadsheet", "desc": "Buy fractional shares in thousands of public companies, with automatic dividend reinvestment built in." },
+      { "label": "Crypto", "title": "Digital assets, properly custodied", "desc": "Bitcoin, Ethereum, and a curated set of major tokens — held in cold storage, not a hot wallet." },
+      { "label": "Gold", "title": "A hedge that actually settles", "desc": "Allocate into fully-backed physical gold, priced in real time and redeemable on request." },
+      { "label": "Real estate", "title": "Property, in any amount", "desc": "Fractional ownership in vetted income-producing properties, starting at $50." },
+      { "label": "AI portfolios", "title": "Managed, not guessed", "desc": "A model portfolio that rebalances on a schedule based on your risk profile, not market noise." }
+    ]
+  },
+  "Testimonials": {
+    "eyebrow": "What investors say",
+    "headlineLine1": "Real people.",
+    "headlineLine2": "Real returns.",
+    "items": [
+      { "quote": "I've tried three other platforms. Vestora is the only one where I actually understand what's happening with my money.", "role": "Freelance designer, Washington, D.C." },
+      { "quote": "The AI portfolio has returned 14% in eight months. I haven't touched it once — that's exactly what I wanted.", "role": "Insurance agent, London" },
+      { "quote": "Starting with $500 felt embarrassing before. Vestora made it feel completely normal. Now I'm at $4,800.", "role": "Lawyer, Toronto" },
+      { "quote": "The rebalancing alone has saved me hours every month. It just quietly does its job in the background.", "role": "Product manager, Austin" },
+      { "quote": "I recommend Vestora to everyone who tells me investing feels too complicated. It genuinely isn't, here.", "role": "Nurse practitioner, Chicago" },
+      { "quote": "Clean, fast, and the fees are exactly what they say they are. No surprises after six months of use.", "role": "Consultant, Germany" }
+    ]
+  },
+  "Pricing": {
+  "eyebrow": "Investment plans",
+  "headlineLine1": "Real returns.",
+  "headlineLine2": "No hidden fees.",
+  "mostPopular": "Most popular",
+  "apy": "APY",
+  "investRange": "Invest {range} · {days}-day term",
+  "assetClasses": ["Crypto", "Stocks", "Real Estate", "Bonds"],
+  "ctaInvestNow": "Invest now",
+  "ctaCreateAccount": "Create account",
+  "ctaGoToPortfolio": "Go to portfolio",
+  "ctaGetStarted": "Get started",
+  "stillNotSure": "Still not sure?",
+  "bandTextLoggedIn": "Head to your portfolio to explore plans.",
+  "bandTextLoggedOut": "Create a free account — no card required to get started."
+},
+"FAQ": {
+  "eyebrow": "FAQ",
+  "headlineLine1": "Common questions,",
+  "headlineLine2": "straight answers.",
+  "items": [
+    { "q": "How do I start investing?", "a": "Create an account, complete a short risk assessment, and fund your wallet. You can start investing in under five minutes with as little as $500." },
+    { "q": "Can I withdraw anytime?", "a": "Yes. Cash balances are available immediately. Asset liquidations settle within 1–3 business days depending on the asset class." },
+    { "q": "What assets are supported?", "a": "Vestora supports equities (US and international), major cryptocurrencies, physical gold, and income-producing real estate. AI-managed portfolios spread across all four automatically." },
+    { "q": "How does Vestora make money?", "a": "A flat 0.25% annual management fee, charged monthly. No commissions, no spreads, no hidden charges. If your portfolio grows, we earn more — so our incentives are aligned." },
+    { "q": "Is my money safe?", "a": "Assets are held in segregated custody accounts, separate from Vestora's operating funds. Cash balances are held at FDIC-insured partner banks up to applicable limits." }
+  ]
+},
+"WhyVestora": {
+  "eyebrow": "Why Vestora",
+  "headlineLine1": "Built for people who'd",
+  "headlineLine2": "rather not think about it.",
+  "reasons": [
+    { "title": "Secure by default", "desc": "Assets held in segregated, insured custody accounts — never commingled with operating funds." },
+    { "title": "Real-time analytics", "desc": "Your portfolio updates live, with performance broken down by asset class, not buried in a PDF." },
+    { "title": "Low, visible fees", "desc": "A flat 0.25% annual fee. No trading commissions, no withdrawal penalties, no fine print." },
+    { "title": "Built-in diversification", "desc": "Every plan spreads risk across asset classes automatically, rebalanced as markets shift." }
+  ]
+},
+"Performance": {
+  "eyebrow": "Performance",
+  "headlineLine1": "Numbers that speak",
+  "headlineLine2": "for themselves.",
+  "stats": [
+    { "label": "Average annual return", "note": "3-year average across all plans" },
+    { "label": "Assets under management", "note": "Across 40,000+ portfolios" },
+    { "label": "Active investors", "note": "In 28 countries" }
+  ]
+},
+"DashboardShell": {
+  "nav": {
+    "dashboard": "Dashboard",
+    "portfolio": "Portfolio",
+    "markets": "Markets",
+    "wallet": "Wallet",
+    "deposit": "Deposit",
+    "withdraw": "Withdraw",
+    "referrals": "Referrals",
+    "settings": "Settings"
+  },
+  "defaultInvestorName": "Investor",
+  "investorRole": "Investor",
+  "adminRole": "Admin",
+  "lightMode": "Light mode",
+  "darkMode": "Dark mode",
+  "switchToDark": "Switch to dark mode",
+  "switchToLight": "Switch to light mode",
+  "toggleMenu": "Toggle menu",
+  "expandSidebar": "Expand sidebar",
+  "collapseSidebar": "Collapse sidebar",
+  "maintenanceTitle": "We'll be right back",
+  "maintenanceSub": "Vestora is undergoing scheduled maintenance. Please check back shortly."
+},
+"Dashboard": {
+  "greeting": "Good morning",
+  "greetingWithName": "Good morning, {name}",
+  "subtitle": "Here's what's happening with your account today",
+  "txnTypes": {
+    "deposit": "Deposit",
+    "withdrawal": "Withdrawal",
+    "adminCredit": "Admin credit",
+    "adminDebit": "Admin debit"
+  },
+  "common": { "loading": "Loading…" },
+  "platformStatus": {
+    "title": "Platform status",
+    "viewStatusPage": "View status page",
+    "checkingSystems": "Checking systems…"
+  },
+  "topPerformers": {
+    "title": "Top performing investments",
+    "rankedByReturn": "Ranked by return since start",
+    "noHoldingsYet": "No holdings yet",
+    "nothingToRank": "Nothing to rank yet",
+    "nothingToRankSub": "Once your investments start accruing, the best performers show up here.",
+    "investedApy": "{amount} invested · {apy}% APY"
+  },
+  "investorActivity": {
+    "title": "Investor activity",
+    "live": "LIVE",
+    "investedThisMonth": "{amount} invested on Vestora this month",
+    "noActivityYet": "No activity yet this month",
+    "investedLine": "{name} invested {amount}"
+  },
+  "stats": {
+    "totalBalance": "Total Balance",
+    "verifiedDeposits": "Verified deposits",
+    "totalGains": "Total Gains",
+    "gainsBreakdown": "{investing} from investing, {adjustments} adjustments",
+    "fromActiveInvestments": "From active investments",
+    "pendingDeposits": "Pending Deposits",
+    "awaitingVerification": "Awaiting verification",
+    "totalDeposited": "Total Deposited",
+    "allTime": "All time",
+    "transactions": "Transactions",
+    "totalActivity": "Total activity"
+  },
+  "portfolioGrowth": {
+    "title": "Portfolio growth",
+    "sinceFirstInvestment": "Since your first investment",
+    "noHoldingsYet": "No holdings yet",
+    "noActivity": "No investment activity yet",
+    "noActivitySub": "This account doesn't have any holdings to chart yet."
+  },
+  "assetAllocation": {
+    "title": "Asset allocation",
+    "byPlan": "By plan",
+    "noHoldingsYet": "No holdings yet",
+    "nothingAllocated": "Nothing allocated yet"
+  },
+  "recentTransactions": {
+    "title": "Recent transactions",
+    "subtitle": "Deposits, withdrawals, and account activity",
+    "noTransactions": "No transactions yet",
+    "noTransactionsSub": "Once you make a deposit, it'll show up here — pending until verified.",
+    "pending": "pending",
+    "rejected": "rejected"
+  }
+},
+"Deposit": {
+  "title": "Deposit funds",
+  "subtitle": "Add money to your investment wallet",
+  "notConfigured": "Not configured yet",
+  "confirmDisconnect": "Disconnect this bank account? You can reconnect it again later if needed.",
+  "errors": {
+    "disconnectFailed": "Failed to disconnect bank account.",
+    "fillAmountAndHash": "Please fill in the amount and transaction hash.",
+    "minDeposit": "Minimum deposit is {amount}.",
+    "genericSubmit": "Something went wrong submitting your deposit.",
+    "selectBank": "Connect or select a bank account first.",
+    "validAmount": "Enter a valid amount.",
+    "wireReference": "Enter the name the wire was sent from, so we can match it."
+  },
+  "submitted": {
+    "title": "Deposit submitted",
+    "bank": "Your deposit is pending review. Once approved, we'll pull the funds from your linked bank account.",
+    "wire": "Your wire deposit is pending review. Once we confirm the funds arrived, your balance will be updated.",
+    "crypto": "Your deposit claim is pending verification. Once we confirm the transaction on-chain, your balance will be updated.",
+    "makeAnother": "Make another deposit"
+  },
+  "methods": { "crypto": "Crypto", "bank": "Bank transfer", "wire": "Wire transfer" },
+  "crypto": {
+    "currency": "Currency",
+    "sendTo": "Send to this address",
+    "amountSent": "Amount sent ({currency})",
+    "estimatedUsd": "Estimated USD value",
+    "txHash": "Transaction hash (tx ID)",
+    "steps": {
+      "1": "Send crypto to the address shown",
+      "2": "Copy your transaction hash from your wallet app",
+      "3": "Submit it here — your deposit sits pending",
+      "4": "We verify it on-chain and credit your balance"
+    }
+  },
+  "howItWorks": "How it works",
+  "minimumDeposit": "Minimum deposit",
+  "submitting": "Submitting…",
+  "submitDeposit": "Submit deposit",
+  "bank": {
+    "loadingAccounts": "Loading your bank accounts…",
+    "depositFrom": "Deposit from",
+    "removing": "Removing…",
+    "disconnect": "Disconnect",
+    "amountUsd": "Amount (USD)",
+    "steps": {
+      "1": "Securely connect your bank — Stripe verifies it, we never see your login",
+      "2": "Enter the amount you want to deposit",
+      "3": "Submit — your deposit sits pending review",
+      "4": "Once approved, we pull the funds from your bank"
+    }
+  },
+  "wire": {
+    "wireTo": "Wire the funds to",
+    "bankName": "Bank name",
+    "accountName": "Account name",
+    "routingNumber": "Routing number",
+    "accountNumber": "Account number",
+    "amountSent": "Amount sent (USD)",
+    "sentFrom": "Sent from (name on your account)",
+    "sentFromPlaceholder": "e.g. Jane Doe",
+    "steps": {
+      "1": "Send a wire to the account shown, from your own bank",
+      "2": "Enter the amount and the name it was sent from",
+      "3": "Submit — your deposit sits pending review",
+      "4": "Once we confirm the wire arrived, your balance is credited"
+    }
+  }
+},
+"Portfolio": {
+  "title": "Portfolio",
+  "subtitle": "Your active investments and available plans",
+  "errors": {
+    "validAmount": "Enter a valid amount.",
+    "exceedsAvailable": "Only {amount} is available to withdraw from this investment.",
+    "withdrawFailed": "Failed to request withdrawal.",
+    "claimFailed": "Failed to claim gains.",
+    "loadFailed": "Failed to load portfolio data",
+    "selectPlan": "Select a plan first.",
+    "minForPlan": "Minimum for {plan} is {amount}.",
+    "exceedsBalance": "You can't invest more than your available balance ({amount}).",
+    "investFailed": "Investment failed."
+  },
+  "cancel": "Cancel",
+  "withdrawModal": {
+    "title": "Withdraw from {plan}",
+    "available": "Available to withdraw: {amount}",
+    "maturedNotice": "This investment has matured — no penalty or fee applies.",
+    "penaltyNotice": "Withdrawing before maturity forfeits earned interest on this amount, plus a flat {fee} fee.",
+    "amountLabel": "Amount to withdraw (USD)",
+    "principalWithdrawn": "Principal withdrawn",
+    "interestEarned": "Interest earned",
+    "interestForfeited": "Interest forfeited",
+    "earlyFee": "Early withdrawal fee",
+    "youllReceive": "You'll receive",
+    "requesting": "Requesting…",
+    "requestWithdrawal": "Request withdrawal"
+  },
+  "claimModal": {
+    "title": "Claim gains from {plan}",
+    "subtitle": "Your principal stays invested — only earned interest moves to your wallet.",
+    "availableToClaim": "Available to claim",
+    "claiming": "Claiming…",
+    "claimGains": "Claim gains"
+  },
+  "choosePlan": "Choose a plan",
+  "apyValue": "{apy}% APY",
+  "termMin": "{days}-day term · min {min}",
+  "amountToInvest": "Amount to invest (available: {available})",
+  "investing": "Investing…",
+  "investNow": "Invest now",
+  "yourInvestments": "Your investments",
+  "loading": "Loading…",
+  "noInvestments": "No investments yet — pick a plan above to get started.",
+  "totalInvested": "Total invested",
+  "currentValue": "Current value",
+  "table": {
+    "plan": "Plan",
+    "invested": "Invested",
+    "currentValue": "Current value",
+    "apy": "APY",
+    "daysLeft": "Days left",
+    "status": "Status"
+  },
+  "status": { "active": "active", "matured": "matured", "cancelled": "cancelled", "withdrawn": "withdrawn" },
+  "noGainsYet": "No gains available to claim yet",
+  "nothingToWithdraw": "Nothing available to withdraw",
+  "claimGains": "Claim gains",
+  "withdraw": "Withdraw",
+  "investSuccess": "Invested {amount} into {plan}.",
+  "withdrawRequestedMsg": "Withdrawal requested — pending admin approval.",
+  "claimRequestedMsg": "Gains claim requested — pending admin approval."
+},
+"Settings": {
+  "title": "Settings",
+  "subtitle": "Manage your account preferences",
+  "signOut": "Sign out",
+  "mfa": {
+    "startFailed": "Failed to start enrollment",
+    "enterCode": "Enter the 6-digit code from your authenticator app.",
+    "invalidCode": "Invalid code — try again.",
+    "enableTitle": "Enable two-factor auth",
+    "settingUp": "Setting up…",
+    "scanInstructions": "Scan with Google Authenticator, Authy, or any TOTP app",
+    "cantScan": "Can't scan? Enter manually:",
+    "verifying": "Verifying…",
+    "confirmEnable": "Confirm & enable",
+    "confirmDisable": "Disable two-factor authentication?",
+    "disableFailed": "Failed to disable 2FA"
+  },
+  "profile": {
+    "title": "Profile",
+    "fullName": "Full name",
+    "email": "Email address",
+    "saving": "Saving…",
+    "saved": "Saved ✓",
+    "saveChanges": "Save changes"
+  },
+  "security": {
+    "title": "Security",
+    "emailNotifications": "Email notifications",
+    "emailNotificationsSub": "Get alerts for deposits and withdrawals",
+    "twoFactor": "Two-factor auth",
+    "checkingStatus": "Checking status…",
+    "enabledDesc": "Enabled — code required on every login",
+    "disabledDesc": "Require a code from your authenticator app on login",
+    "disable2fa": "Disable 2FA",
+    "enable2fa": "Enable 2FA"
+  }
+},
+"Withdraw": {
+  "title": "Withdraw funds",
+  "subtitle": "Move money out of your wallet",
+  "availableToWithdraw": "Available to withdraw",
+  "methods": { "crypto": "Crypto", "bank": "Bank transfer", "wire": "Wire transfer" },
+  "crypto": {
+    "currency": "Currency",
+    "amountToWithdraw": "Amount to withdraw ({currency})",
+    "usdEquivalent": "USD equivalent",
+    "destinationAddress": "Destination {currency} address"
+  },
+  "feePreview": "Fee ({feePercent}%): {fee} · Deducted from balance: {amount}",
+  "noteOptional": "Note (optional)",
+  "notePlaceholder": "What's this for?",
+  "submitting": "Submitting…",
+  "requestWithdrawal": "Request withdrawal",
+  "wire": {
+    "bankName": "Your bank name",
+    "bankNamePlaceholder": "e.g. Chase",
+    "accountHolder": "Account holder name",
+    "routingNumber": "Routing number",
+    "accountNumber": "Account number"
+  },
+  "amountUsd": "Amount (USD)",
+  "bank": {
+    "checkingAccount": "Checking your payout account…",
+    "needsVerification": "To withdraw to your bank, Stripe needs to verify a payout account first — a quick, secure step.",
+    "openingSetup": "Opening secure setup…",
+    "setUpPayouts": "Set up bank payouts"
+  },
+  "info": {
+    "title": "Withdrawal info",
+    "minimum": "Minimum",
+    "dailyLimit": "Daily limit",
+    "remainingToday": "Remaining today",
+    "fee": "Fee",
+    "processing": "Processing",
+    "processingValue": "Reviewed, then sent for real",
+    "cryptoWarning": "Double-check your address before submitting — crypto sent to the wrong address can't be recovered.",
+    "wireWarning": "Double-check your bank details before submitting — we'll wire funds exactly where you tell us to."
+  },
+  "requested": {
+    "title": "Withdrawal requested",
+    "bank": "Your withdrawal is pending review. Once approved, funds will be sent to your connected bank account.",
+    "wire": "Your wire withdrawal is pending review. Once approved, funds will be sent to the bank account you provided.",
+    "crypto": "Your withdrawal is pending review. Once approved, {amount} {currency} will be sent to the address you provided.",
+    "makeAnother": "Make another withdrawal"
+  },
+  "errors": {
+    "connectFailed": "Failed to start bank onboarding.",
+    "enterAmount": "Enter the amount to withdraw.",
+    "enterUsdEquivalent": "Enter the USD equivalent.",
+    "invalidAddress": "Enter a valid {currency} address.",
+    "minWithdrawal": "Minimum withdrawal is {amount}.",
+    "exceedsBalance": "You can't withdraw more than your available balance ({amount}).",
+    "exceedsDailyLimit": "This would exceed your daily withdrawal limit. You have {amount} left today.",
+    "genericSubmit": "Something went wrong submitting your withdrawal.",
+    "validAmount": "Enter a valid amount.",
+    "fillBankDetails": "Fill in all your bank details so we can send the wire correctly."
+  }
+},
+"Wallet": {
+  "title": "Wallet",
+  "subtitle": "Your cash balance and transaction history",
+  "availableBalance": "Available balance",
+  "totalDeposited": "Total deposited",
+  "totalWithdrawn": "Total withdrawn",
+  "history": "Transaction history",
+  "loading": "Loading…",
+  "noTransactions": "No transactions yet",
+  "noTransactionsSub": "Make a deposit to get started — it'll appear here once submitted, and update once verified.",
+  "pendingVerification": "pending verification",
+  "rejectedHint": "Rejected — tap to see why",
+  "txnTypes": {
+    "deposit": "Deposit",
+    "withdrawal": "Withdrawal",
+    "investmentWithdrawal": "Investment withdrawal",
+    "gainsClaim": "Gains claim",
+    "adminCredit": "Admin credit",
+    "adminDebit": "Admin debit"
+  }
+},
+"Referrals": {
+  "title": "Referrals",
+  "subtitle": "Invite friends — you get {referrerBonus}, they get {referredBonus}",
+  "programInactive": "The referral program isn't active right now.",
+  "yourCode": "Your referral code",
+  "copied": "Copied!",
+  "copyLink": "Copy link",
+  "loading": "Loading…",
+  "totalReferred": "Total referred",
+  "pending": "Pending",
+  "earnedSoFar": "Earned so far",
+  "yourReferrals": "Your referrals",
+  "noReferralsYet": "No referrals yet — share your link to get started.",
+  "newInvestor": "New investor",
+  "table": { "name": "Name", "bonus": "Bonus", "status": "Status", "date": "Date" },
+  "status": { "paid": "paid", "pending": "pending" }
+},
+"Markets": {
+  "title": "Markets",
+  "subtitle": "Live pricing across every asset class Vestora supports",
+  "tabs": { "crypto": "Crypto", "stocks": "Stocks", "gold": "Gold", "bonds": "Bonds", "ai": "AI Portfolios" },
+  "updatedAt": "Updated {time}",
+  "refreshNow": "Refresh now",
+  "loadingLivePrices": "Loading live prices…",
+  "noDataAvailable": "No data available right now.",
+  "loading": "Loading…",
+  "crypto": {
+    "title": "Top coins by market cap",
+    "table": { "rank": "#", "coin": "Coin", "price": "Price", "change24h": "24h", "trend7d": "7d trend", "marketCap": "Market cap" }
+  },
+  "stocks": {
+    "title": "Large-cap stocks",
+    "table": { "symbol": "Symbol", "price": "Price", "change": "Change", "daysRange": "Day's range", "prevClose": "Prev close" }
+  },
+  "gold": {
+    "title": "Gold (XAU/USD) — per troy ounce",
+    "loadingPrice": "Loading live price…",
+    "currentPrice": "Current price",
+    "todaysChange": "Today's change",
+    "open": "Open",
+    "daysHigh": "Day's high",
+    "daysLow": "Day's low",
+    "previousClose": "Previous close",
+    "week52Low": "52-week low",
+    "week52High": "52-week high"
+  },
+  "bonds": {
+    "title": "US Treasury yield curve",
+    "loadingYields": "Loading live yields…",
+    "asOf": "As of {date}"
+  },
+  "ai": {
+    "title": "Vestora managed portfolios",
+    "description": "These aren't priced by an external market — they're your platform's own plans, shown live from your catalog.",
+    "noActivePlans": "No active plans yet — add one in Platform Settings.",
+    "apyValue": "{apy}% APY",
+    "termMin": "{days}-day term · min {min}"
+  },
+  "errors": {
+    "couldNotLoadMarket": "Could not load live market data — will retry shortly.",
+    "couldNotLoadStocks": "Could not load live stock data — will retry shortly.",
+    "couldNotLoadGold": "Could not load live gold price — will retry shortly.",
+    "couldNotLoadBonds": "Could not load live bond yield data — will retry shortly.",
+    "couldNotLoadPlans": "Could not load plans."
+  }
+},
+"GuestChat": {
+  "title": "Chat with Vestora",
+  "replyTime": "We typically reply within a few hours",
+  "continuingAs": "Continuing as {name}",
+  "notYou": "Not you?",
+  "openChat": "Open chat",
+  "closeChat": "Close chat",
+  "form": {
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "email": "Email",
+    "emailPlaceholder": "you@email.com",
+    "starting": "Starting…",
+    "startChat": "Start chat",
+    "missingFields": "Please enter your name and email.",
+    "genericError": "Something went wrong — try again."
+  },
+  "emptyState": "Say hello — a real person will get back to you.",
+  "typeMessage": "Type a message…"
+},
+"SupportChat": {
+  "title": "Support",
+  "replyTime": "We usually reply within a few hours",
+  "emptyState": "No messages yet — say hello, and we'll get back to you.",
+  "typeMessage": "Type a message…",
+  "openChat": "Open chat"
+},
+"DashboardShowcase": {
+  "eyebrow": "Your portfolio, at a glance",
+  "headlineLine1": "Built for clarity,",
+  "headlineLine2": "not clutter.",
+  "totalBalance": "Total balance",
+  "range1M": "1M", "range3M": "3M", "range1Y": "1Y", "rangeAll": "All",
+  "allocation": { "title": "Allocation", "equities": "Equities", "bonds": "Bonds", "cash": "Cash" },
+  "activity": {
+    "title": "Recent activity",
+    "deposit": "Deposit received",
+    "voo": "VOO purchase",
+    "dividend": "Dividend payout",
+    "rebalance": "Rebalance executed",
+    "time2m": "2m ago", "time1h": "1h ago", "time5h": "5h ago", "timeYesterday": "Yesterday"
+  },
+  "outperforming": "Outperforming 91% of similar portfolios"
+},
+"TrustedLogos": {
+  "fundYourAccount": "Fund your account your way — crypto, card, or bank transfer",
+  "stats": {
+    "aum": "Assets under management",
+    "investors": "Active investors worldwide",
+    "uptime": "Platform uptime",
+    "rating": "Average user rating"
+  }
+}
+}

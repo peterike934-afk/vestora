@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { motion, useInView } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 import { ArrowUpRight, ArrowDownRight, TrendingUp } from "lucide-react";
 
@@ -12,23 +13,24 @@ const CHART_DATA = [
   { v: 5400 }, { v: 5650 }, { v: 5500 }, { v: 5980 },
 ];
 
-const ACTIVITY = [
-  { label: "Deposit received", amount: "+$2,400", positive: true, time: "2m ago" },
-  { label: "VOO purchase", amount: "−$850", positive: false, time: "1h ago" },
-  { label: "Dividend payout", amount: "+$112.40", positive: true, time: "5h ago" },
-  { label: "Rebalance executed", amount: "—", positive: true, time: "Yesterday" },
-];
-
-const ALLOCATION = [
-  { label: "Equities", pct: 58, color: "var(--green)" },
-  { label: "Bonds", pct: 27, color: "#9fc6b0" },
-  { label: "Cash", pct: 15, color: "#d8e6dd" },
-];
-
 export default function DashboardShowcase() {
+  const t = useTranslations("DashboardShowcase");
   const sectionRef = useRef(null);
   const glowRef = useRef(null);
   const inView = useInView(sectionRef, { once: true, margin: "-100px" });
+
+  const ACTIVITY = [
+    { label: t("activity.deposit"), amount: "+$2,400", positive: true, time: t("activity.time2m") },
+    { label: t("activity.voo"), amount: "−$850", positive: false, time: t("activity.time1h") },
+    { label: t("activity.dividend"), amount: "+$112.40", positive: true, time: t("activity.time5h") },
+    { label: t("activity.rebalance"), amount: "—", positive: true, time: t("activity.timeYesterday") },
+  ];
+
+  const ALLOCATION = [
+    { label: t("allocation.equities"), pct: 58, color: "var(--green)" },
+    { label: t("allocation.bonds"), pct: 27, color: "#9fc6b0" },
+    { label: t("allocation.cash"), pct: 15, color: "#d8e6dd" },
+  ];
 
   useEffect(() => {
     const glow = glowRef.current;
@@ -62,7 +64,7 @@ export default function DashboardShowcase() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
         >
-          Your portfolio, at a glance
+          {t("eyebrow")}
         </motion.p>
 
         <motion.h2
@@ -71,7 +73,7 @@ export default function DashboardShowcase() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
-          Built for clarity,<br />not clutter.
+          {t("headlineLine1")}<br />{t("headlineLine2")}
         </motion.h2>
 
         <motion.div
@@ -80,11 +82,10 @@ export default function DashboardShowcase() {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* ─── Main chart card ─────────────────── */}
           <div className="dash-card dash-card--main">
             <div className="dash-card__head">
               <div>
-                <p className="dash-card__label">Total balance</p>
+                <p className="dash-card__label">{t("totalBalance")}</p>
                 <h3 className="dash-card__value">$59,842.10</h3>
               </div>
               <span className="dash-card__delta dash-card__delta--up">
@@ -108,20 +109,19 @@ export default function DashboardShowcase() {
             </div>
 
             <div className="dash-card__foot">
-              <span>1M</span>
-              <span className="is-active">3M</span>
-              <span>1Y</span>
-              <span>All</span>
+              <span>{t("range1M")}</span>
+              <span className="is-active">{t("range3M")}</span>
+              <span>{t("range1Y")}</span>
+              <span>{t("rangeAll")}</span>
             </div>
           </div>
 
-          {/* ─── Floating allocation widget ────────── */}
           <motion.div
             className="dash-card dash-card--float dash-card--allocation"
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           >
-            <p className="dash-card__label">Allocation</p>
+            <p className="dash-card__label">{t("allocation.title")}</p>
             <div className="alloc-bar">
               {ALLOCATION.map((a) => (
                 <div
@@ -142,13 +142,12 @@ export default function DashboardShowcase() {
             </ul>
           </motion.div>
 
-          {/* ─── Floating activity widget ──────────── */}
           <motion.div
             className="dash-card dash-card--float dash-card--activity"
             animate={{ y: [0, 12, 0] }}
             transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
           >
-            <p className="dash-card__label">Recent activity</p>
+            <p className="dash-card__label">{t("activity.title")}</p>
             <ul className="activity-list">
               {ACTIVITY.map((item) => (
                 <li key={item.label}>
@@ -167,14 +166,13 @@ export default function DashboardShowcase() {
             </ul>
           </motion.div>
 
-          {/* ─── Floating mini stat badge ───────────── */}
           <motion.div
             className="dash-card dash-card--float dash-card--badge"
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           >
             <TrendingUp size={16} />
-            <span>Outperforming 91% of similar portfolios</span>
+            <span>{t("outperforming")}</span>
           </motion.div>
         </motion.div>
       </div>

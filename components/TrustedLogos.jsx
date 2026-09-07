@@ -2,26 +2,18 @@
 
 import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 const LOGOS = [
-  // Crypto
   { name: "Bitcoin", src: "/bitcoin.svg" },
   { name: "Ethereum", src: "/ethereum.svg" },
   { name: "Tether", src: "/tether.svg" },
   { name: "Binance", src: "/binance.svg" },
   { name: "Litecoin", src: "/litecoin.svg" },
-  // Cards & bank rails
   { name: "Visa", src: "/visa.svg" },
   { name: "Mastercard", src: "/mastercard.svg" },
   { name: "American Express", src: "/americanexpress.svg" },
   { name: "Stripe", src: "/stripe.svg" },
-];
-
-const STATS = [
-  { value: "$2.4B+", label: "Assets under management" },
-  { value: "850K+", label: "Active investors worldwide" },
-  { value: "99.97%", label: "Platform uptime" },
-  { value: "4.9★", label: "Average user rating" },
 ];
 
 function LogoItem({ logo }) {
@@ -58,8 +50,16 @@ function LogoTrack() {
 }
 
 export default function TrustedLogos() {
+  const t = useTranslations("TrustedLogos");
   const sectionRef = useRef(null);
   const inView = useInView(sectionRef, { once: true, margin: "-80px" });
+
+  const STATS = [
+    { value: "$2.4B+", label: t("stats.aum") },
+    { value: "850K+", label: t("stats.investors") },
+    { value: "99.97%", label: t("stats.uptime") },
+    { value: "4.9★", label: t("stats.rating") },
+  ];
 
   return (
     <>
@@ -70,7 +70,7 @@ export default function TrustedLogos() {
         transition={{ duration: 0.5 }}
         ref={sectionRef}
       >
-        Fund your account your way — crypto, card, or bank transfer
+        {t("fundYourAccount")}
       </motion.p>
 
       <section className="trust">

@@ -1,0 +1,521 @@
+{
+  "Nav": { "product": "产品", "pricing": "价格", "about": "关于我们", "signIn": "登录", "getStarted": "开始使用" },
+  "Footer": {
+    "tagline": "以从容的信心，让您的资金稳健增长。",
+    "columns": { "product": "产品", "company": "公司", "legal": "法律", "support": "支持" },
+    "links": { "features": "功能", "pricing": "价格", "security": "安全", "about": "关于我们", "privacyPolicy": "隐私政策", "termsOfService": "服务条款", "cookiePolicy": "Cookie 政策", "helpCenter": "帮助中心", "contactUs": "联系我们", "status": "状态" },
+    "rights": "版权所有。"
+  },
+    "Hero": {
+    "eyebrow": "投资，从此简单",
+    "headlineLine1": "让您的资金增长",
+    "headlineLine2": "以从容的信心。",
+    "subhead": "一个投资组合。实时增长。没有噪音。",
+    "ctaPrimary": "开始投资",
+    "ctaSecondary": "了解运作方式"
+  },
+    "PortfolioCard": {
+    "totalPortfolio": "投资组合总额",
+    "thisMonth": "本月",
+    "availableCash": "可用现金"
+  },
+    "FeaturesGrid": {
+    "eyebrow": "您所需要的一切",
+    "headlineLine1": "为认真的投资者而生。",
+    "headlineLine2": "对新手也足够简单。",
+    "cards": [
+      { "title": "透明的投资计划", "desc": "固定期限计划，利率、最低金额和到期日一目了然——您确切知道自己赚多少、何时到账。" },
+      { "title": "真实的资产增长", "desc": "从您的实际起始日期和利率出发，透明计算，逐日见证投资价值的增长。" },
+      { "title": "经核实的存取款", "desc": "每一笔存款和取款都会经我们团队审核确认后才会影响您的余额，并保留完整记录。" },
+      { "title": "双重身份验证", "desc": "使用身份验证应用保护您的账户——启用后，每次登录都需要输入验证码。" },
+      { "title": "实时客服支持", "desc": "直接从仪表盘联系我们的团队并实时获得回复——无需工单号，无需等待邮件回复。" },
+      { "title": "完全可追溯", "desc": "账户中的每一项操作——存款、取款、调整——都会被永久记录。任何操作都有据可查。" }
+    ]
+  },
+  "Features": {
+    "eyebrow": "您可以持有的资产",
+    "headlineLine1": "五大资产类别。",
+    "headlineLine2": "一个账户。",
+    "items": [
+      { "label": "股票", "title": "股票投资，无需表格", "desc": "购买数千家上市公司的碎股，并内置自动股息再投资。" },
+      { "label": "加密货币", "title": "数字资产，妥善托管", "desc": "比特币、以太坊及精选主流代币——存放于冷存储中，而非热钱包。" },
+      { "label": "黄金", "title": "真正能兑现的对冲资产", "desc": "配置足额支持的实物黄金，实时定价，可按需兑换。" },
+      { "label": "房地产", "title": "任意金额的产权", "desc": "在经过审核的收益型房产中持有碎片化产权，最低50美元起。" },
+      { "label": "AI 投资组合", "title": "由系统管理，而非凭猜测", "desc": "根据您的风险偏好按计划再平衡的模型组合，而非市场噪音驱动。" }
+    ]
+  },
+  "Testimonials": {
+    "eyebrow": "投资者怎么说",
+    "headlineLine1": "真实的人。",
+    "headlineLine2": "真实的回报。",
+    "items": [
+      { "quote": "我试过其他三个平台。Vestora 是唯一一个让我真正理解自己资金状况的平台。", "role": "自由设计师，华盛顿特区" },
+      { "quote": "AI 投资组合在八个月内实现了14%的回报。我一次都没碰过它——这正是我想要的。", "role": "保险代理人，伦敦" },
+      { "quote": "以前用500美元起步让我觉得有点难为情。Vestora 让这一切显得非常自然。现在我已经有4,800美元了。", "role": "律师，多伦多" },
+      { "quote": "光是自动再平衡每月就为我省下了好几个小时，它只是默默地在后台完成自己的工作。", "role": "产品经理，奥斯汀" },
+      { "quote": "我会向所有觉得投资太复杂的人推荐 Vestora。在这里，投资真的一点都不复杂。", "role": "执业护士，芝加哥" },
+      { "quote": "简洁、快速，费用完全和宣传的一致。使用六个月以来没有任何意外。", "role": "顾问，德国" }
+    ]
+  },
+  "Pricing": {
+  "eyebrow": "投资计划",
+  "headlineLine1": "真实回报。",
+  "headlineLine2": "无隐藏费用。",
+  "mostPopular": "最受欢迎",
+  "apy": "年化收益率",
+  "investRange": "投资 {range} · 期限 {days} 天",
+  "assetClasses": ["加密货币", "股票", "房地产", "债券"],
+  "ctaInvestNow": "立即投资",
+  "ctaCreateAccount": "创建账户",
+  "ctaGoToPortfolio": "前往投资组合",
+  "ctaGetStarted": "立即开始",
+  "stillNotSure": "还不确定？",
+  "bandTextLoggedIn": "前往您的投资组合以探索各项计划。",
+  "bandTextLoggedOut": "创建免费账户 — 无需信用卡即可开始。"
+},
+"FAQ": {
+  "eyebrow": "常见问题",
+  "headlineLine1": "常见问题，",
+  "headlineLine2": "直接解答。",
+  "items": [
+    { "q": "如何开始投资？", "a": "创建账户，完成简短的风险评估，然后为钱包充值。最低 500 美元即可在五分钟内开始投资。" },
+    { "q": "我可以随时提现吗？", "a": "可以。现金余额可立即使用。资产变现根据资产类别的不同，将在 1-3 个工作日内完成结算。" },
+    { "q": "支持哪些资产？", "a": "Vestora 支持股票（美股及国际股票）、主要加密货币、实物黄金以及可产生收益的房地产。AI 管理的投资组合会自动分配到这四类资产中。" },
+    { "q": "Vestora 如何盈利？", "a": "统一收取 0.25% 的年度管理费，按月计费。没有佣金、没有点差、没有隐藏费用。您的投资组合增长，我们的收益也随之增长——因此我们的利益是一致的。" },
+    { "q": "我的资金安全吗？", "a": "资产存放在独立的托管账户中，与 Vestora 的运营资金分开管理。现金余额存放在受 FDIC 保险的合作银行，享受相应保额保障。" }
+  ]
+},
+"WhyVestora": {
+  "eyebrow": "为什么选择 Vestora",
+  "headlineLine1": "专为不想操心的人",
+  "headlineLine2": "而设计。",
+  "reasons": [
+    { "title": "默认安全保障", "desc": "资产存放在独立的受保托管账户中——绝不与运营资金混同。" },
+    { "title": "实时数据分析", "desc": "您的投资组合实时更新，按资产类别细分表现，而非埋没在 PDF 文件中。" },
+    { "title": "费用低廉透明", "desc": "统一收取 0.25% 的年费。没有交易佣金，没有提现罚金，没有附加条款。" },
+    { "title": "内置分散配置", "desc": "每个计划都会自动在各资产类别间分散风险，并随市场变化进行再平衡。" }
+  ]
+},
+"Performance": {
+  "eyebrow": "业绩表现",
+  "headlineLine1": "数字，",
+  "headlineLine2": "胜于雄辩。",
+  "stats": [
+    { "label": "平均年化收益率", "note": "所有计划的三年平均值" },
+    { "label": "管理资产规模", "note": "覆盖超过 40,000 个投资组合" },
+    { "label": "活跃投资者", "note": "覆盖 28 个国家" }
+  ]
+},
+"DashboardShell": {
+  "nav": {
+    "dashboard": "仪表盘",
+    "portfolio": "投资组合",
+    "markets": "市场",
+    "wallet": "钱包",
+    "deposit": "存款",
+    "withdraw": "提现",
+    "referrals": "推荐",
+    "settings": "设置"
+  },
+  "defaultInvestorName": "投资者",
+  "investorRole": "投资者",
+  "adminRole": "管理员",
+  "lightMode": "浅色模式",
+  "darkMode": "深色模式",
+  "switchToDark": "切换到深色模式",
+  "switchToLight": "切换到浅色模式",
+  "toggleMenu": "切换菜单",
+  "expandSidebar": "展开侧边栏",
+  "collapseSidebar": "收起侧边栏",
+  "maintenanceTitle": "我们马上回来",
+  "maintenanceSub": "Vestora 正在进行例行维护，请稍后再来查看。"
+},
+"Dashboard": {
+  "greeting": "早上好",
+  "greetingWithName": "早上好，{name}",
+  "subtitle": "以下是您账户今天的动态",
+  "txnTypes": { "deposit": "存款", "withdrawal": "提款", "adminCredit": "管理员入账", "adminDebit": "管理员扣款" },
+  "common": { "loading": "加载中…" },
+  "platformStatus": { "title": "平台状态", "viewStatusPage": "查看状态页面", "checkingSystems": "正在检查系统…" },
+  "topPerformers": {
+    "title": "表现最佳的投资",
+    "rankedByReturn": "按自起始以来的回报排名",
+    "noHoldingsYet": "暂无持仓",
+    "nothingToRank": "暂无可排名内容",
+    "nothingToRankSub": "一旦您的投资开始产生收益，表现最好的将显示在这里。",
+    "investedApy": "已投资 {amount} · 年化收益率 {apy}%"
+  },
+  "investorActivity": {
+    "title": "投资者动态",
+    "live": "实时",
+    "investedThisMonth": "本月已在 Vestora 投资 {amount}",
+    "noActivityYet": "本月尚无动态",
+    "investedLine": "{name} 投资了 {amount}"
+  },
+  "stats": {
+    "totalBalance": "总余额",
+    "verifiedDeposits": "已核实存款",
+    "totalGains": "总收益",
+    "gainsBreakdown": "投资收益 {investing}，调整项 {adjustments}",
+    "fromActiveInvestments": "来自活跃投资",
+    "pendingDeposits": "待处理存款",
+    "awaitingVerification": "等待核实",
+    "totalDeposited": "累计存入",
+    "allTime": "历史总计",
+    "transactions": "交易记录",
+    "totalActivity": "总活动数"
+  },
+  "portfolioGrowth": {
+    "title": "投资组合增长",
+    "sinceFirstInvestment": "自您首次投资以来",
+    "noHoldingsYet": "暂无持仓",
+    "noActivity": "暂无投资活动",
+    "noActivitySub": "此账户目前还没有可显示在图表中的持仓。"
+  },
+  "assetAllocation": { "title": "资产配置", "byPlan": "按计划", "noHoldingsYet": "暂无持仓", "nothingAllocated": "暂无配置" },
+  "recentTransactions": {
+    "title": "最近交易",
+    "subtitle": "存款、提款及账户活动",
+    "noTransactions": "暂无交易记录",
+    "noTransactionsSub": "存款后会显示在这里——在核实前为待处理状态。",
+    "pending": "待处理",
+    "rejected": "已拒绝"
+  }
+},
+"Deposit": {
+  "title": "存入资金",
+  "subtitle": "为您的投资钱包添加资金",
+  "notConfigured": "尚未配置",
+  "confirmDisconnect": "要断开此银行账户吗？如需要，您之后可以重新连接。",
+  "errors": {
+    "disconnectFailed": "断开银行账户失败。",
+    "fillAmountAndHash": "请填写金额和交易哈希。",
+    "minDeposit": "最低存款金额为 {amount}。",
+    "genericSubmit": "提交存款时出了点问题。",
+    "selectBank": "请先连接或选择一个银行账户。",
+    "validAmount": "请输入有效金额。",
+    "wireReference": "请输入汇款人姓名，以便我们进行核对。"
+  },
+  "submitted": {
+    "title": "存款已提交",
+    "bank": "您的存款正在审核中。审核通过后，我们将从您绑定的银行账户扣款。",
+    "wire": "您的电汇存款正在审核中。确认款项到账后，您的余额将更新。",
+    "crypto": "您的存款申请正在核实中。链上交易确认后，您的余额将更新。",
+    "makeAnother": "再次存款"
+  },
+  "methods": { "crypto": "加密货币", "bank": "银行转账", "wire": "电汇" },
+  "crypto": {
+    "currency": "货币",
+    "sendTo": "发送到此地址",
+    "amountSent": "发送金额（{currency}）",
+    "estimatedUsd": "预估美元价值",
+    "txHash": "交易哈希（交易ID）",
+    "steps": {
+      "1": "将加密货币发送到显示的地址",
+      "2": "从您的钱包应用复制交易哈希",
+      "3": "在此提交——您的存款将处于待处理状态",
+      "4": "我们在链上核实后为您入账"
+    }
+  },
+  "howItWorks": "运作方式",
+  "minimumDeposit": "最低存款",
+  "submitting": "提交中…",
+  "submitDeposit": "提交存款",
+  "bank": {
+    "loadingAccounts": "正在加载您的银行账户…",
+    "depositFrom": "存款来源",
+    "removing": "正在移除…",
+    "disconnect": "断开连接",
+    "amountUsd": "金额（美元）",
+    "steps": {
+      "1": "安全连接您的银行——Stripe 会进行验证，我们不会看到您的登录信息",
+      "2": "输入您想存入的金额",
+      "3": "提交——您的存款将处于待审核状态",
+      "4": "审核通过后，我们将从您的银行扣款"
+    }
+  },
+  "wire": {
+    "wireTo": "将资金汇至",
+    "bankName": "银行名称",
+    "accountName": "账户名称",
+    "routingNumber": "路由号码",
+    "accountNumber": "账号",
+    "amountSent": "汇款金额（美元）",
+    "sentFrom": "汇款人（您账户上的姓名）",
+    "sentFromPlaceholder": "例如：王小明",
+    "steps": {
+      "1": "从您自己的银行向显示的账户发起电汇",
+      "2": "输入金额及汇款人姓名",
+      "3": "提交——您的存款将处于待审核状态",
+      "4": "确认汇款到账后，将为您的账户入账"
+    }
+  }
+},
+"Portfolio": {
+  "title": "投资组合",
+  "subtitle": "您的活跃投资与可用计划",
+  "errors": {
+    "validAmount": "请输入有效金额。",
+    "exceedsAvailable": "此投资仅有 {amount} 可供提取。",
+    "withdrawFailed": "提取请求失败。",
+    "claimFailed": "领取收益失败。",
+    "loadFailed": "加载投资组合数据失败",
+    "selectPlan": "请先选择一个计划。",
+    "minForPlan": "{plan} 的最低金额为 {amount}。",
+    "exceedsBalance": "您投资的金额不能超过可用余额（{amount}）。",
+    "investFailed": "投资失败。"
+  },
+  "cancel": "取消",
+  "withdrawModal": {
+    "title": "从 {plan} 提取",
+    "available": "可提取金额：{amount}",
+    "maturedNotice": "此投资已到期——不收取任何罚金或费用。",
+    "penaltyNotice": "到期前提取将损失该金额已产生的利息，并需支付固定 {fee} 的费用。",
+    "amountLabel": "提取金额（美元）",
+    "principalWithdrawn": "提取本金",
+    "interestEarned": "已获利息",
+    "interestForfeited": "损失利息",
+    "earlyFee": "提前提取费用",
+    "youllReceive": "您将收到",
+    "requesting": "申请中…",
+    "requestWithdrawal": "申请提取"
+  },
+  "claimModal": {
+    "title": "领取 {plan} 的收益",
+    "subtitle": "您的本金将继续投资——只有已获利息会转入您的钱包。",
+    "availableToClaim": "可领取金额",
+    "claiming": "领取中…",
+    "claimGains": "领取收益"
+  },
+  "choosePlan": "选择计划",
+  "apyValue": "年化收益率 {apy}%",
+  "termMin": "期限 {days} 天 · 最低 {min}",
+  "amountToInvest": "投资金额（可用：{available}）",
+  "investing": "投资中…",
+  "investNow": "立即投资",
+  "yourInvestments": "您的投资",
+  "loading": "加载中…",
+  "noInvestments": "暂无投资——请在上方选择一个计划开始。",
+  "totalInvested": "累计投资",
+  "currentValue": "当前价值",
+  "table": { "plan": "计划", "invested": "已投资", "currentValue": "当前价值", "apy": "年化收益率", "daysLeft": "剩余天数", "status": "状态" },
+  "status": { "active": "活跃", "matured": "已到期", "cancelled": "已取消", "withdrawn": "已提取" },
+  "noGainsYet": "暂无可领取的收益",
+  "nothingToWithdraw": "暂无可提取金额",
+  "claimGains": "领取收益",
+  "withdraw": "提取",
+  "investSuccess": "已向 {plan} 投资 {amount}。",
+  "withdrawRequestedMsg": "已申请提取——等待管理员批准。",
+  "claimRequestedMsg": "已申请领取收益——等待管理员批准。"
+},
+"Settings": {
+  "title": "设置",
+  "subtitle": "管理您的账户偏好设置",
+  "signOut": "退出登录",
+  "mfa": {
+    "startFailed": "启用失败",
+    "enterCode": "请输入验证器应用中的6位数验证码。",
+    "invalidCode": "验证码无效——请重试。",
+    "enableTitle": "启用双重身份验证",
+    "settingUp": "正在设置…",
+    "scanInstructions": "使用 Google Authenticator、Authy 或任意 TOTP 应用扫描",
+    "cantScan": "无法扫描？手动输入：",
+    "verifying": "验证中…",
+    "confirmEnable": "确认并启用",
+    "confirmDisable": "要禁用双重身份验证吗？",
+    "disableFailed": "禁用双重验证失败"
+  },
+  "profile": { "title": "个人资料", "fullName": "全名", "email": "电子邮箱", "saving": "保存中…", "saved": "已保存 ✓", "saveChanges": "保存更改" },
+  "security": {
+    "title": "安全设置",
+    "emailNotifications": "邮件通知",
+    "emailNotificationsSub": "接收存款和提款提醒",
+    "twoFactor": "双重身份验证",
+    "checkingStatus": "正在检查状态…",
+    "enabledDesc": "已启用——每次登录都需要验证码",
+    "disabledDesc": "登录时需要验证器应用提供的验证码",
+    "disable2fa": "禁用双重验证",
+    "enable2fa": "启用双重验证"
+  }
+},
+"Withdraw": {
+  "title": "提取资金",
+  "subtitle": "将资金移出您的钱包",
+  "availableToWithdraw": "可提取金额",
+  "methods": { "crypto": "加密货币", "bank": "银行转账", "wire": "电汇" },
+  "crypto": { "currency": "货币", "amountToWithdraw": "提取金额（{currency}）", "usdEquivalent": "美元等值", "destinationAddress": "目标 {currency} 地址" },
+  "feePreview": "手续费（{feePercent}%）：{fee} · 从余额扣除：{amount}",
+  "noteOptional": "备注（可选）",
+  "notePlaceholder": "这是用于什么的？",
+  "submitting": "提交中…",
+  "requestWithdrawal": "申请提取",
+  "wire": { "bankName": "您的银行名称", "bankNamePlaceholder": "例如：中国银行", "accountHolder": "账户持有人姓名", "routingNumber": "路由号码", "accountNumber": "账号" },
+  "amountUsd": "金额（美元）",
+  "bank": {
+    "checkingAccount": "正在检查您的收款账户…",
+    "needsVerification": "提取到您的银行前，Stripe 需要先验证一个收款账户——这是一个快速安全的步骤。",
+    "openingSetup": "正在打开安全设置…",
+    "setUpPayouts": "设置银行收款"
+  },
+  "info": {
+    "title": "提取信息",
+    "minimum": "最低金额",
+    "dailyLimit": "每日限额",
+    "remainingToday": "今日剩余额度",
+    "fee": "手续费",
+    "processing": "处理方式",
+    "processingValue": "审核后再实际发送",
+    "cryptoWarning": "提交前请仔细核对地址——发送到错误地址的加密货币无法找回。",
+    "wireWarning": "提交前请仔细核对您的银行信息——我们会将资金准确汇往您指定的地方。"
+  },
+  "requested": {
+    "title": "已申请提取",
+    "bank": "您的提取申请正在审核中。审核通过后，资金将发送到您连接的银行账户。",
+    "wire": "您的电汇提取申请正在审核中。审核通过后，资金将发送到您提供的银行账户。",
+    "crypto": "您的提取申请正在审核中。审核通过后，{amount} {currency} 将发送到您提供的地址。",
+    "makeAnother": "再次申请提取"
+  },
+  "errors": {
+    "connectFailed": "启动银行绑定失败。",
+    "enterAmount": "请输入提取金额。",
+    "enterUsdEquivalent": "请输入美元等值金额。",
+    "invalidAddress": "请输入有效的 {currency} 地址。",
+    "minWithdrawal": "最低提取金额为 {amount}。",
+    "exceedsBalance": "您提取的金额不能超过可用余额（{amount}）。",
+    "exceedsDailyLimit": "这将超出您的每日提取限额。您今天还剩 {amount} 可用。",
+    "genericSubmit": "提交提取申请时出了点问题。",
+    "validAmount": "请输入有效金额。",
+    "fillBankDetails": "请填写您所有的银行信息，以便我们能正确汇款。"
+  }
+},
+"Wallet": {
+  "title": "钱包",
+  "subtitle": "您的现金余额和交易历史",
+  "availableBalance": "可用余额",
+  "totalDeposited": "累计存入",
+  "totalWithdrawn": "累计提取",
+  "history": "交易历史",
+  "loading": "加载中…",
+  "noTransactions": "暂无交易记录",
+  "noTransactionsSub": "存款后即可开始——提交后会显示在这里，核实后会更新状态。",
+  "pendingVerification": "待核实",
+  "rejectedHint": "已拒绝——点击查看原因",
+  "txnTypes": {
+    "deposit": "存款",
+    "withdrawal": "提款",
+    "investmentWithdrawal": "投资提取",
+    "gainsClaim": "收益领取",
+    "adminCredit": "管理员入账",
+    "adminDebit": "管理员扣款"
+  }
+},
+"Referrals": {
+  "title": "推荐计划",
+  "subtitle": "邀请好友——您将获得 {referrerBonus}，他们将获得 {referredBonus}",
+  "programInactive": "推荐计划目前未开放。",
+  "yourCode": "您的推荐码",
+  "copied": "已复制！",
+  "copyLink": "复制链接",
+  "loading": "加载中…",
+  "totalReferred": "累计推荐人数",
+  "pending": "待处理",
+  "earnedSoFar": "已获得收益",
+  "yourReferrals": "您的推荐记录",
+  "noReferralsYet": "暂无推荐记录——分享您的链接以开始。",
+  "newInvestor": "新投资者",
+  "table": { "name": "姓名", "bonus": "奖励", "status": "状态", "date": "日期" },
+  "status": { "paid": "已支付", "pending": "待处理" }
+},
+"Markets": {
+  "title": "市场",
+  "subtitle": "Vestora 支持的所有资产类别的实时价格",
+  "tabs": { "crypto": "加密货币", "stocks": "股票", "gold": "黄金", "bonds": "债券", "ai": "AI 投资组合" },
+  "updatedAt": "更新于 {time}",
+  "refreshNow": "立即刷新",
+  "loadingLivePrices": "正在加载实时价格…",
+  "noDataAvailable": "目前没有可用数据。",
+  "loading": "加载中…",
+  "crypto": { "title": "按市值排名的顶级加密货币", "table": { "rank": "#", "coin": "币种", "price": "价格", "change24h": "24小时", "trend7d": "7天走势", "marketCap": "市值" } },
+  "stocks": { "title": "大盘股", "table": { "symbol": "代码", "price": "价格", "change": "涨跌幅", "daysRange": "当日区间", "prevClose": "前收盘价" } },
+  "gold": {
+    "title": "黄金（XAU/USD）— 每金衡盎司",
+    "loadingPrice": "正在加载实时价格…",
+    "currentPrice": "当前价格",
+    "todaysChange": "今日涨跌",
+    "open": "开盘价",
+    "daysHigh": "当日最高",
+    "daysLow": "当日最低",
+    "previousClose": "前收盘价",
+    "week52Low": "52周最低",
+    "week52High": "52周最高"
+  },
+  "bonds": { "title": "美国国债收益率曲线", "loadingYields": "正在加载实时收益率…", "asOf": "截至 {date}" },
+  "ai": {
+    "title": "Vestora 托管投资组合",
+    "description": "这些不是由外部市场定价——它们是您平台自己的计划，实时来自您的产品目录。",
+    "noActivePlans": "暂无活跃计划——请在平台设置中添加一个。",
+    "apyValue": "年化收益率 {apy}%",
+    "termMin": "期限 {days} 天 · 最低 {min}"
+  },
+  "errors": {
+    "couldNotLoadMarket": "无法加载实时市场数据——将很快重试。",
+    "couldNotLoadStocks": "无法加载实时股票数据——将很快重试。",
+    "couldNotLoadGold": "无法加载实时黄金价格——将很快重试。",
+    "couldNotLoadBonds": "无法加载实时债券收益率数据——将很快重试。",
+    "couldNotLoadPlans": "无法加载计划。"
+  }
+},
+"GuestChat": {
+  "title": "与 Vestora 聊天",
+  "replyTime": "我们通常会在几小时内回复",
+  "continuingAs": "以 {name} 的身份继续",
+  "notYou": "不是您？",
+  "openChat": "打开聊天",
+  "closeChat": "关闭聊天",
+  "form": {
+    "name": "姓名",
+    "namePlaceholder": "您的姓名",
+    "email": "电子邮箱",
+    "emailPlaceholder": "you@email.com",
+    "starting": "正在开始…",
+    "startChat": "开始聊天",
+    "missingFields": "请输入您的姓名和电子邮箱。",
+    "genericError": "出了点问题——请重试。"
+  },
+  "emptyState": "打个招呼——真人会尽快回复您。",
+  "typeMessage": "输入消息…"
+},
+"SupportChat": {
+  "title": "客服支持",
+  "replyTime": "我们通常会在几小时内回复",
+  "emptyState": "暂无消息——打个招呼，我们会尽快回复您。",
+  "typeMessage": "输入消息…",
+  "openChat": "打开聊天"
+},
+"DashboardShowcase": {
+  "eyebrow": "一目了然的投资组合",
+  "headlineLine1": "为清晰而生，",
+  "headlineLine2": "拒绝繁杂。",
+  "totalBalance": "总余额",
+  "range1M": "1个月", "range3M": "3个月", "range1Y": "1年", "rangeAll": "全部",
+  "allocation": { "title": "资产配置", "equities": "股票", "bonds": "债券", "cash": "现金" },
+  "activity": {
+    "title": "最近活动",
+    "deposit": "已收到存款",
+    "voo": "购买 VOO",
+    "dividend": "股息发放",
+    "rebalance": "已执行再平衡",
+    "time2m": "2分钟前", "time1h": "1小时前", "time5h": "5小时前", "timeYesterday": "昨天"
+  },
+  "outperforming": "跑赢91%的同类投资组合"
+},
+"TrustedLogos": {
+  "fundYourAccount": "以您喜欢的方式充值——加密货币、银行卡或银行转账",
+  "stats": {
+    "aum": "资产管理规模",
+    "investors": "全球活跃投资者",
+    "uptime": "平台正常运行时间",
+    "rating": "平均用户评分"
+  }
+}
+}

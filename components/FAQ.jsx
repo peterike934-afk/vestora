@@ -2,32 +2,10 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { useReveal } from "@/hooks/useReveal";
 
-const FAQS = [
-  {
-    q: "How do I start investing?",
-    a: "Create an account, complete a short risk assessment, and fund your wallet. You can start investing in under five minutes with as little as $500.",
-  },
-  {
-    q: "Can I withdraw anytime?",
-    a: "Yes. Cash balances are available immediately. Asset liquidations settle within 1–3 business days depending on the asset class.",
-  },
-  {
-    q: "What assets are supported?",
-    a: "Vestora supports equities (US and international), major cryptocurrencies, physical gold, and income-producing real estate. AI-managed portfolios spread across all four automatically.",
-  },
-  {
-    q: "How does Vestora make money?",
-    a: "A flat 0.25% annual management fee, charged monthly. No commissions, no spreads, no hidden charges. If your portfolio grows, we earn more — so our incentives are aligned.",
-  },
-  {
-    q: "Is my money safe?",
-    a: "Assets are held in segregated custody accounts, separate from Vestora's operating funds. Cash balances are held at FDIC-insured partner banks up to applicable limits.",
-  },
-];
-
-function FAQItem({ item, index }) {
+function FAQItem({ item }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -61,22 +39,24 @@ function FAQItem({ item, index }) {
 export default function FAQ() {
   const ref = useRef(null);
   const { fadeUp, staggerChild } = useReveal(ref);
+  const t = useTranslations("FAQ");
+  const items = t.raw("items");
 
   return (
    <section className="faq" id="faq" ref={ref}>
       <div className="faq__inner">
         <motion.p className="section-eyebrow" animate={fadeUp(0)}>
-          FAQ
+          {t("eyebrow")}
         </motion.p>
 
         <motion.h2 className="faq__headline" animate={fadeUp(1)}>
-          Common questions,<br />straight answers.
+          {t("headlineLine1")}<br />{t("headlineLine2")}
         </motion.h2>
 
         <div className="faq__list">
-          {FAQS.map((item, i) => (
+          {items.map((item, i) => (
             <motion.div key={item.q} animate={staggerChild(i)}>
-              <FAQItem item={item} index={i} />
+              <FAQItem item={item} />
             </motion.div>
           ))}
         </div>

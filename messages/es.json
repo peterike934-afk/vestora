@@ -1,0 +1,521 @@
+{
+  "Nav": { "product": "Producto", "pricing": "Precios", "about": "Sobre nosotros", "signIn": "Iniciar sesión", "getStarted": "Empezar" },
+  "Footer": {
+    "tagline": "Haz crecer tu dinero con tranquila confianza.",
+    "columns": { "product": "Producto", "company": "Empresa", "legal": "Legal", "support": "Soporte" },
+    "links": { "features": "Funciones", "pricing": "Precios", "security": "Seguridad", "about": "Sobre nosotros", "privacyPolicy": "Política de privacidad", "termsOfService": "Términos de servicio", "cookiePolicy": "Política de cookies", "helpCenter": "Centro de ayuda", "contactUs": "Contáctanos", "status": "Estado" },
+    "rights": "Todos los derechos reservados."
+  },
+    "Hero": {
+    "eyebrow": "Invertir, simplificado",
+    "headlineLine1": "Haz crecer tu dinero",
+    "headlineLine2": "con tranquila confianza.",
+    "subhead": "Una cartera. Crecimiento en tiempo real. Sin ruido.",
+    "ctaPrimary": "Empieza a invertir",
+    "ctaSecondary": "Ver cómo funciona"
+  },
+    "PortfolioCard": {
+    "totalPortfolio": "Cartera total",
+    "thisMonth": "Este mes",
+    "availableCash": "Efectivo disponible"
+  },
+    "FeaturesGrid": {
+    "eyebrow": "Todo lo que necesitas",
+    "headlineLine1": "Diseñado para inversores serios.",
+    "headlineLine2": "Sencillo para quienes empiezan.",
+    "cards": [
+      { "title": "Planes de inversión transparentes", "desc": "Planes a plazo fijo con una tasa, un mínimo y una fecha de vencimiento claros: sabes exactamente cuánto ganas y cuándo." },
+      { "title": "Crecimiento real de la cartera", "desc": "Observa cómo crece el valor de tu inversión día a día, calculado de forma transparente desde tu fecha de inicio real." },
+      { "title": "Depósitos y retiros verificados", "desc": "Cada depósito y retiro es revisado y confirmado por nuestro equipo antes de afectar tu saldo, con un registro completo." },
+      { "title": "Autenticación de dos factores", "desc": "Protege tu cuenta con una aplicación de autenticación: una vez activada, se requiere un código en cada inicio de sesión." },
+      { "title": "Chat de soporte en vivo", "desc": "Escribe a nuestro equipo directamente desde tu panel y recibe respuestas en tiempo real, sin números de ticket ni esperas por correo." },
+      { "title": "Responsabilidad total", "desc": "Cada acción en tu cuenta —depósitos, retiros, ajustes— queda registrada permanentemente. Nada ocurre sin dejar constancia." }
+    ]
+  },
+  "Features": {
+    "eyebrow": "Lo que puedes tener",
+    "headlineLine1": "Cinco clases de activos.",
+    "headlineLine2": "Una sola cuenta.",
+    "items": [
+      { "label": "Acciones", "title": "Renta variable, sin hojas de cálculo", "desc": "Compra acciones fraccionadas de miles de empresas públicas, con reinversión automática de dividendos incluida." },
+      { "label": "Cripto", "title": "Activos digitales, custodiados como se debe", "desc": "Bitcoin, Ethereum y una selección de tokens principales, guardados en almacenamiento en frío, no en un monedero conectado." },
+      { "label": "Oro", "title": "Una cobertura que realmente se liquida", "desc": "Invierte en oro físico totalmente respaldado, con precio en tiempo real y canjeable a solicitud." },
+      { "label": "Bienes raíces", "title": "Propiedad, en cualquier monto", "desc": "Propiedad fraccionada en inmuebles verificados que generan ingresos, desde $50." },
+      { "label": "Carteras con IA", "title": "Gestionadas, no adivinadas", "desc": "Una cartera modelo que se reequilibra según un calendario basado en tu perfil de riesgo, no en el ruido del mercado." }
+    ]
+  },
+  "Testimonials": {
+    "eyebrow": "Lo que dicen los inversores",
+    "headlineLine1": "Personas reales.",
+    "headlineLine2": "Rendimientos reales.",
+    "items": [
+      { "quote": "He probado otras tres plataformas. Vestora es la única en la que realmente entiendo qué pasa con mi dinero.", "role": "Diseñador freelance, Washington, D.C." },
+      { "quote": "La cartera con IA ha rendido un 14% en ocho meses. No la he tocado ni una vez, que es justo lo que quería.", "role": "Agente de seguros, Londres" },
+      { "quote": "Empezar con $500 antes me daba vergüenza. Vestora hizo que se sintiera completamente normal. Ahora tengo $4.800.", "role": "Abogada, Toronto" },
+      { "quote": "Solo el reequilibrio me ha ahorrado horas cada mes. Simplemente hace su trabajo en segundo plano.", "role": "Gerente de producto, Austin" },
+      { "quote": "Recomiendo Vestora a todos los que me dicen que invertir parece demasiado complicado. Aquí, de verdad, no lo es.", "role": "Enfermera especializada, Chicago" },
+      { "quote": "Limpio, rápido, y las comisiones son exactamente las que dicen. Sin sorpresas tras seis meses de uso.", "role": "Consultor, Alemania" }
+    ]
+  },
+  "Pricing": {
+  "eyebrow": "Planes de inversión",
+  "headlineLine1": "Rendimientos reales.",
+  "headlineLine2": "Sin comisiones ocultas.",
+  "mostPopular": "Más popular",
+  "apy": "TAE",
+  "investRange": "Invierte {range} · plazo de {days} días",
+  "assetClasses": ["Cripto", "Acciones", "Inmuebles", "Bonos"],
+  "ctaInvestNow": "Invertir ahora",
+  "ctaCreateAccount": "Crear cuenta",
+  "ctaGoToPortfolio": "Ir a mi cartera",
+  "ctaGetStarted": "Empezar ahora",
+  "stillNotSure": "¿Aún no estás seguro?",
+  "bandTextLoggedIn": "Ve a tu cartera para explorar los planes.",
+  "bandTextLoggedOut": "Crea una cuenta gratuita — no necesitas tarjeta para empezar."
+},
+"FAQ": {
+  "eyebrow": "Preguntas frecuentes",
+  "headlineLine1": "Preguntas frecuentes,",
+  "headlineLine2": "respuestas claras.",
+  "items": [
+    { "q": "¿Cómo empiezo a invertir?", "a": "Crea una cuenta, completa una breve evaluación de riesgo y recarga tu monedero. Puedes empezar a invertir en menos de cinco minutos desde 500 $." },
+    { "q": "¿Puedo retirar en cualquier momento?", "a": "Sí. Los saldos en efectivo están disponibles de inmediato. La liquidación de activos se procesa en 1–3 días hábiles según la clase de activo." },
+    { "q": "¿Qué activos son compatibles?", "a": "Vestora admite acciones (de EE. UU. e internacionales), las principales criptomonedas, oro físico e inmuebles que generan ingresos. Las carteras gestionadas por IA se reparten entre los cuatro automáticamente." },
+    { "q": "¿Cómo gana dinero Vestora?", "a": "Una comisión de gestión anual fija del 0,25 %, cobrada mensualmente. Sin comisiones ocultas, sin diferenciales, sin cargos sorpresa. Si tu cartera crece, nosotros ganamos más — así que nuestros intereses están alineados." },
+    { "q": "¿Está seguro mi dinero?", "a": "Los activos se mantienen en cuentas de custodia segregadas, separadas de los fondos operativos de Vestora. Los saldos en efectivo se guardan en bancos asociados asegurados hasta los límites aplicables." }
+  ]
+},
+"WhyVestora": {
+  "eyebrow": "Por qué Vestora",
+  "headlineLine1": "Diseñado para quienes prefieren",
+  "headlineLine2": "no tener que pensarlo.",
+  "reasons": [
+    { "title": "Segura por defecto", "desc": "Los activos se mantienen en cuentas de custodia segregadas y aseguradas — nunca mezcladas con los fondos operativos." },
+    { "title": "Analítica en tiempo real", "desc": "Tu cartera se actualiza en vivo, con el rendimiento desglosado por clase de activo, no escondido en un PDF." },
+    { "title": "Comisiones bajas y visibles", "desc": "Una comisión anual fija del 0,25 %. Sin comisiones por operar, sin penalizaciones por retiro, sin letra pequeña." },
+    { "title": "Diversificación integrada", "desc": "Cada plan reparte el riesgo automáticamente entre clases de activos, reequilibrándose conforme se mueven los mercados." }
+  ]
+},
+"Performance": {
+  "eyebrow": "Rendimiento",
+  "headlineLine1": "Cifras que hablan",
+  "headlineLine2": "por sí solas.",
+  "stats": [
+    { "label": "Rendimiento anual promedio", "note": "Promedio de 3 años en todos los planes" },
+    { "label": "Activos bajo gestión", "note": "En más de 40.000 carteras" },
+    { "label": "Inversores activos", "note": "En 28 países" }
+  ]
+},
+"DashboardShell": {
+  "nav": {
+    "dashboard": "Panel",
+    "portfolio": "Cartera",
+    "markets": "Mercados",
+    "wallet": "Billetera",
+    "deposit": "Depositar",
+    "withdraw": "Retirar",
+    "referrals": "Referidos",
+    "settings": "Ajustes"
+  },
+  "defaultInvestorName": "Inversor",
+  "investorRole": "Inversor",
+  "adminRole": "Administrador",
+  "lightMode": "Modo claro",
+  "darkMode": "Modo oscuro",
+  "switchToDark": "Cambiar a modo oscuro",
+  "switchToLight": "Cambiar a modo claro",
+  "toggleMenu": "Alternar menú",
+  "expandSidebar": "Expandir barra lateral",
+  "collapseSidebar": "Contraer barra lateral",
+  "maintenanceTitle": "Volveremos pronto",
+  "maintenanceSub": "Vestora está en mantenimiento programado. Vuelve a intentarlo en breve."
+},
+"Dashboard": {
+  "greeting": "Buenos días",
+  "greetingWithName": "Buenos días, {name}",
+  "subtitle": "Esto es lo que está pasando con tu cuenta hoy",
+  "txnTypes": { "deposit": "Depósito", "withdrawal": "Retiro", "adminCredit": "Crédito administrativo", "adminDebit": "Débito administrativo" },
+  "common": { "loading": "Cargando…" },
+  "platformStatus": { "title": "Estado de la plataforma", "viewStatusPage": "Ver página de estado", "checkingSystems": "Revisando sistemas…" },
+  "topPerformers": {
+    "title": "Inversiones con mejor rendimiento",
+    "rankedByReturn": "Clasificadas por rendimiento desde el inicio",
+    "noHoldingsYet": "Aún no hay activos",
+    "nothingToRank": "Nada que clasificar todavía",
+    "nothingToRankSub": "Cuando tus inversiones empiecen a generar rendimientos, aquí aparecerán las mejores.",
+    "investedApy": "{amount} invertido · {apy}% TAE"
+  },
+  "investorActivity": {
+    "title": "Actividad de inversores",
+    "live": "EN VIVO",
+    "investedThisMonth": "{amount} invertido en Vestora este mes",
+    "noActivityYet": "Aún no hay actividad este mes",
+    "investedLine": "{name} invirtió {amount}"
+  },
+  "stats": {
+    "totalBalance": "Saldo total",
+    "verifiedDeposits": "Depósitos verificados",
+    "totalGains": "Ganancias totales",
+    "gainsBreakdown": "{investing} por inversión, {adjustments} ajustes",
+    "fromActiveInvestments": "De inversiones activas",
+    "pendingDeposits": "Depósitos pendientes",
+    "awaitingVerification": "Esperando verificación",
+    "totalDeposited": "Total depositado",
+    "allTime": "Histórico",
+    "transactions": "Transacciones",
+    "totalActivity": "Actividad total"
+  },
+  "portfolioGrowth": {
+    "title": "Crecimiento de la cartera",
+    "sinceFirstInvestment": "Desde tu primera inversión",
+    "noHoldingsYet": "Aún no hay activos",
+    "noActivity": "Aún no hay actividad de inversión",
+    "noActivitySub": "Esta cuenta todavía no tiene activos para graficar."
+  },
+  "assetAllocation": { "title": "Asignación de activos", "byPlan": "Por plan", "noHoldingsYet": "Aún no hay activos", "nothingAllocated": "Aún no hay nada asignado" },
+  "recentTransactions": {
+    "title": "Transacciones recientes",
+    "subtitle": "Depósitos, retiros y actividad de la cuenta",
+    "noTransactions": "Aún no hay transacciones",
+    "noTransactionsSub": "Cuando hagas un depósito, aparecerá aquí — pendiente hasta que se verifique.",
+    "pending": "pendiente",
+    "rejected": "rechazada"
+  }
+},
+"Deposit": {
+  "title": "Depositar fondos",
+  "subtitle": "Agrega dinero a tu cartera de inversión",
+  "notConfigured": "Aún no configurado",
+  "confirmDisconnect": "¿Desconectar esta cuenta bancaria? Puedes volver a conectarla más adelante si lo necesitas.",
+  "errors": {
+    "disconnectFailed": "No se pudo desconectar la cuenta bancaria.",
+    "fillAmountAndHash": "Completa el monto y el hash de la transacción.",
+    "minDeposit": "El depósito mínimo es {amount}.",
+    "genericSubmit": "Algo salió mal al enviar tu depósito.",
+    "selectBank": "Primero conecta o selecciona una cuenta bancaria.",
+    "validAmount": "Ingresa un monto válido.",
+    "wireReference": "Ingresa el nombre desde el que se envió la transferencia, para poder identificarla."
+  },
+  "submitted": {
+    "title": "Depósito enviado",
+    "bank": "Tu depósito está pendiente de revisión. Una vez aprobado, tomaremos los fondos de tu cuenta bancaria vinculada.",
+    "wire": "Tu depósito por transferencia está pendiente de revisión. Cuando confirmemos que los fondos llegaron, tu saldo se actualizará.",
+    "crypto": "Tu depósito está pendiente de verificación. Cuando confirmemos la transacción en la cadena, tu saldo se actualizará.",
+    "makeAnother": "Hacer otro depósito"
+  },
+  "methods": { "crypto": "Cripto", "bank": "Transferencia bancaria", "wire": "Transferencia SWIFT" },
+  "crypto": {
+    "currency": "Moneda",
+    "sendTo": "Envía a esta dirección",
+    "amountSent": "Monto enviado ({currency})",
+    "estimatedUsd": "Valor estimado en USD",
+    "txHash": "Hash de la transacción (ID)",
+    "steps": {
+      "1": "Envía la criptomoneda a la dirección mostrada",
+      "2": "Copia el hash de la transacción desde tu app de billetera",
+      "3": "Envíalo aquí — tu depósito quedará pendiente",
+      "4": "Lo verificamos en la cadena y acreditamos tu saldo"
+    }
+  },
+  "howItWorks": "Cómo funciona",
+  "minimumDeposit": "Depósito mínimo",
+  "submitting": "Enviando…",
+  "submitDeposit": "Enviar depósito",
+  "bank": {
+    "loadingAccounts": "Cargando tus cuentas bancarias…",
+    "depositFrom": "Depositar desde",
+    "removing": "Eliminando…",
+    "disconnect": "Desconectar",
+    "amountUsd": "Monto (USD)",
+    "steps": {
+      "1": "Conecta tu banco de forma segura — Stripe lo verifica, nunca vemos tu inicio de sesión",
+      "2": "Ingresa el monto que deseas depositar",
+      "3": "Envía — tu depósito quedará pendiente de revisión",
+      "4": "Una vez aprobado, tomamos los fondos de tu banco"
+    }
+  },
+  "wire": {
+    "wireTo": "Envía la transferencia a",
+    "bankName": "Nombre del banco",
+    "accountName": "Nombre de la cuenta",
+    "routingNumber": "Número de ruta",
+    "accountNumber": "Número de cuenta",
+    "amountSent": "Monto enviado (USD)",
+    "sentFrom": "Enviado desde (nombre en tu cuenta)",
+    "sentFromPlaceholder": "ej. Juana Pérez",
+    "steps": {
+      "1": "Envía una transferencia a la cuenta mostrada, desde tu propio banco",
+      "2": "Ingresa el monto y el nombre desde el que se envió",
+      "3": "Envía — tu depósito quedará pendiente de revisión",
+      "4": "Cuando confirmemos que llegó la transferencia, tu saldo se acredita"
+    }
+  }
+},
+"Portfolio": {
+  "title": "Cartera",
+  "subtitle": "Tus inversiones activas y los planes disponibles",
+  "errors": {
+    "validAmount": "Ingresa un monto válido.",
+    "exceedsAvailable": "Solo hay {amount} disponible para retirar de esta inversión.",
+    "withdrawFailed": "No se pudo solicitar el retiro.",
+    "claimFailed": "No se pudieron reclamar las ganancias.",
+    "loadFailed": "No se pudieron cargar los datos de la cartera",
+    "selectPlan": "Selecciona primero un plan.",
+    "minForPlan": "El mínimo para {plan} es {amount}.",
+    "exceedsBalance": "No puedes invertir más de tu saldo disponible ({amount}).",
+    "investFailed": "La inversión falló."
+  },
+  "cancel": "Cancelar",
+  "withdrawModal": {
+    "title": "Retirar de {plan}",
+    "available": "Disponible para retirar: {amount}",
+    "maturedNotice": "Esta inversión ya venció — no se aplica ninguna penalización ni comisión.",
+    "penaltyNotice": "Retirar antes del vencimiento hace perder el interés ganado sobre este monto, más una comisión fija de {fee}.",
+    "amountLabel": "Monto a retirar (USD)",
+    "principalWithdrawn": "Capital retirado",
+    "interestEarned": "Interés ganado",
+    "interestForfeited": "Interés perdido",
+    "earlyFee": "Comisión por retiro anticipado",
+    "youllReceive": "Recibirás",
+    "requesting": "Solicitando…",
+    "requestWithdrawal": "Solicitar retiro"
+  },
+  "claimModal": {
+    "title": "Reclamar ganancias de {plan}",
+    "subtitle": "Tu capital permanece invertido — solo el interés ganado pasa a tu billetera.",
+    "availableToClaim": "Disponible para reclamar",
+    "claiming": "Reclamando…",
+    "claimGains": "Reclamar ganancias"
+  },
+  "choosePlan": "Elige un plan",
+  "apyValue": "{apy}% TAE",
+  "termMin": "Plazo de {days} días · mínimo {min}",
+  "amountToInvest": "Monto a invertir (disponible: {available})",
+  "investing": "Invirtiendo…",
+  "investNow": "Invertir ahora",
+  "yourInvestments": "Tus inversiones",
+  "loading": "Cargando…",
+  "noInvestments": "Aún no tienes inversiones — elige un plan arriba para comenzar.",
+  "totalInvested": "Total invertido",
+  "currentValue": "Valor actual",
+  "table": { "plan": "Plan", "invested": "Invertido", "currentValue": "Valor actual", "apy": "TAE", "daysLeft": "Días restantes", "status": "Estado" },
+  "status": { "active": "activa", "matured": "vencida", "cancelled": "cancelada", "withdrawn": "retirada" },
+  "noGainsYet": "Aún no hay ganancias disponibles para reclamar",
+  "nothingToWithdraw": "No hay nada disponible para retirar",
+  "claimGains": "Reclamar ganancias",
+  "withdraw": "Retirar",
+  "investSuccess": "Invertiste {amount} en {plan}.",
+  "withdrawRequestedMsg": "Retiro solicitado — pendiente de aprobación del administrador.",
+  "claimRequestedMsg": "Reclamo de ganancias solicitado — pendiente de aprobación del administrador."
+},
+"Settings": {
+  "title": "Ajustes",
+  "subtitle": "Administra las preferencias de tu cuenta",
+  "signOut": "Cerrar sesión",
+  "mfa": {
+    "startFailed": "No se pudo iniciar la activación",
+    "enterCode": "Ingresa el código de 6 dígitos de tu app de autenticación.",
+    "invalidCode": "Código inválido — inténtalo de nuevo.",
+    "enableTitle": "Activar autenticación de dos factores",
+    "settingUp": "Configurando…",
+    "scanInstructions": "Escanea con Google Authenticator, Authy o cualquier app TOTP",
+    "cantScan": "¿No puedes escanear? Ingresa manualmente:",
+    "verifying": "Verificando…",
+    "confirmEnable": "Confirmar y activar",
+    "confirmDisable": "¿Desactivar la autenticación de dos factores?",
+    "disableFailed": "No se pudo desactivar la 2FA"
+  },
+  "profile": { "title": "Perfil", "fullName": "Nombre completo", "email": "Correo electrónico", "saving": "Guardando…", "saved": "Guardado ✓", "saveChanges": "Guardar cambios" },
+  "security": {
+    "title": "Seguridad",
+    "emailNotifications": "Notificaciones por correo",
+    "emailNotificationsSub": "Recibe alertas de depósitos y retiros",
+    "twoFactor": "Autenticación de dos factores",
+    "checkingStatus": "Comprobando estado…",
+    "enabledDesc": "Activada — se requiere un código en cada inicio de sesión",
+    "disabledDesc": "Requiere un código de tu app de autenticación al iniciar sesión",
+    "disable2fa": "Desactivar 2FA",
+    "enable2fa": "Activar 2FA"
+  }
+},
+"Withdraw": {
+  "title": "Retirar fondos",
+  "subtitle": "Saca dinero de tu billetera",
+  "availableToWithdraw": "Disponible para retirar",
+  "methods": { "crypto": "Cripto", "bank": "Transferencia bancaria", "wire": "Transferencia SWIFT" },
+  "crypto": { "currency": "Moneda", "amountToWithdraw": "Monto a retirar ({currency})", "usdEquivalent": "Equivalente en USD", "destinationAddress": "Dirección de destino {currency}" },
+  "feePreview": "Comisión ({feePercent}%): {fee} · Deducido del saldo: {amount}",
+  "noteOptional": "Nota (opcional)",
+  "notePlaceholder": "¿Para qué es esto?",
+  "submitting": "Enviando…",
+  "requestWithdrawal": "Solicitar retiro",
+  "wire": { "bankName": "Nombre de tu banco", "bankNamePlaceholder": "ej. BBVA", "accountHolder": "Nombre del titular", "routingNumber": "Número de ruta", "accountNumber": "Número de cuenta" },
+  "amountUsd": "Monto (USD)",
+  "bank": {
+    "checkingAccount": "Comprobando tu cuenta de pago…",
+    "needsVerification": "Para retirar a tu banco, Stripe necesita verificar primero una cuenta de pago — un paso rápido y seguro.",
+    "openingSetup": "Abriendo configuración segura…",
+    "setUpPayouts": "Configurar pagos bancarios"
+  },
+  "info": {
+    "title": "Información de retiro",
+    "minimum": "Mínimo",
+    "dailyLimit": "Límite diario",
+    "remainingToday": "Restante hoy",
+    "fee": "Comisión",
+    "processing": "Procesamiento",
+    "processingValue": "Revisado y luego enviado de verdad",
+    "cryptoWarning": "Verifica tu dirección antes de enviar — las criptomonedas enviadas a la dirección equivocada no se pueden recuperar.",
+    "wireWarning": "Verifica tus datos bancarios antes de enviar — transferiremos los fondos exactamente a donde nos indiques."
+  },
+  "requested": {
+    "title": "Retiro solicitado",
+    "bank": "Tu retiro está pendiente de revisión. Una vez aprobado, los fondos se enviarán a tu cuenta bancaria conectada.",
+    "wire": "Tu retiro por transferencia está pendiente de revisión. Una vez aprobado, los fondos se enviarán a la cuenta bancaria que proporcionaste.",
+    "crypto": "Tu retiro está pendiente de revisión. Una vez aprobado, se enviarán {amount} {currency} a la dirección que proporcionaste.",
+    "makeAnother": "Hacer otro retiro"
+  },
+  "errors": {
+    "connectFailed": "No se pudo iniciar la conexión bancaria.",
+    "enterAmount": "Ingresa el monto a retirar.",
+    "enterUsdEquivalent": "Ingresa el equivalente en USD.",
+    "invalidAddress": "Ingresa una dirección {currency} válida.",
+    "minWithdrawal": "El retiro mínimo es {amount}.",
+    "exceedsBalance": "No puedes retirar más de tu saldo disponible ({amount}).",
+    "exceedsDailyLimit": "Esto excedería tu límite diario de retiro. Te quedan {amount} disponibles hoy.",
+    "genericSubmit": "Algo salió mal al enviar tu retiro.",
+    "validAmount": "Ingresa un monto válido.",
+    "fillBankDetails": "Completa todos tus datos bancarios para poder enviar la transferencia correctamente."
+  }
+},
+"Wallet": {
+  "title": "Billetera",
+  "subtitle": "Tu saldo en efectivo e historial de transacciones",
+  "availableBalance": "Saldo disponible",
+  "totalDeposited": "Total depositado",
+  "totalWithdrawn": "Total retirado",
+  "history": "Historial de transacciones",
+  "loading": "Cargando…",
+  "noTransactions": "Aún no hay transacciones",
+  "noTransactionsSub": "Haz un depósito para comenzar — aparecerá aquí una vez enviado, y se actualizará cuando se verifique.",
+  "pendingVerification": "verificación pendiente",
+  "rejectedHint": "Rechazada — toca para ver por qué",
+  "txnTypes": {
+    "deposit": "Depósito",
+    "withdrawal": "Retiro",
+    "investmentWithdrawal": "Retiro de inversión",
+    "gainsClaim": "Reclamo de ganancias",
+    "adminCredit": "Crédito administrativo",
+    "adminDebit": "Débito administrativo"
+  }
+},
+"Referrals": {
+  "title": "Referidos",
+  "subtitle": "Invita amigos — tú recibes {referrerBonus}, ellos reciben {referredBonus}",
+  "programInactive": "El programa de referidos no está activo en este momento.",
+  "yourCode": "Tu código de referido",
+  "copied": "¡Copiado!",
+  "copyLink": "Copiar enlace",
+  "loading": "Cargando…",
+  "totalReferred": "Total referidos",
+  "pending": "Pendiente",
+  "earnedSoFar": "Ganado hasta ahora",
+  "yourReferrals": "Tus referidos",
+  "noReferralsYet": "Aún no tienes referidos — comparte tu enlace para comenzar.",
+  "newInvestor": "Nuevo inversor",
+  "table": { "name": "Nombre", "bonus": "Bono", "status": "Estado", "date": "Fecha" },
+  "status": { "paid": "pagado", "pending": "pendiente" }
+},
+"Markets": {
+  "title": "Mercados",
+  "subtitle": "Precios en vivo de todas las clases de activos que ofrece Vestora",
+  "tabs": { "crypto": "Cripto", "stocks": "Acciones", "gold": "Oro", "bonds": "Bonos", "ai": "Carteras con IA" },
+  "updatedAt": "Actualizado {time}",
+  "refreshNow": "Actualizar ahora",
+  "loadingLivePrices": "Cargando precios en vivo…",
+  "noDataAvailable": "No hay datos disponibles en este momento.",
+  "loading": "Cargando…",
+  "crypto": { "title": "Principales monedas por capitalización", "table": { "rank": "#", "coin": "Moneda", "price": "Precio", "change24h": "24h", "trend7d": "Tendencia 7d", "marketCap": "Capitalización" } },
+  "stocks": { "title": "Acciones de gran capitalización", "table": { "symbol": "Símbolo", "price": "Precio", "change": "Variación", "daysRange": "Rango del día", "prevClose": "Cierre anterior" } },
+  "gold": {
+    "title": "Oro (XAU/USD) — por onza troy",
+    "loadingPrice": "Cargando precio en vivo…",
+    "currentPrice": "Precio actual",
+    "todaysChange": "Variación de hoy",
+    "open": "Apertura",
+    "daysHigh": "Máximo del día",
+    "daysLow": "Mínimo del día",
+    "previousClose": "Cierre anterior",
+    "week52Low": "Mínimo de 52 semanas",
+    "week52High": "Máximo de 52 semanas"
+  },
+  "bonds": { "title": "Curva de rendimiento del Tesoro de EE. UU.", "loadingYields": "Cargando rendimientos en vivo…", "asOf": "Al {date}" },
+  "ai": {
+    "title": "Carteras gestionadas por Vestora",
+    "description": "Estas no se cotizan en un mercado externo — son los propios planes de tu plataforma, mostrados en vivo desde tu catálogo.",
+    "noActivePlans": "Aún no hay planes activos — agrega uno en Configuración de la plataforma.",
+    "apyValue": "{apy}% TAE",
+    "termMin": "Plazo de {days} días · mínimo {min}"
+  },
+  "errors": {
+    "couldNotLoadMarket": "No se pudieron cargar los datos del mercado en vivo — se reintentará en breve.",
+    "couldNotLoadStocks": "No se pudieron cargar los datos de acciones en vivo — se reintentará en breve.",
+    "couldNotLoadGold": "No se pudo cargar el precio del oro en vivo — se reintentará en breve.",
+    "couldNotLoadBonds": "No se pudieron cargar los rendimientos de bonos en vivo — se reintentará en breve.",
+    "couldNotLoadPlans": "No se pudieron cargar los planes."
+  }
+},
+"GuestChat": {
+  "title": "Chatea con Vestora",
+  "replyTime": "Normalmente respondemos en unas pocas horas",
+  "continuingAs": "Continuando como {name}",
+  "notYou": "¿No eres tú?",
+  "openChat": "Abrir chat",
+  "closeChat": "Cerrar chat",
+  "form": {
+    "name": "Nombre",
+    "namePlaceholder": "Tu nombre",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "tu@correo.com",
+    "starting": "Iniciando…",
+    "startChat": "Iniciar chat",
+    "missingFields": "Ingresa tu nombre y correo electrónico.",
+    "genericError": "Algo salió mal — inténtalo de nuevo."
+  },
+  "emptyState": "Saluda — una persona real te responderá.",
+  "typeMessage": "Escribe un mensaje…"
+},
+"SupportChat": {
+  "title": "Soporte",
+  "replyTime": "Normalmente respondemos en unas pocas horas",
+  "emptyState": "Aún no hay mensajes — saluda y te responderemos.",
+  "typeMessage": "Escribe un mensaje…",
+  "openChat": "Abrir chat"
+},
+"DashboardShowcase": {
+  "eyebrow": "Tu cartera, de un vistazo",
+  "headlineLine1": "Diseñado para la claridad,",
+  "headlineLine2": "no para el desorden.",
+  "totalBalance": "Saldo total",
+  "range1M": "1M", "range3M": "3M", "range1Y": "1A", "rangeAll": "Todo",
+  "allocation": { "title": "Asignación", "equities": "Acciones", "bonds": "Bonos", "cash": "Efectivo" },
+  "activity": {
+    "title": "Actividad reciente",
+    "deposit": "Depósito recibido",
+    "voo": "Compra de VOO",
+    "dividend": "Pago de dividendos",
+    "rebalance": "Reequilibrio ejecutado",
+    "time2m": "hace 2 min", "time1h": "hace 1 h", "time5h": "hace 5 h", "timeYesterday": "Ayer"
+  },
+  "outperforming": "Superando al 91% de carteras similares"
+},
+"TrustedLogos": {
+  "fundYourAccount": "Financia tu cuenta a tu manera — cripto, tarjeta o transferencia bancaria",
+  "stats": {
+    "aum": "Activos bajo gestión",
+    "investors": "Inversores activos en todo el mundo",
+    "uptime": "Tiempo de actividad de la plataforma",
+    "rating": "Calificación media de usuarios"
+  }
+}
+}

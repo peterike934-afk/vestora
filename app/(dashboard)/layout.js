@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
+import { NextIntlClientProvider } from "next-intl";
 import { createClient } from "@/lib/supabase/server";
 import DashboardShell from "@/components/DashboardShell";
+import enMessages from "@/messages/en.json";
 
 export default async function Layout({ children }) {
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Not logged in — send them to login instead of showing the dashboard
   if (!user) {
     redirect("/login");
   }
@@ -20,5 +20,9 @@ export default async function Layout({ children }) {
     .eq("id", user.id)
     .single();
 
-  return <DashboardShell profile={profile}>{children}</DashboardShell>;
+  return (
+    <NextIntlClientProvider locale="en" messages={enMessages}>
+      <DashboardShell profile={profile}>{children}</DashboardShell>
+    </NextIntlClientProvider>
+  );
 }

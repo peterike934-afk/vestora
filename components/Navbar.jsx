@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+import NextLink from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function Navbar() {
+  const t = useTranslations("Nav");
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -16,28 +20,30 @@ export default function Navbar() {
   return (
     <header className={`nav${scrolled ? " nav--solid" : ""}`}>
       <div className="nav__inner">
-        <a href="/" className="nav__logo" aria-label="Vestora home">
+        <Link href="/" className="nav__logo" aria-label="Vestora home">
           <svg width="22" height="26" viewBox="0 0 27 30" fill="none">
             <path d="M2 4L11 24L20 4" stroke="var(--green)" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M16 12L20 4L25 9" stroke="var(--green)" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
           </svg>
           estora
-        </a>
-<nav className="nav__links">
-  <a href="/#product">Product</a>
-  <a href="/#pricing">Pricing</a>
-  <a href="/#about">About</a>
-</nav>
+        </Link>
+
+        <nav className="nav__links">
+          <Link href="/#product">{t("product")}</Link>
+          <Link href="/#pricing">{t("pricing")}</Link>
+          <Link href="/#about">{t("about")}</Link>
+        </nav>
 
         <div className="nav__actions">
-          <Link href="/login" className="nav__signin">Sign in</Link>
+          <LanguageSelector />
+          <NextLink href="/login" className="nav__signin">{t("signIn")}</NextLink>
           <motion.a
             href="/signup"
             className="nav__cta"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
           >
-            Get started
+            {t("getStarted")}
           </motion.a>
         </div>
       </div>

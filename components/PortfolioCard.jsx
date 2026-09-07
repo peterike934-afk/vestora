@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion, useInView, animate } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 function TickingNumber({ value, prefix = "", suffix = "", decimals = 0 }) {
   const ref = useRef(null);
@@ -26,8 +27,6 @@ function TickingNumber({ value, prefix = "", suffix = "", decimals = 0 }) {
   );
 }
 
-// Smooth, organic-looking line path for the chart — not a literal data plot,
-// but reads as "real" growth rather than a generic decorative squiggle.
 const CHART_PATH = "M0,118 C30,112 48,100 70,96 C95,91 110,104 135,98 C162,91 178,60 205,52 C232,44 250,66 278,58 C306,50 322,18 350,8";
 
 function GrowthChart() {
@@ -67,11 +66,13 @@ function GrowthChart() {
 }
 
 export default function PortfolioCard() {
+  const t = useTranslations("PortfolioCard");
+
   return (
     <div className="portfolio-grid">
       <div className="bento-card bento-card--chart">
         <div className="bento-card__head">
-          <span className="bento-card__label">Total portfolio</span>
+          <span className="bento-card__label">{t("totalPortfolio")}</span>
           <span className="bento-card__change">+12.4%</span>
         </div>
         <div className="bento-card__value">
@@ -81,14 +82,14 @@ export default function PortfolioCard() {
       </div>
 
       <div className="bento-card bento-card--stat">
-        <span className="bento-card__label">This month</span>
+        <span className="bento-card__label">{t("thisMonth")}</span>
         <div className="bento-card__value bento-card__value--sm">
           <TickingNumber value={12.4} prefix="+" suffix="%" decimals={1} />
         </div>
       </div>
 
       <div className="bento-card bento-card--stat">
-        <span className="bento-card__label">Available cash</span>
+        <span className="bento-card__label">{t("availableCash")}</span>
         <div className="bento-card__value bento-card__value--sm">
           <TickingNumber value={3842} prefix="$" decimals={0} />
         </div>

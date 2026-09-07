@@ -1,5 +1,8 @@
+"use client";
+
 import { useState, useEffect, useRef } from 'react'
 import { MessageCircle, X, Send } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
 import { getMessages, sendMessage, subscribeToMessages, getUnreadAdminMessageCount, markAdminMessagesRead } from '@/lib/queries'
 
@@ -51,6 +54,7 @@ const s = {
 }
 
 export default function ChatWidget() {
+  const t = useTranslations('SupportChat')
   const { user, isAdmin } = useUser()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([])
@@ -67,10 +71,6 @@ export default function ChatWidget() {
 
     const unsubscribe = subscribeToMessages(user.id, (newMsg) => {
       setMessages((prev) => (prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]))
-
-      // Only admin replies count toward the badge — and only bump it
-      // if the panel isn't already open (if it's open, the user is
-      // actively looking at it, so it gets marked read immediately below instead).
       if (newMsg.sender === 'admin' && !open) {
         setUnreadCount((c) => c + 1)
       }
@@ -110,8 +110,6 @@ export default function ChatWidget() {
     }
   }
 
-  // Support chat is for users contacting the team — admins reply
-  // through the dedicated inbox at /admin/messages instead.
   if (!user || isAdmin) return null
 
   return (
@@ -120,8 +118,8 @@ export default function ChatWidget() {
         <div style={s.panel}>
           <div style={s.header}>
             <div>
-              <div style={s.headerTitle}>Support</div>
-              <div style={s.headerSub}>We usually reply within a few hours</div>
+              <div style={s.headerTitle}>{t('title')}</div>
+              <div style={s.headerSub}>{t('replyTime')}</div>
             </div>
             <button style={s.closeBtn} onClick={() => setOpen(false)}>
               <X size={18} />
@@ -130,11 +128,11 @@ export default function ChatWidget() {
 
           <div style={s.messages}>
             {messages.length === 0 ? (
-              <div style={s.empty}>No messages yet — say hello, and we'll get back to you.</div>
+              <div style={s.empty}>{t('emptyState')}</div>
             ) : (
               messages.map((m) => (
                 <div key={m.id} style={m.sender === 'user' ? s.bubbleUser : s.bubbleAdmin}>
-                  {m.body}
+                  {m.sender === "user" ? m.body : (m.translated_body || m.body)}
                 </div>
               ))
             )}
@@ -144,7 +142,7 @@ export default function ChatWidget() {
           <div style={s.inputRow}>
             <input
               style={s.input}
-              placeholder="Type a message…"
+              placeholder={t('typeMessage')}
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -156,7 +154,7 @@ export default function ChatWidget() {
         </div>
       )}
 
-      <button style={{ ...s.bubble, position: 'fixed' }} onClick={handleOpen} aria-label="Open chat">
+      <button style={{ ...s.bubble, position: 'fixed' }} onClick={handleOpen} aria-label={t('openChat')}>
         {open ? <X size={22} /> : <MessageCircle size={22} />}
         {!open && unreadCount > 0 && (
           <span style={s.unreadBadge}>{unreadCount > 9 ? '9+' : unreadCount}</span>

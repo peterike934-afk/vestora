@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { TrendingUp, TrendingDown, RefreshCw } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { getInvestmentPlans } from '@/lib/queries'
 
 const s = {
@@ -11,7 +12,6 @@ const s = {
   tabs: { display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' },
   tab: { padding: '10px 18px', borderRadius: '999px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text2)' },
   tabActive: { background: 'var(--green)', color: '#000', border: '1px solid var(--green)' },
-  tabDisabled: { opacity: 0.4, cursor: 'not-allowed' },
   card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '24px' },
   cardHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
   cardTitle: { fontSize: '15px', fontWeight: '600', color: 'var(--text)' },
@@ -27,8 +27,6 @@ const s = {
   changeDown: { color: 'var(--red)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' },
   empty: { textAlign: 'center', padding: '40px', color: 'var(--text3)', fontSize: '14px' },
   error: { fontSize: '13px', color: 'var(--red)', background: 'var(--red-dim)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '16px' },
-  comingSoon: { textAlign: 'center', padding: '60px 20px', color: 'var(--text3)' },
-  comingSoonTitle: { fontSize: '15px', fontWeight: '600', color: 'var(--text)', marginBottom: '6px' },
   heroRow: { display: 'flex', flexWrap: 'wrap', gap: '32px', alignItems: 'flex-end', marginBottom: '24px' },
   heroPrice: { fontSize: '42px', fontWeight: '700', color: 'var(--text)', letterSpacing: '-0.01em' },
   heroLabel: { fontSize: '12px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' },
@@ -45,20 +43,9 @@ const s = {
   planMeta: { fontSize: '12px', color: 'var(--text2)', marginTop: '8px' },
 }
 
-const ASSET_TABS = [
-  { key: 'crypto', label: 'Crypto', live: true },
-  { key: 'stocks', label: 'Stocks', live: true },
-  { key: 'gold', label: 'Gold', live: true },
-  { key: 'bonds', label: 'Bonds', live: true },
-  { key: 'ai', label: 'AI Portfolios', live: true },
-]
+const REFRESH_MS = 45000
+const REFRESH_MS_STOCKS = 60000
 
-const REFRESH_MS = 45000 // CoinGecko's free public API is rate-limited — 45s keeps us well under it
-const REFRESH_MS_STOCKS = 60000 // Finnhub free tier — a longer interval keeps shared rate-limit usage safe
-
-// Crypto prices span wildly different magnitudes ($60,000 BTC vs
-// $0.00002 SHIB), so a fixed 2-decimal format breaks down — this picks
-// a sensible decimal count based on the price itself.
 function formatCryptoPrice(n) {
   const num = Number(n) || 0
   if (num >= 1) return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -74,7 +61,6 @@ function formatMarketCap(n) {
   return `$${num.toLocaleString()}`
 }
 
-// Small inline sparkline — no chart library needed for a single trend line.
 function Sparkline({ prices, up }) {
   if (!prices || prices.length < 2) return null
   const width = 100
@@ -92,19 +78,13 @@ function Sparkline({ prices, up }) {
 
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ display: 'block' }}>
-      <polyline
-        points={points}
-        fill="none"
-        stroke={up ? 'var(--green)' : 'var(--red)'}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <polyline points={points} fill="none" stroke={up ? 'var(--green)' : 'var(--red)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
 function CryptoTab() {
+  const t = useTranslations('Markets')
   const [coins, setCoins] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -121,12 +101,12 @@ function CryptoTab() {
       setCoins(data)
       setLastUpdated(new Date())
     } catch (err) {
-      setError('Could not load live market data — will retry shortly.')
+      setError(t('errors.couldNotLoadMarket'))
       console.error('Failed to load crypto markets:', err)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     load()
@@ -137,10 +117,10 @@ function CryptoTab() {
   return (
     <div style={s.card}>
       <div style={s.cardHead}>
-        <div style={s.cardTitle}>Top coins by market cap</div>
+        <div style={s.cardTitle}>{t('crypto.title')}</div>
         <div style={s.refreshRow}>
-          {lastUpdated && <span>Updated {lastUpdated.toLocaleTimeString()}</span>}
-          <button style={s.refreshBtn} onClick={load} aria-label="Refresh now" title="Refresh now">
+          {lastUpdated && <span>{t('updatedAt', { time: lastUpdated.toLocaleTimeString() })}</span>}
+          <button style={s.refreshBtn} onClick={load} aria-label={t('refreshNow')} title={t('refreshNow')}>
             <RefreshCw size={14} />
           </button>
         </div>
@@ -149,16 +129,16 @@ function CryptoTab() {
       {error && <div style={s.error}>{error}</div>}
 
       {loading ? (
-        <div style={s.empty}>Loading live prices…</div>
+        <div style={s.empty}>{t('loadingLivePrices')}</div>
       ) : coins.length === 0 ? (
-        <div style={s.empty}>No data available right now.</div>
+        <div style={s.empty}>{t('noDataAvailable')}</div>
       ) : (
         <div className="responsive-table-wrap">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                {['#', 'Coin', 'Price', '24h', '7d trend', 'Market cap'].map(h => (
-                  <th key={h} style={s.th}>{h}</th>
+                {['rank', 'coin', 'price', 'change24h', 'trend7d', 'marketCap'].map(h => (
+                  <th key={h} style={s.th}>{t(`crypto.table.${h}`)}</th>
                 ))}
               </tr>
             </thead>
@@ -199,13 +179,8 @@ function CryptoTab() {
   )
 }
 
-// Tries a favicon for the stock's domain via Google's public favicon
-// service (no key, no signup, very reliable — unlike Clearbit's free
-// Logo API, which has become inconsistent). Falls back to the same
-// initials-circle style used elsewhere in the app if even that fails.
 function StockLogo({ domain, symbol }) {
   const [failed, setFailed] = useState(false)
-
   if (!domain || failed) {
     return (
       <div style={{ ...s.coinImg, background: 'var(--bg4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: 'var(--text2)' }}>
@@ -213,7 +188,6 @@ function StockLogo({ domain, symbol }) {
       </div>
     )
   }
-
   return (
     <img
       src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
@@ -225,6 +199,7 @@ function StockLogo({ domain, symbol }) {
 }
 
 function StocksTab() {
+  const t = useTranslations('Markets')
   const [stocks, setStocks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -239,12 +214,12 @@ function StocksTab() {
       setStocks(data.stocks || [])
       setLastUpdated(new Date())
     } catch (err) {
-      setError(err.message || 'Could not load live stock data — will retry shortly.')
+      setError(err.message || t('errors.couldNotLoadStocks'))
       console.error('Failed to load stock markets:', err)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     load()
@@ -255,10 +230,10 @@ function StocksTab() {
   return (
     <div style={s.card}>
       <div style={s.cardHead}>
-        <div style={s.cardTitle}>Large-cap stocks</div>
+        <div style={s.cardTitle}>{t('stocks.title')}</div>
         <div style={s.refreshRow}>
-          {lastUpdated && <span>Updated {lastUpdated.toLocaleTimeString()}</span>}
-          <button style={s.refreshBtn} onClick={load} aria-label="Refresh now" title="Refresh now">
+          {lastUpdated && <span>{t('updatedAt', { time: lastUpdated.toLocaleTimeString() })}</span>}
+          <button style={s.refreshBtn} onClick={load} aria-label={t('refreshNow')} title={t('refreshNow')}>
             <RefreshCw size={14} />
           </button>
         </div>
@@ -267,16 +242,16 @@ function StocksTab() {
       {error && <div style={s.error}>{error}</div>}
 
       {loading ? (
-        <div style={s.empty}>Loading live prices…</div>
+        <div style={s.empty}>{t('loadingLivePrices')}</div>
       ) : stocks.length === 0 ? (
-        <div style={s.empty}>No data available right now.</div>
+        <div style={s.empty}>{t('noDataAvailable')}</div>
       ) : (
         <div className="responsive-table-wrap">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                {['Symbol', 'Price', 'Change', "Day's range", 'Prev close'].map(h => (
-                  <th key={h} style={s.th}>{h}</th>
+                {['symbol', 'price', 'change', 'daysRange', 'prevClose'].map(h => (
+                  <th key={h} style={s.th}>{t(`stocks.table.${h}`)}</th>
                 ))}
               </tr>
             </thead>
@@ -321,6 +296,7 @@ function StocksTab() {
 }
 
 function GoldTab() {
+  const t = useTranslations('Markets')
   const [gold, setGold] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -335,16 +311,16 @@ function GoldTab() {
       setGold(data)
       setLastUpdated(new Date())
     } catch (err) {
-      setError(err.message || 'Could not load live gold price — will retry shortly.')
+      setError(err.message || t('errors.couldNotLoadGold'))
       console.error('Failed to load gold price:', err)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     load()
-    const interval = setInterval(load, 120000) // matches the server's 2-minute cache window
+    const interval = setInterval(load, 120000)
     return () => clearInterval(interval)
   }, [load])
 
@@ -353,10 +329,10 @@ function GoldTab() {
   return (
     <div style={s.card}>
       <div style={s.cardHead}>
-        <div style={s.cardTitle}>Gold (XAU/USD) — per troy ounce</div>
+        <div style={s.cardTitle}>{t('gold.title')}</div>
         <div style={s.refreshRow}>
-          {lastUpdated && <span>Updated {lastUpdated.toLocaleTimeString()}</span>}
-          <button style={s.refreshBtn} onClick={load} aria-label="Refresh now" title="Refresh now">
+          {lastUpdated && <span>{t('updatedAt', { time: lastUpdated.toLocaleTimeString() })}</span>}
+          <button style={s.refreshBtn} onClick={load} aria-label={t('refreshNow')} title={t('refreshNow')}>
             <RefreshCw size={14} />
           </button>
         </div>
@@ -365,18 +341,18 @@ function GoldTab() {
       {error && <div style={s.error}>{error}</div>}
 
       {loading ? (
-        <div style={s.empty}>Loading live price…</div>
+        <div style={s.empty}>{t('gold.loadingPrice')}</div>
       ) : !gold ? (
-        <div style={s.empty}>No data available right now.</div>
+        <div style={s.empty}>{t('noDataAvailable')}</div>
       ) : (
         <>
           <div style={s.heroRow}>
             <div>
-              <div style={s.heroLabel}>Current price</div>
+              <div style={s.heroLabel}>{t('gold.currentPrice')}</div>
               <div style={s.heroPrice}>${gold.price?.toFixed(2)}</div>
             </div>
             <div>
-              <div style={s.heroLabel}>Today's change</div>
+              <div style={s.heroLabel}>{t('gold.todaysChange')}</div>
               <span style={{ ...(up ? s.changeUp : s.changeDown), fontSize: '18px' }}>
                 {up ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
                 ${Math.abs(gold.change || 0).toFixed(2)} ({Math.abs(gold.changePercent || 0).toFixed(2)}%)
@@ -386,30 +362,30 @@ function GoldTab() {
 
           <div style={s.statGrid}>
             <div style={s.statBox}>
-              <div style={s.statBoxLabel}>Open</div>
+              <div style={s.statBoxLabel}>{t('gold.open')}</div>
               <div style={s.statBoxValue}>${gold.open?.toFixed(2) ?? '—'}</div>
             </div>
             <div style={s.statBox}>
-              <div style={s.statBoxLabel}>Day's high</div>
+              <div style={s.statBoxLabel}>{t('gold.daysHigh')}</div>
               <div style={s.statBoxValue}>${gold.high?.toFixed(2) ?? '—'}</div>
             </div>
             <div style={s.statBox}>
-              <div style={s.statBoxLabel}>Day's low</div>
+              <div style={s.statBoxLabel}>{t('gold.daysLow')}</div>
               <div style={s.statBoxValue}>${gold.low?.toFixed(2) ?? '—'}</div>
             </div>
             <div style={s.statBox}>
-              <div style={s.statBoxLabel}>Previous close</div>
+              <div style={s.statBoxLabel}>{t('gold.previousClose')}</div>
               <div style={s.statBoxValue}>${gold.previousClose?.toFixed(2) ?? '—'}</div>
             </div>
             {gold.fiftyTwoWeekLow != null && (
               <div style={s.statBox}>
-                <div style={s.statBoxLabel}>52-week low</div>
+                <div style={s.statBoxLabel}>{t('gold.week52Low')}</div>
                 <div style={s.statBoxValue}>${gold.fiftyTwoWeekLow.toFixed(2)}</div>
               </div>
             )}
             {gold.fiftyTwoWeekHigh != null && (
               <div style={s.statBox}>
-                <div style={s.statBoxLabel}>52-week high</div>
+                <div style={s.statBoxLabel}>{t('gold.week52High')}</div>
                 <div style={s.statBoxValue}>${gold.fiftyTwoWeekHigh.toFixed(2)}</div>
               </div>
             )}
@@ -421,6 +397,7 @@ function GoldTab() {
 }
 
 function BondsTab() {
+  const t = useTranslations('Markets')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -433,24 +410,24 @@ function BondsTab() {
       if (json.error) throw new Error(json.error)
       setData(json)
     } catch (err) {
-      setError(err.message || 'Could not load live bond yield data — will retry shortly.')
+      setError(err.message || t('errors.couldNotLoadBonds'))
       console.error('Failed to load bond yields:', err)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     load()
-    const interval = setInterval(load, 3600000) // matches server's hourly cache — this updates once per business day anyway
+    const interval = setInterval(load, 3600000)
     return () => clearInterval(interval)
   }, [load])
 
   return (
     <div style={s.card}>
       <div style={s.cardHead}>
-        <div style={s.cardTitle}>US Treasury yield curve</div>
-        <button style={s.refreshBtn} onClick={load} aria-label="Refresh now" title="Refresh now">
+        <div style={s.cardTitle}>{t('bonds.title')}</div>
+        <button style={s.refreshBtn} onClick={load} aria-label={t('refreshNow')} title={t('refreshNow')}>
           <RefreshCw size={14} />
         </button>
       </div>
@@ -458,12 +435,12 @@ function BondsTab() {
       {error && <div style={s.error}>{error}</div>}
 
       {loading ? (
-        <div style={s.empty}>Loading live yields…</div>
+        <div style={s.empty}>{t('bonds.loadingYields')}</div>
       ) : !data ? (
-        <div style={s.empty}>No data available right now.</div>
+        <div style={s.empty}>{t('noDataAvailable')}</div>
       ) : (
         <>
-          {data.asOf && <div style={s.asOfNote}>As of {data.asOf}</div>}
+          {data.asOf && <div style={s.asOfNote}>{t('bonds.asOf', { date: data.asOf })}</div>}
           <div style={s.statGrid}>
             {data.yields.map(y => (
               <div key={y.label} style={s.statBox}>
@@ -479,6 +456,8 @@ function BondsTab() {
 }
 
 function AiPortfoliosTab() {
+  const t = useTranslations('Markets')
+  const formatMoney = useMoneyFormatter()
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -487,35 +466,35 @@ function AiPortfoliosTab() {
     getInvestmentPlans()
       .then(setPlans)
       .catch(err => {
-        setError(err.message || 'Could not load plans.')
+        setError(err.message || t('errors.couldNotLoadPlans'))
         console.error('Failed to load investment plans:', err)
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [t])
 
   return (
     <div style={s.card}>
       <div style={s.cardHead}>
-        <div style={s.cardTitle}>Vestora managed portfolios</div>
+        <div style={s.cardTitle}>{t('ai.title')}</div>
       </div>
       <p style={{ fontSize: '13px', color: 'var(--text3)', marginTop: '-12px', marginBottom: '20px' }}>
-        These aren't priced by an external market — they're your platform's own plans, shown live from your catalog.
+        {t('ai.description')}
       </p>
 
       {error && <div style={s.error}>{error}</div>}
 
       {loading ? (
-        <div style={s.empty}>Loading…</div>
+        <div style={s.empty}>{t('loading')}</div>
       ) : plans.length === 0 ? (
-        <div style={s.empty}>No active plans yet — add one in Platform Settings.</div>
+        <div style={s.empty}>{t('ai.noActivePlans')}</div>
       ) : (
         <div style={s.planGrid}>
           {plans.map(plan => (
             <div key={plan.id} style={s.planCard}>
               <div style={s.planName}>{plan.name}</div>
               {plan.description && <div style={s.planDesc}>{plan.description}</div>}
-              <div style={s.planApy}>{plan.apy_percent}% APY</div>
-              <div style={s.planMeta}>{plan.term_days}-day term · min ${Number(plan.min_amount).toLocaleString()}</div>
+              <div style={s.planApy}>{t('ai.apyValue', { apy: plan.apy_percent })}</div>
+              <div style={s.planMeta}>{t('ai.termMin', { days: plan.term_days, min: formatMoney(plan.min_amount) })}</div>
             </div>
           ))}
         </div>
@@ -524,37 +503,31 @@ function AiPortfoliosTab() {
   )
 }
 
-function ComingSoonTab({ label }) {
-  return (
-    <div style={s.card}>
-      <div style={s.comingSoon}>
-        <div style={s.comingSoonTitle}>{label} data coming soon</div>
-        <p style={{ fontSize: '13px' }}>Live {label.toLowerCase()} pricing will appear here once it's connected.</p>
-      </div>
-    </div>
-  )
-}
-
 export default function MarketsPage() {
+  const t = useTranslations('Markets')
   const [tab, setTab] = useState('crypto')
+
+  const ASSET_TABS = [
+    { key: 'crypto', label: t('tabs.crypto') },
+    { key: 'stocks', label: t('tabs.stocks') },
+    { key: 'gold', label: t('tabs.gold') },
+    { key: 'bonds', label: t('tabs.bonds') },
+    { key: 'ai', label: t('tabs.ai') },
+  ]
 
   return (
     <div style={s.page}>
-      <h1 style={s.title}>Markets</h1>
-      <p style={s.sub}>Live pricing across every asset class Vestora supports</p>
+      <h1 style={s.title}>{t('title')}</h1>
+      <p style={s.sub}>{t('subtitle')}</p>
 
       <div style={s.tabs}>
-        {ASSET_TABS.map(t => (
+        {ASSET_TABS.map(tb => (
           <button
-            key={t.key}
-            style={{
-              ...s.tab,
-              ...(tab === t.key ? s.tabActive : {}),
-              ...(!t.live && tab !== t.key ? s.tabDisabled : {}),
-            }}
-            onClick={() => setTab(t.key)}
+            key={tb.key}
+            style={{ ...s.tab, ...(tab === tb.key ? s.tabActive : {}) }}
+            onClick={() => setTab(tb.key)}
           >
-            {t.label}
+            {tb.label}
           </button>
         ))}
       </div>

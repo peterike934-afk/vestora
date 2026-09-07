@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { MessageCircle, X, Send } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 
 const s = {
   bubble: {
@@ -51,9 +52,11 @@ const THREAD_KEY = "vestora_guest_thread_id";
 const NAME_KEY = "vestora_guest_name";
 
 export default function GuestChatWidget() {
+  const t = useTranslations("GuestChat");
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [threadId, setThreadId] = useState(null);
-  const [savedName, setSavedName] = useState(""); // whose conversation is currently loaded
+  const [savedName, setSavedName] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [formError, setFormError] = useState("");
@@ -76,7 +79,7 @@ export default function GuestChatWidget() {
       const res = await fetch(`/api/guest-chat/messages?threadId=${id}`);
       const data = await res.json();
       if (data.messages) setMessages(data.messages);
-      setUnreadCount(0); // opening the chat marks it read server-side too
+      setUnreadCount(0);
     } catch (err) {
       console.error("Failed to load guest chat messages:", err);
     }
@@ -96,15 +99,12 @@ export default function GuestChatWidget() {
     if (open && threadId) loadMessages(threadId);
   }, [open, threadId]);
 
-  // Poll for new admin replies while the window is open.
   useEffect(() => {
     if (!open || !threadId) return;
     const interval = setInterval(() => loadMessages(threadId), 4000);
     return () => clearInterval(interval);
   }, [open, threadId]);
 
-  // Background check for a badge on the collapsed bubble, so the user
-  // knows a reply came in even without the chat window open.
   useEffect(() => {
     if (!threadId) return;
     checkUnread(threadId);
@@ -121,7 +121,7 @@ export default function GuestChatWidget() {
   async function handleStart() {
     setFormError("");
     if (!name.trim() || !email.trim()) {
-      setFormError("Please enter your name and email.");
+      setFormError(t("form.missingFields"));
       return;
     }
     setStarting(true);
@@ -129,7 +129,7 @@ export default function GuestChatWidget() {
       const res = await fetch("/api/guest-chat/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name, email, locale }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -139,7 +139,7 @@ export default function GuestChatWidget() {
       setSavedName(name.trim());
       setMessages([]);
     } catch (err) {
-      setFormError(err.message || "Something went wrong — try again.");
+      setFormError(err.message || t("form.genericError"));
     } finally {
       setStarting(false);
     }
@@ -157,9 +157,9 @@ export default function GuestChatWidget() {
         body: JSON.stringify({ threadId, sender: "guest", body }),
       });
       const data = await res.json();
-if (data.message) {
-  setMessages((prev) => (prev.some(m => m.id === data.message.id) ? prev : [...prev, data.message]));
-}
+      if (data.message) {
+        setMessages((prev) => (prev.some(m => m.id === data.message.id) ? prev : [...prev, data.message]));
+      }
     } catch (err) {
       console.error("Failed to send guest message:", err);
     } finally {
@@ -167,10 +167,6 @@ if (data.message) {
     }
   }
 
-  // Clears the saved thread entirely — the NEXT person on this browser
-  // gets a fresh name/email form instead of silently inheriting
-  // whoever chatted last. This is the fix for cross-person mixups on
-  // a shared or reused browser.
   function handleStartNewChat() {
     localStorage.removeItem(THREAD_KEY);
     localStorage.removeItem(NAME_KEY);
@@ -184,7 +180,7 @@ if (data.message) {
 
   if (!open) {
     return (
-      <button style={s.bubble} onClick={() => setOpen(true)} aria-label="Open chat">
+      <button style={s.bubble} onClick={() => setOpen(true)} aria-label={t("openChat")}>
         <MessageCircle size={24} />
         {unreadCount > 0 && (
           <span style={s.bubbleBadge}>{unreadCount > 9 ? "9+" : unreadCount}</span>
@@ -197,18 +193,18 @@ if (data.message) {
     <div style={s.window}>
       <div style={s.header}>
         <div style={s.headerLeft}>
-          <div style={s.headerTitle}>Chat with Vestora</div>
+          <div style={s.headerTitle}>{t("title")}</div>
           <div style={s.headerSub}>
-            {threadId && savedName ? `Continuing as ${savedName}` : "We typically reply within a few hours"}
+            {threadId && savedName ? t("continuingAs", { name: savedName }) : t("replyTime")}
           </div>
         </div>
         <div style={s.headerActions}>
           {threadId && (
             <button style={s.switchBtn} onClick={handleStartNewChat}>
-              Not you?
+              {t("notYou")}
             </button>
           )}
-          <button style={s.closeBtn} onClick={() => setOpen(false)} aria-label="Close chat">
+          <button style={s.closeBtn} onClick={() => setOpen(false)} aria-label={t("closeChat")}>
             <X size={18} />
           </button>
         </div>
@@ -217,27 +213,27 @@ if (data.message) {
       {!threadId ? (
         <div style={s.form}>
           <div>
-            <label style={s.label}>Name</label>
-            <input style={s.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+            <label style={s.label}>{t("form.name")}</label>
+            <input style={s.input} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("form.namePlaceholder")} />
           </div>
           <div>
-            <label style={s.label}>Email</label>
-            <input style={s.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" />
+            <label style={s.label}>{t("form.email")}</label>
+            <input style={s.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("form.emailPlaceholder")} />
           </div>
           {formError && <div style={s.formError}>{formError}</div>}
           <button style={s.startBtn} onClick={handleStart} disabled={starting}>
-            {starting ? "Starting…" : "Start chat"}
+            {starting ? t("form.starting") : t("form.startChat")}
           </button>
         </div>
       ) : (
         <>
           <div style={s.messages}>
             {messages.length === 0 ? (
-              <div style={s.emptyState}>Say hello — a real person will get back to you.</div>
+              <div style={s.emptyState}>{t("emptyState")}</div>
             ) : (
               messages.map((m) => (
                 <div key={m.id} style={m.sender === "guest" ? s.bubbleGuest : s.bubbleAdmin}>
-                  {m.body}
+                  {m.sender === "admin" ? (m.translated_body || m.body) : m.body}
                 </div>
               ))
             )}
@@ -246,7 +242,7 @@ if (data.message) {
           <div style={s.inputRow}>
             <input
               style={s.textInput}
-              placeholder="Type a message…"
+              placeholder={t("typeMessage")}
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}

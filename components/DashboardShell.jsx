@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import NextLink from "next/link";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ChevronRight, LayoutDashboard, PieChart, Wallet,
@@ -11,17 +12,20 @@ import {
 } from "lucide-react";
 import ChatWidget from "@/components/ChatWidget";
 import { getSettings, getUnreadUserMessageCount, subscribeToMessageCountChanges, getPendingTransactionCount, subscribeToPendingTransactionChanges, getUnreadGuestMessageCount, subscribeToGuestMessageCountChanges } from "@/lib/queries";
+import { useLocale } from "next-intl";
+import { useUser } from "@/contexts/UserContext";
+import { updatePreferredLocale } from "@/lib/queries";
 
 
 const nav = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/portfolio", icon: PieChart, label: "Portfolio" },
-  { to: "/markets", icon: LineChart, label: "Markets" },
-  { to: "/wallet", icon: Wallet, label: "Wallet" },
-  { to: "/deposit", icon: ArrowDownToLine, label: "Deposit" },
-  { to: "/withdraw", icon: ArrowUpFromLine, label: "Withdraw" },
-  { to: "/referrals", icon: Gift, label: "Referrals" },
-  { to: "/settings", icon: Settings, label: "Settings" },
+  { to: "/dashboard", icon: LayoutDashboard, key: "dashboard" },
+  { to: "/portfolio", icon: PieChart, key: "portfolio" },
+  { to: "/markets", icon: LineChart, key: "markets" },
+  { to: "/wallet", icon: Wallet, key: "wallet" },
+  { to: "/deposit", icon: ArrowDownToLine, key: "deposit" },
+  { to: "/withdraw", icon: ArrowUpFromLine, key: "withdraw" },
+  { to: "/referrals", icon: Gift, key: "referrals" },
+  { to: "/settings", icon: Settings, key: "settings" },
 ];
 
 const SIDEBAR_WIDTH = 240;
@@ -116,13 +120,12 @@ function VestoraMark({ size = 22 }) {
   );
 }
 
-// badgeCount (red) = messages from existing logged-in clients.
-// badgeCountBlue = messages from new/guest website visitors — its own
-// separately-colored badge, not merged into one number, so an admin
-// can tell at a glance which kind of message is waiting.
-function NavLink({ href, Icon, label, active, collapsed, badgeCount, badgeCountBlue, gold }) {
+// `plain` items (admin) always use next/link so they NEVER get a locale
+// prefix — admin isn't localized, so an /es/admin/... URL would 404.
+function NavLink({ href, Icon, label, active, collapsed, badgeCount, badgeCountBlue, gold, plain }) {
+  const LinkComponent = plain ? NextLink : Link;
   return (
-    <Link
+    <LinkComponent
       href={href}
       title={collapsed ? label : undefined}
       style={{
@@ -157,11 +160,11 @@ function NavLink({ href, Icon, label, active, collapsed, badgeCount, badgeCountB
           )}
         </span>
       )}
-    </Link>
+    </LinkComponent>
   );
 }
 
-function ThemeSwitch({ theme, onToggle, collapsed }) {
+function ThemeSwitch({ theme, onToggle, collapsed, t }) {
   const isLight = theme === "light";
   return (
     <button
@@ -169,7 +172,7 @@ function ThemeSwitch({ theme, onToggle, collapsed }) {
       role="switch"
       aria-checked={isLight}
       onClick={onToggle}
-      title={collapsed ? (isLight ? "Switch to dark mode" : "Switch to light mode") : undefined}
+      title={collapsed ? (isLight ? t("switchToDark") : t("switchToLight")) : undefined}
       style={{
         display: "flex", alignItems: "center",
         justifyContent: collapsed ? "center" : "space-between",
@@ -180,7 +183,7 @@ function ThemeSwitch({ theme, onToggle, collapsed }) {
       }}
     >
       {!collapsed && (
-        <span>{isLight ? "Light mode" : "Dark mode"}</span>
+        <span>{isLight ? t("lightMode") : t("darkMode")}</span>
       )}
       <span
         style={{
@@ -205,6 +208,7 @@ function ThemeSwitch({ theme, onToggle, collapsed }) {
 }
 
 export default function DashboardShell({ profile, children }) {
+  const t = useTranslations("DashboardShell");
   const router = useRouter();
   const pathname = usePathname();
   const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -216,8 +220,10 @@ export default function DashboardShell({ profile, children }) {
   const [pendingTxnCount, setPendingTxnCount] = useState(0);
   const [isDesktop, setIsDesktop] = useState(true);
   const [theme, setTheme] = useState("dark");
+  const locale = useLocale();
+  const { user } = useUser();
 
-  const displayName = profile?.full_name || "Investor";
+  const displayName = profile?.full_name || t("defaultInvestorName");
   const isAdmin = profile?.role === "admin";
 
   useEffect(() => {
@@ -252,7 +258,6 @@ export default function DashboardShell({ profile, children }) {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Existing clients messaging admin — the red badge.
   useEffect(() => {
     if (!isAdmin) return;
     function refreshCount() {
@@ -265,10 +270,6 @@ export default function DashboardShell({ profile, children }) {
     return unsubscribe;
   }, [isAdmin]);
 
-  // New/guest website visitors messaging admin — the blue badge. This was
-  // previously never wired up here at all, which is why it only ever
-  // seemed to show after manually opening the Messages page (a one-time
-  // fetch there, not a live subscription on the sidebar itself).
   useEffect(() => {
     if (!isAdmin) return;
     function refreshGuestCount() {
@@ -297,13 +298,18 @@ export default function DashboardShell({ profile, children }) {
     return (
       <div style={s.maintenancePage}>
         <div style={s.maintenanceIcon}>🛠️</div>
-        <div style={s.maintenanceTitle}>We'll be right back</div>
-        <p style={s.maintenanceSub}>
-          Vestoral is undergoing scheduled maintenance. Please check back shortly.
-        </p>
+        <div style={s.maintenanceTitle}>{t("maintenanceTitle")}</div>
+        <p style={s.maintenanceSub}>{t("maintenanceSub")}</p>
       </div>
     );
   }
+
+  useEffect(() => {
+  if (!user?.id || isAdmin) return;
+  updatePreferredLocale(user.id, locale).catch(err =>
+    console.error("Failed to sync preferred locale:", err)
+  );
+}, [locale, user?.id, isAdmin]);
 
   const sidebarX = !isDesktop ? (mobileMenuOpen ? 0 : "-100%") : 0;
   const collapsed = isDesktop && sidebarCollapsed;
@@ -323,7 +329,7 @@ export default function DashboardShell({ profile, children }) {
         className="mobile-hamburger"
         style={s.hamburgerBtn}
         onClick={() => setMobileMenuOpen(v => !v)}
-        aria-label="Toggle menu"
+        aria-label={t("toggleMenu")}
       >
         <span style={{ fontSize: "20px", color: "var(--text)" }}>{mobileMenuOpen ? "✕" : "☰"}</span>
       </button>
@@ -335,7 +341,7 @@ export default function DashboardShell({ profile, children }) {
           animate={{ left: collapseBtnLeft }}
           transition={{ type: "spring", stiffness: 320, damping: 34 }}
           onClick={() => setSidebarCollapsed(v => !v)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
         >
           {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
         </motion.button>
@@ -371,7 +377,7 @@ export default function DashboardShell({ profile, children }) {
               key={item.to}
               href={item.to}
               Icon={item.icon}
-              label={item.label}
+              label={t(`nav.${item.key}`)}
               active={pathname === item.to}
               collapsed={collapsed}
             />
@@ -380,6 +386,7 @@ export default function DashboardShell({ profile, children }) {
             <>
               <div style={{ marginTop: "auto" }}>
                 <NavLink
+                  plain
                   href="/admin/messages"
                   Icon={Mail}
                   label="Messages"
@@ -390,6 +397,7 @@ export default function DashboardShell({ profile, children }) {
                 />
               </div>
               <NavLink
+                plain
                 href="/admin/investments"
                 Icon={TrendingUp}
                 label="Investments"
@@ -398,6 +406,7 @@ export default function DashboardShell({ profile, children }) {
               />
 
               <NavLink
+                plain
                 href="/admin/referrals"
                 Icon={Gift}
                 label="Referrals"
@@ -406,6 +415,7 @@ export default function DashboardShell({ profile, children }) {
               />
 
               <NavLink
+                plain
                 href="/admin/system-status"
                 Icon={Activity}
                 label="Status"
@@ -413,6 +423,7 @@ export default function DashboardShell({ profile, children }) {
                 collapsed={collapsed}
               />
               <NavLink
+                plain
                 href="/admin/settings"
                 Icon={Settings}
                 label="Platform settings"
@@ -420,6 +431,7 @@ export default function DashboardShell({ profile, children }) {
                 collapsed={collapsed}
               />
               <NavLink
+                plain
                 href="/admin"
                 Icon={ShieldCheck}
                 label="Admin"
@@ -432,7 +444,7 @@ export default function DashboardShell({ profile, children }) {
           )}
         </nav>
         <div style={s.bottom}>
-          <ThemeSwitch theme={theme} onToggle={toggleTheme} collapsed={collapsed} />
+          <ThemeSwitch theme={theme} onToggle={toggleTheme} collapsed={collapsed} t={t} />
           <div
             style={{ ...s.avatar, ...(collapsed ? s.avatarCollapsed : {}) }}
             onClick={() => router.push("/settings")}
@@ -442,7 +454,7 @@ export default function DashboardShell({ profile, children }) {
             {!collapsed && (
               <div>
                 <div style={s.avatarName}>{displayName}</div>
-                <div style={s.avatarSub}>{isAdmin ? "Admin" : "Investor"}</div>
+                <div style={s.avatarSub}>{isAdmin ? t("adminRole") : t("investorRole")}</div>
               </div>
             )}
           </div>
@@ -462,8 +474,6 @@ export default function DashboardShell({ profile, children }) {
           </motion.div>
         </AnimatePresence>
       </main>
-      {/* Admins already have the full Messages page — the floating
-          widget is for regular investors/guests, not admin. */}
       {!isAdmin && <ChatWidget />}
     </motion.div>
   );

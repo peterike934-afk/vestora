@@ -4,7 +4,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect, useMemo } from 'react'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts'
 import { Inbox } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
+import { useMoneyFormatter, useDateFormatter } from '@/lib/formatting'
 import {
   getWallet, getTransactions, getUserInvestments,
   getServiceStatuses, getActiveIncidents, subscribeToStatusChanges,
@@ -21,7 +23,6 @@ const s = {
   statLabel: { fontSize: '12px', color: 'var(--text3)', fontWeight: '500', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '10px' },
   statValue: { fontSize: '26px', fontWeight: '700', color: 'var(--text)', marginBottom: '6px', letterSpacing: '-0.02em' },
   statChange: { fontSize: '12px', fontWeight: '500', padding: '3px 8px', borderRadius: '20px', display: 'inline-block' },
-
   statusCard: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '20px 24px', marginBottom: '20px' },
   statusHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' },
   statusStrip: { display: 'flex', gap: '10px', flexWrap: 'wrap' },
@@ -29,27 +30,22 @@ const s = {
   statusDot: { width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0 },
   statusLink: { fontSize: '12px', color: 'var(--green)', fontWeight: '500', textDecoration: 'none' },
   alertBanner: { display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--red-dim)', border: '1px solid var(--red)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', marginTop: '14px', fontSize: '13px', color: 'var(--red)' },
-
   grid2: { display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', marginBottom: '20px' },
   card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '24px' },
   cardTitle: { fontSize: '15px', fontWeight: '600', color: 'var(--text)', marginBottom: '4px' },
   cardSub: { fontSize: '12px', color: 'var(--text3)', marginBottom: '20px' },
-
   txnItem: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border)' },
   txnLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
   txnIcon: { width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 },
   txnName: { fontSize: '14px', fontWeight: '500', color: 'var(--text)' },
   txnDate: { fontSize: '12px', color: 'var(--text3)', marginTop: '2px' },
   txnAmount: { fontSize: '14px', fontWeight: '600' },
-
   empty: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '40px 20px', color: 'var(--text3)', textAlign: 'center' },
   emptyTitle: { fontSize: '14px', fontWeight: '500', color: 'var(--text2)' },
   emptySub: { fontSize: '12px', color: 'var(--text3)', maxWidth: '220px' },
-
   legendRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', fontSize: '13px' },
   legendLeft: { display: 'flex', alignItems: 'center', gap: '8px' },
   legendDot: { width: '9px', height: '9px', borderRadius: '50%' },
-
   topItem: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border)' },
   topLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
   topRank: { width: '26px', height: '26px', borderRadius: '8px', background: 'var(--bg3)', color: 'var(--text2)', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
@@ -58,7 +54,6 @@ const s = {
   topGain: { fontSize: '13.5px', fontWeight: '600' },
 }
 
-// Matches the palette used elsewhere in the app (green/blue/gold/etc as CSS vars)
 const ALLOCATION_COLORS = ['var(--green)', 'var(--blue)', 'var(--gold)', 'var(--red)', 'var(--text3)'];
 
 const STATUS_DOT_COLOR = {
@@ -78,29 +73,21 @@ function EmptyState({ title, sub }) {
   );
 }
 
-function formatUsd(n) {
-  return `$${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function txnIconMeta(type) {
+function txnIconMeta(type, t) {
   switch (type) {
     case 'deposit':
-      return { icon: '↓', color: 'var(--green)', bg: 'var(--green-dim)', label: 'Deposit' };
+      return { icon: '↓', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.deposit') };
     case 'withdrawal':
-      return { icon: '↑', color: 'var(--red)', bg: 'var(--red-dim)', label: 'Withdrawal' };
+      return { icon: '↑', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.withdrawal') };
     case 'admin_credit':
-      return { icon: '+', color: 'var(--green)', bg: 'var(--green-dim)', label: 'Admin credit' };
+      return { icon: '+', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.adminCredit') };
     case 'admin_debit':
-      return { icon: '−', color: 'var(--red)', bg: 'var(--red-dim)', label: 'Admin debit' };
+      return { icon: '−', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.adminDebit') };
     default:
       return { icon: '•', color: 'var(--text2)', bg: 'var(--bg3)', label: type };
   }
 }
 
-// The value of a single investment at any point in time, using the
-// same simple-interest-prorated-and-capped formula as the
-// investments_with_value SQL view — so the chart's "today" point
-// matches the Portfolio page's live current_value exactly.
 function valueAt(investment, atDate) {
   const started = new Date(investment.started_at);
   if (atDate < started) return 0;
@@ -109,18 +96,13 @@ function valueAt(investment, atDate) {
   return Number(investment.amount_usd) * (1 + (Number(investment.apy_percent) / 100) * (cappedDays / 365));
 }
 
-// Because accrual is deterministic (fixed APY, prorated by time), the
-// whole growth curve can be reconstructed from investments' start
-// dates alone — no need to have stored daily snapshots historically.
 function buildGrowthSeries(investments) {
   if (!investments.length) return [];
-
   const starts = investments.map(i => new Date(i.started_at).getTime());
   const earliest = new Date(Math.min(...starts));
   const now = new Date();
   const totalDays = Math.max(1, Math.ceil((now - earliest) / 86400000));
   const pointCount = Math.min(30, totalDays + 1);
-
   const points = [];
   for (let i = 0; i < pointCount; i++) {
     const t = pointCount === 1 ? 0 : i / (pointCount - 1);
@@ -138,20 +120,15 @@ function buildAllocation(investments) {
   const active = investments.filter(i => i.status === 'active');
   const totalValue = active.reduce((sum, i) => sum + Number(i.current_value), 0);
   if (totalValue === 0) return [];
-
   const byPlan = {};
   for (const inv of active) {
     byPlan[inv.plan_name] = (byPlan[inv.plan_name] || 0) + Number(inv.current_value);
   }
-
   return Object.entries(byPlan)
     .map(([name, value]) => ({ name, value, pct: Math.round((value / totalValue) * 1000) / 10 }))
     .sort((a, b) => b.value - a.value);
 }
 
-// Ranks each individual holding (not grouped by plan, unlike allocation)
-// by its actual gain percentage — amount_usd vs current_value — so this
-// reflects real performance per position, not just position size.
 function buildTopPerformers(investments) {
   return investments
     .filter(i => i.status === 'active' || i.status === 'matured')
@@ -167,6 +144,7 @@ function buildTopPerformers(investments) {
 }
 
 function PlatformStatus() {
+  const t = useTranslations('Dashboard');
   const [services, setServices] = useState([]);
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -192,12 +170,12 @@ function PlatformStatus() {
   return (
     <div style={s.statusCard}>
       <div style={s.statusHead}>
-        <div style={s.cardTitle}>Platform status</div>
-        <a href="/status" style={s.statusLink}>View status page →</a>
+        <div style={s.cardTitle}>{t('platformStatus.title')}</div>
+        <a href="/status" style={s.statusLink}>{t('platformStatus.viewStatusPage')} →</a>
       </div>
 
       {loading ? (
-        <div style={{ fontSize: '13px', color: 'var(--text3)' }}>Checking systems…</div>
+        <div style={{ fontSize: '13px', color: 'var(--text3)' }}>{t('platformStatus.checkingSystems')}</div>
       ) : (
         <div style={s.statusStrip}>
           {services.map(svc => (
@@ -219,19 +197,21 @@ function PlatformStatus() {
 }
 
 function TopPerformers({ investments, loading }) {
+  const t = useTranslations('Dashboard');
+  const formatMoney = useMoneyFormatter();
   const top = useMemo(() => buildTopPerformers(investments), [investments]);
 
   return (
     <div style={s.card}>
-      <div style={s.cardTitle}>Top performing investments</div>
-      <div style={s.cardSub}>{top.length ? 'Ranked by return since start' : 'No holdings yet'}</div>
+      <div style={s.cardTitle}>{t('topPerformers.title')}</div>
+      <div style={s.cardSub}>{top.length ? t('topPerformers.rankedByReturn') : t('topPerformers.noHoldingsYet')}</div>
 
       {loading ? (
-        <EmptyState title="Loading…" />
+        <EmptyState title={t('common.loading')} />
       ) : top.length === 0 ? (
         <EmptyState
-          title="Nothing to rank yet"
-          sub="Once your investments start accruing, the best performers show up here."
+          title={t('topPerformers.nothingToRank')}
+          sub={t('topPerformers.nothingToRankSub')}
         />
       ) : (
         top.map((inv, i) => (
@@ -240,7 +220,7 @@ function TopPerformers({ investments, loading }) {
               <div style={s.topRank}>{i + 1}</div>
               <div>
                 <div style={s.topName}>{inv.plan_name}</div>
-                <div style={s.topMeta}>{formatUsd(inv.amount_usd)} invested · {inv.apy_percent}% APY</div>
+                <div style={s.topMeta}>{t('topPerformers.investedApy', { amount: formatMoney(inv.amount_usd), apy: inv.apy_percent })}</div>
               </div>
             </div>
             <div style={{ ...s.topGain, color: inv.gainPct >= 0 ? 'var(--green)' : 'var(--red)' }}>
@@ -254,6 +234,9 @@ function TopPerformers({ investments, loading }) {
 }
 
 function InvestorActivity() {
+  const t = useTranslations('Dashboard');
+  const formatMoney = useMoneyFormatter();
+  const formatDate = useDateFormatter();
   const [activity, setActivity] = useState([]);
   const [monthlyTotal, setMonthlyTotal] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -283,13 +266,11 @@ function InvestorActivity() {
 
   useEffect(() => {
     load();
-
     const supabase = createClient();
     const channel = supabase
       .channel('investor-activity-feed')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => load(true))
       .subscribe();
-
     return () => supabase.removeChannel(channel);
   }, []);
 
@@ -298,7 +279,7 @@ function InvestorActivity() {
   return (
     <div style={s.card}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <div style={s.cardTitle}>Investor activity</div>
+        <div style={s.cardTitle}>{t('investorActivity.title')}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span
             style={{
@@ -307,20 +288,20 @@ function InvestorActivity() {
               transition: 'box-shadow 0.6s ease',
             }}
           />
-          <span style={{ fontSize: '11px', color: 'var(--text3)', fontWeight: '500', letterSpacing: '0.03em' }}>LIVE</span>
+          <span style={{ fontSize: '11px', color: 'var(--text3)', fontWeight: '500', letterSpacing: '0.03em' }}>{t('investorActivity.live')}</span>
         </div>
       </div>
-      <div style={s.cardSub}>{formatUsd(monthlyTotal)} invested on Vestora this month</div>
+      <div style={s.cardSub}>{t('investorActivity.investedThisMonth', { amount: formatMoney(monthlyTotal) })}</div>
       {activity.length === 0 ? (
-        <EmptyState title="No activity yet this month" />
+        <EmptyState title={t('investorActivity.noActivityYet')} />
       ) : (
         activity.slice(0, 6).map(a => (
           <div key={a.id} style={{ ...s.txnItem, borderBottom: '1px solid var(--border)' }}>
             <div style={{ fontSize: '13.5px', color: 'var(--text)' }}>
-              <b>{a.display_name}</b> invested {formatUsd(a.amount_rounded)}
+              {t('investorActivity.investedLine', { name: a.display_name, amount: formatMoney(a.amount_rounded) })}
             </div>
             <div style={{ fontSize: '11.5px', color: 'var(--text3)' }}>
-              {new Date(a.created_at).toLocaleDateString()}
+              {formatDate(a.created_at)}
             </div>
           </div>
         ))
@@ -329,8 +310,10 @@ function InvestorActivity() {
   );
 }
 
-
 export default function Dashboard() {
+  const t = useTranslations('Dashboard');
+  const formatMoney = useMoneyFormatter();
+  const formatDate = useDateFormatter();
   const { user, userName } = useUser();
   const firstName = userName?.split(' ')[0] || '';
 
@@ -357,12 +340,6 @@ export default function Dashboard() {
   const growthData = useMemo(() => buildGrowthSeries(investments), [investments]);
   const allocationData = useMemo(() => buildAllocation(investments), [investments]);
 
-  // "Gains" is two genuinely different things added together — real
-  // investment returns (current_value minus what was put in) and any
-  // manual admin credit/debit. Kept as separate sums internally, shown
-  // as one honest total with a breakdown in the subtext, so it never
-  // reads as "you earned this from investing" when part of it was a
-  // manual adjustment.
   const investmentGains = investments
     .filter(i => i.status === 'active' || i.status === 'matured')
     .reduce((sum, i) => sum + (Number(i.current_value) - Number(i.amount_usd)), 0);
@@ -372,25 +349,25 @@ export default function Dashboard() {
   const totalGains = investmentGains + netAdminAdjustments;
 
   const stats = [
-    { label: 'Total Balance', value: formatUsd(balance), change: 'Verified deposits', up: null },
+    { label: t('stats.totalBalance'), value: formatMoney(balance), change: t('stats.verifiedDeposits'), up: null },
     {
-      label: 'Total Gains',
-      value: `${totalGains >= 0 ? '+' : ''}${formatUsd(totalGains)}`,
+      label: t('stats.totalGains'),
+      value: `${totalGains >= 0 ? '+' : ''}${formatMoney(totalGains)}`,
       change: netAdminAdjustments !== 0
-        ? `${formatUsd(investmentGains)} from investing, ${formatUsd(netAdminAdjustments)} adjustments`
-        : 'From active investments',
+        ? t('stats.gainsBreakdown', { investing: formatMoney(investmentGains), adjustments: formatMoney(netAdminAdjustments) })
+        : t('stats.fromActiveInvestments'),
       up: totalGains >= 0,
     },
-    { label: "Pending Deposits", value: String(transactions.filter(t => t.type === 'deposit' && t.status === 'pending').length), change: 'Awaiting verification', up: null },
-    { label: 'Total Deposited', value: formatUsd(verifiedTxns.filter(t => t.type === 'deposit' || t.type === 'admin_credit').reduce((sum, t) => sum + Number(t.amount_usd), 0)), change: 'All time', up: null },
-    { label: 'Transactions', value: String(transactions.length), change: 'Total activity', up: null },
+    { label: t('stats.pendingDeposits'), value: String(transactions.filter(t => t.type === 'deposit' && t.status === 'pending').length), change: t('stats.awaitingVerification'), up: null },
+    { label: t('stats.totalDeposited'), value: formatMoney(verifiedTxns.filter(t => t.type === 'deposit' || t.type === 'admin_credit').reduce((sum, t) => sum + Number(t.amount_usd), 0)), change: t('stats.allTime'), up: null },
+    { label: t('stats.transactions'), value: String(transactions.length), change: t('stats.totalActivity'), up: null },
   ];
 
   return (
     <div style={s.page}>
       <div style={s.header}>
-        <h1 style={s.title}>Good morning{firstName ? `, ${firstName}` : ''}</h1>
-        <p style={s.sub}>Here's what's happening with your account today</p>
+        <h1 style={s.title}>{firstName ? t('greetingWithName', { name: firstName }) : t('greeting')}</h1>
+        <p style={s.sub}>{t('subtitle')}</p>
       </div>
 
       <div style={s.statsGrid}>
@@ -412,24 +389,21 @@ export default function Dashboard() {
       </div>
 
       <PlatformStatus />
-
       <InvestorActivity />
-
-          
 
       <div className="responsive-grid-2" style={s.grid2}>
         <div style={s.card}>
-          <div style={s.cardTitle}>Portfolio growth</div>
-          <div style={s.cardSub}>{growthData.length ? 'Since your first investment' : 'No holdings yet'}</div>
+          <div style={s.cardTitle}>{t('portfolioGrowth.title')}</div>
+          <div style={s.cardSub}>{growthData.length ? t('portfolioGrowth.sinceFirstInvestment') : t('portfolioGrowth.noHoldingsYet')}</div>
           {loading ? (
             <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <EmptyState title="Loading…" />
+              <EmptyState title={t('common.loading')} />
             </div>
           ) : growthData.length === 0 ? (
             <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <EmptyState
-                title="No investment activity yet"
-                sub="This account doesn't have any holdings to chart yet."
+                title={t('portfolioGrowth.noActivity')}
+                sub={t('portfolioGrowth.noActivitySub')}
               />
             </div>
           ) : (
@@ -445,7 +419,7 @@ export default function Dashboard() {
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: 'var(--text3)' }} axisLine={false} tickLine={false} tickFormatter={v => `$${Math.round(v / 1000)}k`} />
                 <Tooltip
-                  formatter={v => formatUsd(v)}
+                  formatter={v => formatMoney(v)}
                   contentStyle={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '12px' }}
                 />
                 <Area type="monotone" dataKey="value" stroke="var(--green)" strokeWidth={2} fill="url(#growthFill)" />
@@ -455,12 +429,12 @@ export default function Dashboard() {
         </div>
 
         <div style={s.card}>
-          <div style={s.cardTitle}>Asset allocation</div>
-          <div style={s.cardSub}>{allocationData.length ? 'By plan' : 'No holdings yet'}</div>
+          <div style={s.cardTitle}>{t('assetAllocation.title')}</div>
+          <div style={s.cardSub}>{allocationData.length ? t('assetAllocation.byPlan') : t('assetAllocation.noHoldingsYet')}</div>
           {loading ? (
-            <EmptyState title="Loading…" />
+            <EmptyState title={t('common.loading')} />
           ) : allocationData.length === 0 ? (
-            <EmptyState title="Nothing allocated yet" />
+            <EmptyState title={t('assetAllocation.nothingAllocated')} />
           ) : (
             <>
               <ResponsiveContainer width="100%" height={160}>
@@ -477,10 +451,10 @@ export default function Dashboard() {
                       <Cell key={entry.name} fill={ALLOCATION_COLORS[i % ALLOCATION_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={v => formatUsd(v)} contentStyle={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '12px' }} />
+                  <Tooltip formatter={v => formatMoney(v)} contentStyle={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '12px' }} />
                 </PieChart>
               </ResponsiveContainer>
-          
+
               <div>
                 {allocationData.map((a, i) => (
                   <div key={a.name} style={s.legendRow}>
@@ -499,40 +473,40 @@ export default function Dashboard() {
 
       <div className="responsive-grid-2" style={s.grid2}>
         <div style={s.card}>
-          <div style={s.cardTitle}>Recent transactions</div>
-          <div style={s.cardSub}>Deposits, withdrawals, and account activity</div>
+          <div style={s.cardTitle}>{t('recentTransactions.title')}</div>
+          <div style={s.cardSub}>{t('recentTransactions.subtitle')}</div>
 
           {loading ? (
-            <EmptyState title="Loading…" />
+            <EmptyState title={t('common.loading')} />
           ) : transactions.length === 0 ? (
             <EmptyState
-              title="No transactions yet"
-              sub="Once you make a deposit, it'll show up here — pending until verified."
+              title={t('recentTransactions.noTransactions')}
+              sub={t('recentTransactions.noTransactionsSub')}
             />
           ) : (
           transactions.map((tx, i) => {
-  const meta = txnIconMeta(tx.type);
+  const meta = txnIconMeta(tx.type, t);
   const isNegative = tx.type === 'withdrawal' || tx.type === 'admin_debit';
   const isResolved = tx.status === 'verified';
   const amountColor = isResolved ? meta.color : 'var(--text3)';
+  const statusSuffix = tx.status === 'pending' ? ` (${t('recentTransactions.pending')})` : tx.status === 'rejected' ? ` (${t('recentTransactions.rejected')})` : '';
   return (
     <div key={tx.id} style={{ ...s.txnItem, ...(i === transactions.length - 1 ? { borderBottom: 'none' } : {}) }}>
       <div style={s.txnLeft}>
         <div style={{ ...s.txnIcon, background: isResolved ? meta.bg : 'var(--bg3)', color: amountColor }}>{meta.icon}</div>
         <div>
-          <div style={s.txnName}>{meta.label}{tx.status === 'pending' ? ' (pending)' : tx.status === 'rejected' ? ' (rejected)' : ''}</div>
-          <div style={s.txnDate}>{new Date(tx.created_at).toLocaleDateString()}</div>
+          <div style={s.txnName}>{meta.label}{statusSuffix}</div>
+          <div style={s.txnDate}>{formatDate(tx.created_at)}</div>
         </div>
       </div>
       <div style={{ ...s.txnAmount, color: amountColor }}>
-        {isNegative ? '−' : '+'}{formatUsd(tx.amount_usd)}
+        {isNegative ? '−' : '+'}{formatMoney(tx.amount_usd)}
       </div>
     </div>
   );
 })
           )}
         </div>
-    
 
         <TopPerformers investments={investments} loading={loading} />
       </div>

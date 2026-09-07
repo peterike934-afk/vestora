@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
 import { createClient } from '@/lib/supabase/client'
 import { startMfaEnrollment, verifyMfaEnrollment, listMfaFactors, unenrollMfaFactor } from '@/lib/mfa'
@@ -31,7 +32,8 @@ const s = {
 }
 
 function EnrollMfaModal({ onClose, onEnrolled }) {
-  const [step, setStep] = useState('loading') // loading | scan | error
+  const t = useTranslations('Settings')
+  const [step, setStep] = useState('loading')
   const [factorId, setFactorId] = useState(null)
   const [qrCode, setQrCode] = useState('')
   const [secret, setSecret] = useState('')
@@ -48,14 +50,14 @@ function EnrollMfaModal({ onClose, onEnrolled }) {
         setStep('scan')
       })
       .catch(err => {
-        setError(err.message || 'Failed to start enrollment')
+        setError(err.message || t('mfa.startFailed'))
         setStep('error')
       })
   }, [])
 
   async function handleVerify() {
     if (!code || code.length !== 6) {
-      setError('Enter the 6-digit code from your authenticator app.')
+      setError(t('mfa.enterCode'))
       return
     }
     setVerifying(true)
@@ -64,7 +66,7 @@ function EnrollMfaModal({ onClose, onEnrolled }) {
       await verifyMfaEnrollment(factorId, code)
       onEnrolled()
     } catch (err) {
-      setError(err.message || 'Invalid code — try again.')
+      setError(err.message || t('mfa.invalidCode'))
     } finally {
       setVerifying(false)
     }
@@ -73,17 +75,17 @@ function EnrollMfaModal({ onClose, onEnrolled }) {
   return (
     <div style={s.modalOverlay} onClick={onClose}>
       <div style={s.modal} onClick={e => e.stopPropagation()}>
-        <div style={s.modalTitle}>Enable two-factor auth</div>
+        <div style={s.modalTitle}>{t('mfa.enableTitle')}</div>
 
-        {step === 'loading' && <div style={s.modalSub}>Setting up…</div>}
+        {step === 'loading' && <div style={s.modalSub}>{t('mfa.settingUp')}</div>}
 
         {step === 'error' && <div style={s.error}>{error}</div>}
 
         {step === 'scan' && (
           <>
-            <div style={s.modalSub}>Scan with Google Authenticator, Authy, or any TOTP app</div>
+            <div style={s.modalSub}>{t('mfa.scanInstructions')}</div>
             <div style={s.qrWrap} dangerouslySetInnerHTML={{ __html: qrCode }} />
-            <div style={s.secretText}>Can't scan? Enter manually: {secret}</div>
+            <div style={s.secretText}>{t('mfa.cantScan')} {secret}</div>
 
             {error && <div style={s.error}>{error}</div>}
 
@@ -99,7 +101,7 @@ function EnrollMfaModal({ onClose, onEnrolled }) {
               disabled={verifying}
               onClick={handleVerify}
             >
-              {verifying ? 'Verifying…' : 'Confirm & enable'}
+              {verifying ? t('mfa.verifying') : t('mfa.confirmEnable')}
             </button>
           </>
         )}
@@ -109,6 +111,7 @@ function EnrollMfaModal({ onClose, onEnrolled }) {
 }
 
 export default function Settings() {
+  const t = useTranslations('Settings')
   const router = useRouter()
   const { user, userName } = useUser()
   const [name, setName] = useState('')
@@ -134,7 +137,7 @@ export default function Settings() {
 
   async function handleToggleNotify() {
     const next = !notify
-    setNotify(next) // optimistic — flips immediately, reverts below if the save fails
+    setNotify(next)
     try {
       await updateEmailNotificationPref(user.id, next)
     } catch (err) {
@@ -160,13 +163,13 @@ export default function Settings() {
 
   async function handleDisableMfa() {
     if (!mfaFactor) return
-    if (!confirm('Disable two-factor authentication?')) return
+    if (!confirm(t('mfa.confirmDisable'))) return
     setError('')
     try {
       await unenrollMfaFactor(mfaFactor.id)
       setMfaFactor(null)
     } catch (err) {
-      setError(err.message || 'Failed to disable 2FA')
+      setError(err.message || t('mfa.disableFailed'))
     }
   }
 
@@ -191,31 +194,31 @@ export default function Settings() {
 
   return (
     <div style={s.page}>
-      <h1 style={s.title}>Settings</h1>
-      <p style={s.sub}>Manage your account preferences</p>
+      <h1 style={s.title}>{t('title')}</h1>
+      <p style={s.sub}>{t('subtitle')}</p>
 
       {error && <div style={s.error}>{error}</div>}
 
       <div className="responsive-grid-2" style={s.grid2}>
         <div style={s.card}>
-          <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text)', marginBottom: '20px' }}>Profile</div>
-          <label style={s.label}>Full name</label>
+          <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text)', marginBottom: '20px' }}>{t('profile.title')}</div>
+          <label style={s.label}>{t('profile.fullName')}</label>
           <input style={s.input} value={name} onChange={e => setName(e.target.value)} />
-          <label style={s.label}>Email address</label>
+          <label style={s.label}>{t('profile.email')}</label>
           <input style={s.input} type="email" value={email} disabled />
           <button style={s.btnGreen} onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save changes'}
+            {saving ? t('profile.saving') : saved ? t('profile.saved') : t('profile.saveChanges')}
           </button>
         </div>
 
         <div>
           <div style={s.card}>
-            <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text)', marginBottom: '20px' }}>Security</div>
+            <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text)', marginBottom: '20px' }}>{t('security.title')}</div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text)' }}>Email notifications</div>
-                <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>Get alerts for deposits and withdrawals</div>
+                <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text)' }}>{t('security.emailNotifications')}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>{t('security.emailNotificationsSub')}</div>
               </div>
               <div onClick={handleToggleNotify} style={{ ...s.toggle, background: notify ? 'var(--green)' : 'var(--bg4)' }}>
                 <div style={{ ...s.toggleKnob, left: notify ? '23px' : '3px' }} />
@@ -224,9 +227,9 @@ export default function Settings() {
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text)' }}>Two-factor auth</div>
+                <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text)' }}>{t('security.twoFactor')}</div>
                 <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
-                  {loadingMfa ? 'Checking status…' : mfaFactor ? 'Enabled — code required on every login' : 'Require a code from your authenticator app on login'}
+                  {loadingMfa ? t('security.checkingStatus') : mfaFactor ? t('security.enabledDesc') : t('security.disabledDesc')}
                 </div>
               </div>
             </div>
@@ -234,16 +237,16 @@ export default function Settings() {
             {!loadingMfa && (
               mfaFactor ? (
                 <button style={{ ...s.btnRed, width: '100%' }} onClick={handleDisableMfa}>
-                  Disable 2FA
+                  {t('security.disable2fa')}
                 </button>
               ) : (
                 <button style={{ ...s.btnGreen, width: '100%' }} onClick={() => setShowEnrollModal(true)}>
-                  Enable 2FA
+                  {t('security.enable2fa')}
                 </button>
               )
             )}
           </div>
-          <button style={{ ...s.btnRed, width: '100%', marginTop: '4px' }} onClick={handleSignOut}>Sign out</button>
+          <button style={{ ...s.btnRed, width: '100%', marginTop: '4px' }} onClick={handleSignOut}>{t('signOut')}</button>
         </div>
       </div>
 

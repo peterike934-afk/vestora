@@ -1,37 +1,7 @@
-const LINKS = [
-  {
-    heading: "Product",
-    items: [
-      { label: "Features", href: "/#product" },   // was "#product"
-      { label: "Pricing", href: "/#pricing" },    // was "#pricing"
-      { label: "Security", href: "/security" },
-      
-    ],
-  },
-  {
-    heading: "Company",
-    items: [
-      { label: "About", href: "/#about" },        // was "#about"
-     
-    ],
-  },
-  {
-    heading: "Legal",
-    items: [
-      { label: "Privacy Policy", href: "/legal/privacy-policy.pdf", external: true },
-      { label: "Terms of Service", href: "/legal/terms-of-service.pdf", external: true },
-      { label: "Cookie Policy", href: "/legal/cookie-policy.pdf", external: true },
-    ],
-  },
-  {
-    heading: "Support",
-    items: [
-      { label: "Help center", href: "/#faq" },    // was "#faq"
-      { label: "Contact Us", href: "mailto:support@vestora.com" },
-      { label: "Status", href: "/status" },
-    ],
-  },
-];
+"use client";
+
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 const SOCIALS = [
   {
@@ -55,21 +25,52 @@ const SOCIALS = [
 ];
 
 export default function Footer() {
+  const t = useTranslations("Footer");
+
+  const LINKS = [
+    {
+      heading: t("columns.product"),
+      items: [
+        { label: t("links.features"), href: "/#product" },
+        { label: t("links.pricing"), href: "/#pricing" },
+        { label: t("links.security"), href: "/security", plain: true },
+      ],
+    },
+    {
+      heading: t("columns.company"),
+      items: [{ label: t("links.about"), href: "/#about" }],
+    },
+    {
+      heading: t("columns.legal"),
+      items: [
+        { label: t("links.privacyPolicy"), href: "/legal/privacy-policy.pdf", external: true, plain: true },
+        { label: t("links.termsOfService"), href: "/legal/terms-of-service.pdf", external: true, plain: true },
+        { label: t("links.cookiePolicy"), href: "/legal/cookie-policy.pdf", external: true, plain: true },
+      ],
+    },
+    {
+      heading: t("columns.support"),
+      items: [
+        { label: t("links.helpCenter"), href: "/#faq" },
+        { label: t("links.contactUs"), href: "mailto:support@vestora.com", plain: true },
+        { label: t("links.status"), href: "/status", plain: true },
+      ],
+    },
+  ];
+
   return (
     <footer className="footer">
       <div className="footer__inner">
-
-        {/* Top: logo + columns */}
         <div className="footer__top">
           <div className="footer__brand">
-            <a href="/" className="footer__logo">
+            <Link href="/" className="footer__logo">
               <svg width="20" height="24" viewBox="0 0 27 30" fill="none">
                 <path d="M2 4L11 24L20 4" stroke="#1F6F4A" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M16 12L20 4L25 9" stroke="#1F6F4A" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
               </svg>
               estora
-            </a>
-            <p className="footer__tagline">Grow your money with quiet confidence.</p>
+            </Link>
+            <p className="footer__tagline">{t("tagline")}</p>
             <div className="footer__socials">
               {SOCIALS.map((s) => (
                 <a key={s.label} href={s.href} className="footer__social" aria-label={s.label}>
@@ -83,28 +84,29 @@ export default function Footer() {
             {LINKS.map((col) => (
               <div key={col.heading} className="footer__col">
                 <p className="footer__col-heading">{col.heading}</p>
- <ul>
-  {col.items.map((item) => (
-    <li key={item.label}>
-      
-       <a  href={item.href}
-        {...(item.external && { target: "_blank", rel: "noopener noreferrer" })}
-      >
-        {item.label}
-      </a>
-    </li>
-  ))}
-</ul>
+                <ul>
+                  {col.items.map((item) =>
+                    item.plain ? (
+                      <li key={item.label}>
+                        <a href={item.href} {...(item.external && { target: "_blank", rel: "noopener noreferrer" })}>
+                          {item.label}
+                        </a>
+                      </li>
+                    ) : (
+                      <li key={item.label}>
+                        <Link href={item.href}>{item.label}</Link>
+                      </li>
+                    )
+                  )}
+                </ul>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Bottom: copyright + disclaimer */}
         <div className="footer__bottom">
-          <p className="footer__copy">© {new Date().getFullYear()} Vestora. All rights reserved.</p>
+          <p className="footer__copy">© {new Date().getFullYear()} Vestora. {t("rights")}</p>
         </div>
-
       </div>
     </footer>
   );

@@ -1,9 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import PortfolioCard from "./PortfolioCard";
 
 export default function Hero() {
+  const t = useTranslations("Hero");
+
   return (
     <section className="hero">
       <div className="hero__glow" aria-hidden="true" />
@@ -15,7 +18,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Investing, simplified
+          {t("eyebrow")}
         </motion.p>
 
         <motion.h1
@@ -24,7 +27,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
-          Grow your money<br />with quiet confidence.
+          {t("headlineLine1")}<br />{t("headlineLine2")}
         </motion.h1>
 
         <motion.p
@@ -33,7 +36,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          One portfolio. Real-time growth. No noise.
+          {t("subhead")}
         </motion.p>
 
         <motion.div
@@ -42,8 +45,8 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <a href="/signup" className="btn btn--primary">Start investing</a>
-          <a href="/#product" className="btn btn--ghost">See how it works</a>
+          <a href="/signup" className="btn btn--primary">{t("ctaPrimary")}</a>
+          <a href="/#product" className="btn btn--ghost">{t("ctaSecondary")}</a>
         </motion.div>
 
         <motion.div
