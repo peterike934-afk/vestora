@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { NextIntlClientProvider } from "next-intl";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useReveal } from "@/hooks/useReveal";
@@ -10,6 +11,7 @@ import {
   getIncidentHistory, subscribeToStatusChanges,
 } from "@/lib/queries";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import enMessages from "@/messages/en.json";
 
 const heroContainer = { hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } } };
 const heroItem = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } } };
@@ -80,7 +82,7 @@ function IncidentCard({ incident }) {
   );
 }
 
-export default function StatusPage() {
+function StatusPageContent() {
   const [services, setServices] = useState([]);
   const [activeIncidents, setActiveIncidents] = useState([]);
   const [pastIncidents, setPastIncidents] = useState([]);
@@ -159,5 +161,13 @@ export default function StatusPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+export default function StatusPage() {
+  return (
+    <NextIntlClientProvider locale="en" messages={enMessages}>
+      <StatusPageContent />
+    </NextIntlClientProvider>
   );
 }

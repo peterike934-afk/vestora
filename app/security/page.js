@@ -1,11 +1,13 @@
 "use client";
 
+import { NextIntlClientProvider } from "next-intl";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useRef } from "react";
 import { useReveal } from "@/hooks/useReveal";
 import { Lock, KeyRound, Eye, Landmark } from "lucide-react";
+import enMessages from "@/messages/en.json";
 
 const CUSTODY = [
   { label: "Segregated client accounts", detail: "Assets held apart from Vestora's operating funds, at all times.", status: "Active" },
@@ -28,7 +30,6 @@ const INFRA = [
   { label: "Continuous monitoring", detail: "Infrastructure and account activity are monitored for anomalies around the clock.", status: "Active" },
 ];
 
-// Hero: load-in only, no scroll trigger — it's the first thing visible
 const heroContainer = {
   hidden: {},
   show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
@@ -63,7 +64,7 @@ function StatementGroup({ title, icon: Icon, rows, index }) {
   );
 }
 
-export default function SecurityPage() {
+function SecurityPageContent() {
   const discRef = useRef(null);
   const { fadeUp: discFadeUp } = useReveal(discRef);
 
@@ -112,5 +113,13 @@ export default function SecurityPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+export default function SecurityPage() {
+  return (
+    <NextIntlClientProvider locale="en" messages={enMessages}>
+      <SecurityPageContent />
+    </NextIntlClientProvider>
   );
 }
