@@ -54,13 +54,6 @@ export default function TrustedLogos() {
   const sectionRef = useRef(null);
   const inView = useInView(sectionRef, { once: true, margin: "-80px" });
 
-  const STATS = [
-    { value: "$2.4B+", label: t("stats.aum") },
-    { value: "850K+", label: t("stats.investors") },
-    { value: "99.97%", label: t("stats.uptime") },
-    { value: "4.9★", label: t("stats.rating") },
-  ];
-
   return (
     <>
       <motion.p
@@ -83,22 +76,6 @@ export default function TrustedLogos() {
             animate={inView ? { scaleX: 1 } : {}}
             transition={{ duration: 0.8, delay: 0.2 }}
           />
-
-          <div className="trust__stats">
-            {STATS.map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                className="trust__stat"
-                initial={{ opacity: 0, y: 24 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: 0.3 + i * 0.09 }}
-                whileHover={{ y: -5 }}
-              >
-                <div className="trust__stat-value">{stat.value}</div>
-                <p className="trust__stat-label">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
     </>

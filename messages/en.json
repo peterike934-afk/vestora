@@ -1,5 +1,5 @@
 {
-  "Nav": { "product": "Product", "pricing": "Pricing", "about": "About", "signIn": "Sign in", "getStarted": "Get started" },
+  "Nav": { "product": "Platform", "pricing": "Investments", "markets": "Markets", "about": "About", "signIn": "Sign in", "getStarted": "Get started" },
   "Footer": {
     "tagline": "Grow your money with quiet confidence.",
     "columns": { "product": "Product", "company": "Company", "legal": "Legal", "support": "Support" },
@@ -7,17 +7,21 @@
     "rights": "All rights reserved."
   },
     "Hero": {
-    "eyebrow": "Investing, simplified",
-    "headlineLine1": "Grow your money",
-    "headlineLine2": "with quiet confidence.",
-    "subhead": "One portfolio. Real-time growth. No noise.",
-    "ctaPrimary": "Start investing",
-    "ctaSecondary": "See how it works"
+    "eyebrow": "Investing, with clarity",
+    "headlineLine1": "Manage your investments",
+    "headlineLine2": "with confidence.",
+    "subhead": "Explore fixed-term plans, follow deposits and withdrawals, and keep every account action in one place.",
+    "ctaPrimary": "Create an account",
+    "ctaSecondary": "Explore the platform"
   },
     "PortfolioCard": {
-    "totalPortfolio": "Total portfolio",
-    "thisMonth": "This month",
-    "availableCash": "Available cash"
+    "totalPortfolio": "Investment plan",
+    "thisMonth": "Term",
+    "availableCash": "Account",
+    "interfacePreview": "Interface preview",
+    "planOverview": "Plan overview",
+    "fixedTerm": "Fixed term",
+    "trackStatus": "Track status"
   },
     "FeaturesGrid": {
     "eyebrow": "Everything you need",
@@ -33,15 +37,16 @@
     ]
   },
   "Features": {
-    "eyebrow": "What you can hold",
-    "headlineLine1": "Five asset classes.",
-    "headlineLine2": "One account.",
+  "eyebrow": "Platform capabilities",
+  "headlineLine1": "A clear view of your",
+  "headlineLine2": "account and investments.",
     "items": [
-      { "label": "Stocks", "title": "Equities, without the spreadsheet", "desc": "Buy fractional shares in thousands of public companies, with automatic dividend reinvestment built in." },
-      { "label": "Crypto", "title": "Digital assets, properly custodied", "desc": "Bitcoin, Ethereum, and a curated set of major tokens — held in cold storage, not a hot wallet." },
-      { "label": "Gold", "title": "A hedge that actually settles", "desc": "Allocate into fully-backed physical gold, priced in real time and redeemable on request." },
-      { "label": "Real estate", "title": "Property, in any amount", "desc": "Fractional ownership in vetted income-producing properties, starting at $50." },
-      { "label": "AI portfolios", "title": "Managed, not guessed", "desc": "A model portfolio that rebalances on a schedule based on your risk profile, not market noise." }
+    { "label": "Plans", "title": "Explore fixed-term plans", "desc": "Review each plan's name, term, amount range, and published rate before creating an investment." },
+    { "label": "Wallet", "title": "Fund and manage your account", "desc": "Start deposits and withdrawals from the dashboard and follow their verification status." },
+    { "label": "Markets", "title": "Follow available market data", "desc": "Open the markets area for the financial information made available by Vestora." },
+    { "label": "Crypto", "title": "Use supported digital assets", "desc": "Deposit and manage the cryptocurrency options displayed in your wallet." },
+    { "label": "Support", "title": "Contact the Vestora team", "desc": "Use the in-platform chat to ask about account activity and requests." },
+    { "label": "Security", "title": "Protect account access", "desc": "Sign in securely and enable two-factor authentication when available from account settings." }
     ]
   },
   "Testimonials": {
@@ -59,8 +64,8 @@
   },
   "Pricing": {
   "eyebrow": "Investment plans",
-  "headlineLine1": "Real returns.",
-  "headlineLine2": "No hidden fees.",
+    "headlineLine1": "Available plans.",
+    "headlineLine2": "Clear terms.",
   "mostPopular": "Most popular",
   "apy": "APY",
   "investRange": "Invest {range} · {days}-day term",
@@ -78,33 +83,40 @@
   "headlineLine1": "Common questions,",
   "headlineLine2": "straight answers.",
   "items": [
-    { "q": "How do I start investing?", "a": "Create an account, complete a short risk assessment, and fund your wallet. You can start investing in under five minutes with as little as $500." },
-    { "q": "Can I withdraw anytime?", "a": "Yes. Cash balances are available immediately. Asset liquidations settle within 1–3 business days depending on the asset class." },
-    { "q": "What assets are supported?", "a": "Vestora supports equities (US and international), major cryptocurrencies, physical gold, and income-producing real estate. AI-managed portfolios spread across all four automatically." },
-    { "q": "How does Vestora make money?", "a": "A flat 0.25% annual management fee, charged monthly. No commissions, no spreads, no hidden charges. If your portfolio grows, we earn more — so our incentives are aligned." },
-    { "q": "Is my money safe?", "a": "Assets are held in segregated custody accounts, separate from Vestora's operating funds. Cash balances are held at FDIC-insured partner banks up to applicable limits." }
+    { "q": "How do I start?", "a": "Create an account, sign in, and open the deposit or investment area from your dashboard." },
+    { "q": "How do deposits work?", "a": "Choose an available deposit method and submit the request. The team reviews and verifies the transaction before it is applied to the account according to the platform workflow." },
+    { "q": "How do withdrawals work?", "a": "Submit a withdrawal request from your account. It must be reviewed and approved through Vestora's verification process before funds are released." },
+    { "q": "Where can I see investment terms?", "a": "Available plans show their amount range and term. Review all plan details and risks before creating an investment." },
+    { "q": "How do I secure my account?", "a": "Use a strong password and enable two-factor authentication in account settings when available." },
+    { "q": "How can I contact support?", "a": "Use the support chat from the website or dashboard to send your question to the Vestora team." }
   ]
 },
 "WhyVestora": {
   "eyebrow": "Why Vestora",
-  "headlineLine1": "Built for people who'd",
-  "headlineLine2": "rather not think about it.",
+  "headlineLine1": "Built around account",
+  "headlineLine2": "clarity and review.",
   "reasons": [
-    { "title": "Secure by default", "desc": "Assets held in segregated, insured custody accounts — never commingled with operating funds." },
-    { "title": "Real-time analytics", "desc": "Your portfolio updates live, with performance broken down by asset class, not buried in a PDF." },
-    { "title": "Low, visible fees", "desc": "A flat 0.25% annual fee. No trading commissions, no withdrawal penalties, no fine print." },
-    { "title": "Built-in diversification", "desc": "Every plan spreads risk across asset classes automatically, rebalanced as markets shift." }
+    { "title": "Reviewable requests", "desc": "Deposits and withdrawals follow a tracked verification workflow." },
+    { "title": "Account activity", "desc": "View balances and account actions from a dedicated dashboard." },
+    { "title": "Clear plan terms", "desc": "Published plan details include amount ranges and fixed terms." },
+    { "title": "Account protection", "desc": "Authentication and optional two-factor verification help protect account access." }
   ]
 },
 "Performance": {
-  "eyebrow": "Performance",
-  "headlineLine1": "Numbers that speak",
-  "headlineLine2": "for themselves.",
+  "eyebrow": "Platform principles",
+  "headlineLine1": "Designed for clear",
+  "headlineLine2": "account activity.",
   "stats": [
-    { "label": "Average annual return", "note": "3-year average across all plans" },
-    { "label": "Assets under management", "note": "Across 40,000+ portfolios" },
-    { "label": "Active investors", "note": "In 28 countries" }
+    { "label": "Fixed terms", "note": "Investment terms are defined in each plan" },
+    { "label": "Verified requests", "note": "Deposits and withdrawals follow review workflows" },
+    { "label": "Two-factor security", "note": "Available through account security settings" }
   ]
+},
+"FinalCta": {
+  "eyebrow": "Get started",
+  "headline": "Create an account and explore your Vestora dashboard.",
+  "primary": "Create account",
+  "secondary": "Read common questions"
 },
 "DashboardShell": {
   "nav": {
@@ -125,8 +137,11 @@
   "switchToDark": "Switch to dark mode",
   "switchToLight": "Switch to light mode",
   "toggleMenu": "Toggle menu",
+  "mobileNavigation": "Mobile navigation",
+  "more": "More",
   "expandSidebar": "Expand sidebar",
   "collapseSidebar": "Collapse sidebar",
+  "backToWebsite": "Back to website",
   "maintenanceTitle": "We'll be right back",
   "maintenanceSub": "Vestora is undergoing scheduled maintenance. Please check back shortly."
 },
@@ -134,10 +149,15 @@
   "greeting": "Good morning",
   "greetingWithName": "Good morning, {name}",
   "subtitle": "Here's what's happening with your account today",
+  "accountOverview": "Account overview",
+  "availableBalance": "Available balance",
+  "accountCurrency": "Primary account currency",
+  "dataLoadFailed": "We couldn't load your account data. Check your connection and try again.",
+  "retry": "Try again",
   "txnTypes": {
     "deposit": "Deposit",
     "withdrawal": "Withdrawal",
-    "adminCredit": "Admin credit",
+    "adminCredit": "Profit",
     "adminDebit": "Admin debit"
   },
   "common": { "loading": "Loading…" },
@@ -193,7 +213,8 @@
     "noTransactions": "No transactions yet",
     "noTransactionsSub": "Once you make a deposit, it'll show up here — pending until verified.",
     "pending": "pending",
-    "rejected": "rejected"
+    "rejected": "rejected",
+    "verified": "Completed"
   }
 },
 "Deposit": {
@@ -267,6 +288,7 @@
 },
 "Portfolio": {
   "title": "Portfolio",
+  "closedInvestments": "Closed investments",
   "subtitle": "Your active investments and available plans",
   "errors": {
     "validAmount": "Enter a valid amount.",
@@ -433,18 +455,37 @@
   "availableBalance": "Available balance",
   "totalDeposited": "Total deposited",
   "totalWithdrawn": "Total withdrawn",
+  "netBalance": "Net balance",
+  "walletBalanceLabel": "Wallet balance",
+  "verifiedActivity": "Verified transactions",
+  "cardPreviewLabel": "Vestora Card visual preview",
+  "cardPreviewOnly": "PREVIEW · NOT ISSUED",
+  "cardNumberMasked": "Card number masked for preview",
+  "cardholderLabel": "CARDHOLDER",
+  "cardholderPlaceholder": "YOUR NAME",
+  "cardExpiryLabel": "VALID THRU",
+  "cardComingSoon": "Coming Soon",
+  "cardFeatureTitle": "Get your Vestora Card",
+  "cardFeatureDescription": "A smarter way to access and spend your money.",
+  "applyForCard": "Apply for Card",
+  "cardPreviewDisclaimer": "Visual preview only · No card has been issued",
+  "cardNoticeTitle": "Vestora Card is coming soon",
+  "cardNoticeMessage": "Vestora Card is coming soon. We're working on bringing you a premium card experience. You'll be notified when applications open.",
+  "closeCardNotice": "Close",
   "history": "Transaction history",
   "loading": "Loading…",
+  "loadError": "We couldn't load your wallet data. Please try again later.",
   "noTransactions": "No transactions yet",
   "noTransactionsSub": "Make a deposit to get started — it'll appear here once submitted, and update once verified.",
   "pendingVerification": "pending verification",
   "rejectedHint": "Rejected — tap to see why",
+  "statuses": { "verified": "Completed", "rejected": "Rejected" },
   "txnTypes": {
     "deposit": "Deposit",
     "withdrawal": "Withdrawal",
     "investmentWithdrawal": "Investment withdrawal",
     "gainsClaim": "Gains claim",
-    "adminCredit": "Admin credit",
+    "adminCredit": "Profit",
     "adminDebit": "Admin debit"
   }
 },
@@ -545,15 +586,21 @@
   "eyebrow": "Your portfolio, at a glance",
   "headlineLine1": "Built for clarity,",
   "headlineLine2": "not clutter.",
-  "totalBalance": "Total balance",
+  "totalBalance": "Account overview",
+  "accountOverview": "Portfolio",
+  "interfacePreview": "Interface preview",
   "range1M": "1M", "range3M": "3M", "range1Y": "1Y", "rangeAll": "All",
   "allocation": { "title": "Allocation", "equities": "Equities", "bonds": "Bonds", "cash": "Cash" },
   "activity": {
     "title": "Recent activity",
     "deposit": "Deposit received",
-    "voo": "VOO purchase",
-    "dividend": "Dividend payout",
-    "rebalance": "Rebalance executed",
+    "voo": "Investment",
+    "dividend": "Withdrawal",
+    "rebalance": "Account action",
+    "verified": "Verified",
+    "active": "Active",
+    "reviewed": "Reviewed",
+    "logged": "Logged",
     "time2m": "2m ago", "time1h": "1h ago", "time5h": "5h ago", "timeYesterday": "Yesterday"
   },
   "outperforming": "Outperforming 91% of similar portfolios"

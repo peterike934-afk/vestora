@@ -10,6 +10,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 export default function Navbar() {
   const t = useTranslations("Nav");
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -30,7 +31,9 @@ export default function Navbar() {
 
         <nav className="nav__links">
           <Link href="/#product">{t("product")}</Link>
-          <Link href="/#pricing">{t("pricing")}</Link>
+          <Link href="/#investments">{t("pricing")}</Link>
+          <Link href="/#markets">Markets</Link>
+          <Link href="/#crypto">Crypto</Link>
           <Link href="/#about">{t("about")}</Link>
         </nav>
 
@@ -45,8 +48,29 @@ export default function Navbar() {
           >
             {t("getStarted")}
           </motion.a>
+          <button
+            type="button"
+            className="nav__menu"
+            aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span />
+            <span />
+          </button>
         </div>
       </div>
+      {menuOpen && (
+        <nav className="nav__mobile" aria-label="Mobile navigation">
+          <Link href="/#product" onClick={() => setMenuOpen(false)}>{t("product")}</Link>
+          <Link href="/#investments" onClick={() => setMenuOpen(false)}>{t("pricing")}</Link>
+          <Link href="/#markets" onClick={() => setMenuOpen(false)}>Markets</Link>
+          <Link href="/#crypto" onClick={() => setMenuOpen(false)}>Crypto</Link>
+          <Link href="/#about" onClick={() => setMenuOpen(false)}>{t("about")}</Link>
+          <NextLink href="/login" onClick={() => setMenuOpen(false)}>{t("signIn")}</NextLink>
+          <NextLink href="/signup" className="nav__mobile-cta" onClick={() => setMenuOpen(false)}>{t("getStarted")}</NextLink>
+        </nav>
+      )}
     </header>
   );
 }

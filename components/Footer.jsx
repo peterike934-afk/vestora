@@ -32,7 +32,7 @@ export default function Footer() {
       heading: t("columns.product"),
       items: [
         { label: t("links.features"), href: "/#product" },
-        { label: t("links.pricing"), href: "/#pricing" },
+        { label: t("links.pricing"), href: "/#investments" },
         { label: t("links.security"), href: "/security", plain: true },
       ],
     },

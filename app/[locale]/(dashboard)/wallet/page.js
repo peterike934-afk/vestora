@@ -1,52 +1,57 @@
 "use client";
 
-import { useState, useEffect } from 'react'
-import { Inbox } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import { useUser } from '@/contexts/UserContext'
-import { useMoneyFormatter, useDateFormatter } from '@/lib/formatting'
-import { getWallet, getTransactions } from '@/lib/queries'
-import RejectionReasonModal from '@/components/RejectionReasonModal'
-
-const s = {
-  page: { padding: '32px 36px' },
-  title: { fontSize: '26px', fontWeight: '700', color: 'var(--text)', marginBottom: '4px' },
-  sub: { fontSize: '14px', color: 'var(--text2)', marginBottom: '28px' },
-  card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '24px', marginBottom: '20px' },
-  row: { display: 'flex', gap: '16px', marginBottom: '20px' },
-  stat: { flex: 1, background: 'var(--bg3)', borderRadius: 'var(--radius-sm)', padding: '20px 24px' },
-  statLabel: { fontSize: '11px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' },
-  statValue: { fontSize: '24px', fontWeight: '700', color: 'var(--text)' },
-  txItem: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border)' },
-  txItemClickable: { cursor: 'pointer' },
-  txLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
-  txIcon: { width: '34px', height: '34px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 },
-  empty: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '40px 20px', textAlign: 'center' },
-  emptyTitle: { fontSize: '14px', fontWeight: '500', color: 'var(--text2)' },
-  emptySub: { fontSize: '12px', color: 'var(--text3)', maxWidth: '260px' },
-  rejectedHint: { fontSize: '11px', color: 'var(--red)', marginTop: '2px' },
-}
+import { useEffect, useState } from "react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronRight,
+  CircleDollarSign,
+  Inbox,
+  TrendingUp,
+} from "lucide-react";
+import { useFormatter, useTranslations } from "next-intl";
+import { useUser } from "@/contexts/UserContext";
+import { useUsdFormatter } from "@/lib/formatting";
+import { getWallet, getTransactions } from "@/lib/queries";
+import { Link } from "@/i18n/navigation";
+import DashboardPageHeader from "@/components/dashboard/DashboardPageHeader";
+import DashboardState from "@/components/dashboard/DashboardState";
+import FinancialMetric from "@/components/dashboard/FinancialMetric";
+import TransactionRow from "@/components/dashboard/TransactionRow";
+import VestoraCardFeature from "@/components/dashboard/VestoraCardFeature";
+import VestoraMark from "@/components/VestoraMark";
+import RejectionReasonModal from "@/components/RejectionReasonModal";
 
 function txnMeta(type, t) {
   switch (type) {
-    case 'deposit': return { icon: '↓', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.deposit') };
-    case 'withdrawal': return { icon: '↑', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.withdrawal') };
-    case 'investment_withdrawal': return { icon: '↑', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.investmentWithdrawal') };
-    case 'investment_interest_claim': return { icon: '+', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.gainsClaim') };
-    case 'admin_credit': return { icon: '+', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.adminCredit') };
-    case 'admin_debit': return { icon: '−', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.adminDebit') };
-    default: return { icon: '•', color: 'var(--text2)', bg: 'var(--bg3)', label: type };
+    case "deposit":
+      return { icon: ArrowDownLeft, tone: "positive", label: t("txnTypes.deposit") };
+    case "withdrawal":
+      return { icon: ArrowUpRight, tone: "negative", label: t("txnTypes.withdrawal") };
+    case "investment_withdrawal":
+      return { icon: ArrowUpRight, tone: "negative", label: t("txnTypes.investmentWithdrawal") };
+    case "investment_interest_claim":
+      return { icon: TrendingUp, tone: "positive", label: t("txnTypes.gainsClaim") };
+    case "admin_credit":
+      return { icon: CircleDollarSign, tone: "positive", label: t("txnTypes.adminCredit") };
+    case "admin_debit":
+      return { icon: CircleDollarSign, tone: "negative", label: t("txnTypes.adminDebit") };
+    default:
+      return { icon: CircleDollarSign, tone: "neutral", label: type };
   }
 }
 
 export default function Wallet() {
-  const t = useTranslations('Wallet')
-  const formatMoney = useMoneyFormatter()
-  const formatDate = useDateFormatter()
+  const t = useTranslations("Wallet");
+  const tDeposit = useTranslations("Deposit");
+  const tWithdraw = useTranslations("Withdraw");
+  const formatUsd = useUsdFormatter();
+  const formatter = useFormatter();
   const { user } = useUser();
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [viewingReasonTxn, setViewingReasonTxn] = useState(null);
 
   useEffect(() => {
@@ -56,87 +61,154 @@ export default function Wallet() {
         setWallet(w);
         setTransactions(tx || []);
       })
-      .catch((err) => console.error('Failed to load wallet:', err))
+      .catch((err) => {
+        console.error("Failed to load wallet:", err);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   }, [user]);
 
   const balance = wallet?.balance_usd ?? 0;
-  const verified = transactions.filter(tx => tx.status === 'verified');
+  const verified = transactions.filter((tx) => tx.status === "verified");
   const totalDeposited = verified
-    .filter(tx => tx.type === 'deposit' || tx.type === 'admin_credit')
+    .filter((tx) => tx.type === "deposit")
     .reduce((sum, tx) => sum + Number(tx.amount_usd), 0);
   const totalWithdrawn = verified
-    .filter(tx => tx.type === 'withdrawal' || tx.type === 'admin_debit')
+    .filter((tx) => tx.type === "withdrawal" || tx.type === "admin_debit")
     .reduce((sum, tx) => sum + Number(tx.amount_usd), 0);
+  const displayedValue = loading || loadError ? "—" : null;
+
+  function formatTransactionDate(date) {
+    return formatter.dateTime(new Date(date), { dateStyle: "medium", timeStyle: "short" });
+  }
 
   return (
-    <div style={s.page}>
-      <h1 style={s.title}>{t('title')}</h1>
-      <p style={s.sub}>{t('subtitle')}</p>
+    <div className="dashboard-money-page dashboard-wallet-page">
+      <DashboardPageHeader title={t("title")} description={t("subtitle")} />
 
-      <div className="responsive-stats" style={s.row}>
-        <div style={s.stat}>
-          <div style={s.statLabel}>{t('availableBalance')}</div>
-          <div style={{ ...s.statValue, color: 'var(--green)' }}>{loading ? '—' : formatMoney(balance)}</div>
+      <section className="dashboard-wallet-overview" aria-label={t("title")}>
+        <div className="dashboard-wallet-card">
+          <div className="dashboard-wallet-card__decoration" aria-hidden="true" />
+          <div className="dashboard-wallet-card__top">
+            <div className="dashboard-wallet-card__brand">
+              <span className="dashboard-wallet-card__mark"><VestoraMark size={26} /></span>
+              <span>Vestora</span>
+            </div>
+            <span className="dashboard-wallet-card__account">{t("availableBalance")}</span>
+          </div>
+          <div className="dashboard-wallet-card__balance-label">{t("availableBalance")}</div>
+          <div className="dashboard-wallet-card__balance" aria-live="polite">
+            {displayedValue || formatUsd(balance)}
+          </div>
+          <div className="dashboard-wallet-card__bottom">
+            <div className="dashboard-wallet-card__currency">USD · {t("walletBalanceLabel")}</div>
+            <div className="dashboard-wallet-card__actions">
+              <Link className="dashboard-wallet-card__action dashboard-wallet-card__action--primary" href="/deposit">
+                <ArrowDownLeft size={17} aria-hidden="true" />
+                <span>{tDeposit("title")}</span>
+              </Link>
+              <Link className="dashboard-wallet-card__action" href="/withdraw">
+                <ArrowUpRight size={17} aria-hidden="true" />
+                <span>{tWithdraw("title")}</span>
+              </Link>
+            </div>
+          </div>
+          <span className="dashboard-wallet-card__watermark" aria-hidden="true">V</span>
         </div>
-        <div style={s.stat}>
-          <div style={s.statLabel}>{t('totalDeposited')}</div>
-          <div style={s.statValue}>{loading ? '—' : formatMoney(totalDeposited)}</div>
-        </div>
-        <div style={s.stat}>
-          <div style={s.statLabel}>{t('totalWithdrawn')}</div>
-          <div style={s.statValue}>{loading ? '—' : formatMoney(totalWithdrawn)}</div>
-        </div>
-      </div>
 
-      <div style={s.card}>
-        <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text)', marginBottom: '20px' }}>{t('history')}</div>
+        <div className="dashboard-wallet-metrics">
+          <FinancialMetric
+            label={t("totalDeposited")}
+            value={displayedValue || formatUsd(totalDeposited)}
+            detail={t("verifiedActivity")}
+          />
+          <FinancialMetric
+            label={t("totalWithdrawn")}
+            value={displayedValue || formatUsd(totalWithdrawn)}
+            detail={t("verifiedActivity")}
+          />
+          <FinancialMetric
+            label={t("netBalance")}
+            value={displayedValue || formatUsd(balance)}
+            detail={t("walletBalanceLabel")}
+            tone="positive"
+          />
+        </div>
+      </section>
+
+      <VestoraCardFeature
+        t={t}
+        cardholder={user?.user_metadata?.full_name || user?.user_metadata?.name}
+      />
+
+      <section className="dashboard-wallet-history" aria-labelledby="dashboard-wallet-history-title">
+        <div className="dashboard-wallet-history__header">
+          <div>
+            <h2 className="dashboard-wallet-history__title" id="dashboard-wallet-history-title">{t("history")}</h2>
+          </div>
+        </div>
 
         {loading ? (
-          <div style={s.empty}><p style={s.emptyTitle}>{t('loading')}</p></div>
+          <DashboardState title={t("loading")} />
+        ) : loadError ? (
+          <DashboardState variant="error" title={t("loadError")} />
         ) : transactions.length === 0 ? (
-          <div style={s.empty}>
-            <Inbox size={26} strokeWidth={1.5} color="var(--text3)" />
-            <p style={s.emptyTitle}>{t('noTransactions')}</p>
-            <p style={s.emptySub}>{t('noTransactionsSub')}</p>
-          </div>
+          <DashboardState
+            title={t("noTransactions")}
+            description={t("noTransactionsSub")}
+            action={
+              <Link className="dashboard-wallet-empty-link" href="/deposit">
+                {tDeposit("title")}
+              </Link>
+            }
+          />
         ) : (
-          transactions.map((tx, i) => {
-            const meta = txnMeta(tx.type, t);
-            const isNegative = tx.type === 'withdrawal' || tx.type === 'admin_debit' || tx.type === 'investment_withdrawal';
-            const isRejected = tx.status === 'rejected';
-            return (
-              <div
-                key={tx.id}
-                style={{
-                  ...s.txItem,
-                  ...(isRejected ? s.txItemClickable : {}),
-                  ...(i === transactions.length - 1 ? { borderBottom: 'none' } : {}),
-                }}
-                onClick={isRejected ? () => setViewingReasonTxn(tx) : undefined}
-              >
-                <div style={s.txLeft}>
-                  <div style={{ ...s.txIcon, background: meta.bg, color: meta.color }}>{meta.icon}</div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text)' }}>
-                      {meta.label}{tx.status === 'pending' ? ` — ${t('pendingVerification')}` : ''}
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>
-                      {formatDate(tx.created_at)}
-                    </div>
-                    {isRejected && (
-                      <div style={s.rejectedHint}>{t('rejectedHint')}</div>
-                    )}
-                  </div>
+          <div className="dashboard-wallet-transaction-list">
+            {transactions.map((tx) => {
+              const meta = txnMeta(tx.type, t);
+              const isNegative =
+                tx.type === "withdrawal" ||
+                tx.type === "admin_debit" ||
+                tx.type === "investment_withdrawal";
+              const isRejected = tx.status === "rejected";
+              const statusLabel =
+                tx.status === "pending"
+                  ? t("pendingVerification")
+                  : tx.status === "verified"
+                    ? t("statuses.verified")
+                    : tx.status === "rejected"
+                      ? t("statuses.rejected")
+                      : tx.status;
+
+              return (
+                <div className="dashboard-wallet-transaction" key={tx.id}>
+                  <TransactionRow
+                    icon={meta.icon}
+                    iconTone={meta.tone}
+                    title={meta.label}
+                    description={formatTransactionDate(tx.created_at)}
+                    amount={`${isNegative ? "−" : "+"}${formatUsd(tx.amount_usd)}`}
+                    positive={!isNegative && !isRejected}
+                    negative={isNegative && !isRejected}
+                    status={tx.status}
+                    statusLabel={statusLabel}
+                    action={isRejected ? (
+                      <button
+                        type="button"
+                        className="dashboard-wallet-transaction__details"
+                        aria-label={t("rejectedHint")}
+                        onClick={() => setViewingReasonTxn(tx)}
+                      >
+                        <ChevronRight size={17} aria-hidden="true" />
+                      </button>
+                    ) : null}
+                  />
                 </div>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: isRejected ? 'var(--text3)' : meta.color }}>
-                  {isNegative ? '−' : '+'}{formatMoney(tx.amount_usd)}
-                </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
-      </div>
+      </section>
 
       {viewingReasonTxn && (
         <RejectionReasonModal
@@ -145,5 +217,5 @@ export default function Wallet() {
         />
       )}
     </div>
-  )
+  );
 }

@@ -29,6 +29,10 @@ function PricingCard({ plan, index, staggerChild, highlighted, ctaHref, ctaLabel
     >
       {highlighted && <span className="pricing-card__badge">{t("mostPopular")}</span>}
 
+      <div className="pricing-card__eyebrow">
+        <span>Plan {String(index + 1).padStart(2, "0")}</span>
+        {highlighted && <span>Featured</span>}
+      </div>
       <h3 className="pricing-card__name">{plan.name}</h3>
       <p className="pricing-card__desc">{plan.description}</p>
 
@@ -36,9 +40,16 @@ function PricingCard({ plan, index, staggerChild, highlighted, ctaHref, ctaLabel
         <span className="pricing-card__amount">{plan.apy_percent}%</span>
         <span className="pricing-card__period">{t("apy")}</span>
       </div>
-      <p style={{ fontSize: "13px", opacity: 0.7, marginTop: "-8px", marginBottom: "20px" }}>
-        {t("investRange", { range: formatRange(plan.min_amount, plan.max_amount), days: plan.term_days })}
-      </p>
+      <div className="pricing-card__terms">
+        <div>
+          <span>Investment range</span>
+          <strong>{formatRange(plan.min_amount, plan.max_amount)}</strong>
+        </div>
+        <div>
+          <span>Duration</span>
+          <strong>{plan.term_days} days</strong>
+        </div>
+      </div>
 
       
        <a href={ctaHref}
@@ -87,7 +98,7 @@ export default function Pricing() {
   const highlightedIndex = Math.floor(plans.length / 2);
 
   return (
-    <section className="pricing" id="pricing" ref={sectionRef}>
+    <section className="pricing" id="investments" ref={sectionRef}>
       <div className="pricing__inner">
         <motion.p className="pricing__eyebrow" animate={fadeUp(0)}>
           {t("eyebrow")}

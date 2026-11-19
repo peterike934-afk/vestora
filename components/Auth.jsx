@@ -1,38 +1,11 @@
 "use client";
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import VestoraMark from '@/components/VestoraMark'
+import AuthExperienceShell from '@/components/auth/AuthExperienceShell'
 import { useSearchParams } from 'next/navigation'
 import { applyReferralCode } from '@/lib/queries'
-
-const s = {
-  page: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '24px' },
-  card: { width: '100%', maxWidth: '440px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '48px 40px' },
-  logo: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px', justifyContent: 'center' },
-  logoText: { fontFamily: 'Playfair Display, serif', fontSize: '22px', fontWeight: '600', color: 'var(--text)' },
-  title: { fontSize: '24px', fontWeight: '700', color: 'var(--text)', marginBottom: '8px', textAlign: 'center' },
-  sub: { fontSize: '14px', color: 'var(--text2)', textAlign: 'center', marginBottom: '32px' },
-  label: { display: 'block', fontSize: '13px', color: 'var(--text2)', marginBottom: '6px', fontWeight: '500' },
-  input: { width: '100%', padding: '12px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s' },
-  field: { marginBottom: '20px' },
-  btn: { width: '100%', padding: '14px', background: 'var(--green)', border: 'none', borderRadius: 'var(--radius-sm)', color: '#000', fontSize: '15px', fontWeight: '600', marginTop: '8px', transition: 'opacity 0.2s', cursor: 'pointer' },
-  btnDisabled: { opacity: 0.6, cursor: 'not-allowed' },
-  link: { textAlign: 'center', marginTop: '24px', fontSize: '14px', color: 'var(--text2)' },
-  linkA: { color: 'var(--green)', fontWeight: '500' },
-  row: { display: 'flex', gap: '16px' },
-  half: { flex: 1 },
-  divider: { display: 'flex', alignItems: 'center', gap: '12px', margin: '24px 0' },
-  divLine: { flex: 1, height: '1px', background: 'var(--border)' },
-  divText: { fontSize: '12px', color: 'var(--text3)' },
-  google: { width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border2)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' },
-  error: { fontSize: '13px', color: 'var(--red)', background: 'var(--red-dim)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' },
-  success: { fontSize: '13px', color: 'var(--green)', background: 'var(--green-dim)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' },
-  passWrap: { position: 'relative' },
-  eyeBtn: { position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--text3)' },
-}
 
 function EyeIcon({ open }) {
   return open ? (
@@ -49,7 +22,6 @@ function EyeIcon({ open }) {
 }
 
 export function Login() {
-  const router = useRouter()
   const supabase = createClient()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
@@ -66,12 +38,16 @@ export function Login() {
       password: form.password,
     })
 
-    if (error) {
-      setLoading(false)
-      setError(error.message)
-      return
-    }
-
+ if (error) {
+  console.error('signup failed:', error.name, error.status, error.message)
+  const unreachable = error.name === 'AuthRetryableFetchError' || error.message === '{}'
+  setError(
+    unreachable
+      ? "Can't reach the server right now. Check your connection and try again."
+      : error.message || 'Something went wrong. Please try again.'
+  )
+  return
+}
     // Apply any referral code saved during signup but not yet processed
     // (happens when email confirmation was required before a session existed).
     const savedCode = localStorage.getItem('vestora_referral_code')
@@ -97,28 +73,41 @@ export function Login() {
   }
 
   return (
-    <div style={s.page}>
-      <div style={s.card}>
-        <div style={s.logo}>
-          <VestoraMark size={32} />
-          <span style={s.logoText}>Vestora</span>
-        </div>
-        <p style={s.title}>Welcome back</p>
-        <p style={s.sub}>Sign in to your investment account</p>
+    <AuthExperienceShell
+      className="auth-experience--login"
+      topAction={<>New to Vestora? <Link href="/signup">Create an account</Link></>}
+    >
+      <div className="auth-experience__form">
+        <header className="auth-experience__form-heading">
+          <span className="auth-experience__form-eyebrow">Secure account access</span>
+          <h2 className="auth-experience__form-title">Welcome back</h2>
+          <p className="auth-experience__form-description">Sign in to your Vestora account.</p>
+        </header>
 
-        {error && <div style={s.error}>{error}</div>}
+        {error && <div className="auth-experience__message" role="alert">{error}</div>}
 
         <form onSubmit={handle}>
-          <div style={s.field}>
-            <label style={s.label}>Email address</label>
-            <input style={s.input} type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
+          <div className="auth-experience__field">
+            <label className="auth-experience__label" htmlFor="legacy-login-email">Email address</label>
+            <input
+              className="auth-experience__input"
+              id="legacy-login-email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={e => setForm({...form, email: e.target.value})}
+              required
+            />
           </div>
-          <div style={s.field}>
-            <label style={s.label}>Password</label>
-            <div style={s.passWrap}>
+          <div className="auth-experience__field">
+            <label className="auth-experience__label" htmlFor="legacy-login-password">Password</label>
+            <div className="auth-experience__password-wrap">
               <input
-                style={{ ...s.input, paddingRight: '44px' }}
+                className="auth-experience__input"
+                id="legacy-login-password"
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 placeholder="••••••••"
                 value={form.password}
                 onChange={e => setForm({...form, password: e.target.value})}
@@ -126,7 +115,7 @@ export function Login() {
               />
               <button
                 type="button"
-                style={s.eyeBtn}
+                className="auth-experience__password-toggle"
                 onClick={() => setShowPassword(v => !v)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -135,26 +124,31 @@ export function Login() {
             </div>
           </div>
           <button
-            style={{ ...s.btn, ...(loading ? s.btnDisabled : {}) }}
+            className="auth-experience__submit"
             type="submit"
             disabled={loading}
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-        <div style={s.divider}><div style={s.divLine}/><span style={s.divText}>or</span><div style={s.divLine}/></div>
-        <button style={s.google} onClick={handleGoogle} type="button">🌐 Continue with Google</button>
-        <p style={s.link}>Don't have an account? <Link href="/signup" style={s.linkA}>Create one</Link></p>
+        <div className="auth-experience__separator"><span>or</span></div>
+        <button className="auth-experience__secondary" onClick={handleGoogle} type="button">
+          <span className="auth-experience__google-mark" aria-hidden="true">G</span>
+          Continue with Google
+        </button>
+        <p className="auth-experience__form-footer">
+          Don’t have an account? <Link href="/signup">Create one</Link>
+        </p>
       </div>
-    </div>
+    </AuthExperienceShell>
   )
 }
 
 export function Signup() {
-  const router = useRouter()
   const supabase = createClient()
   const searchParams = useSearchParams()
   const [form, setForm] = useState({ first: '', last: '', email: '', password: '', confirm: '', referralCode: '' })
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
@@ -185,20 +179,29 @@ export function Signup() {
 
     setLoading(true)
 
+    const emailRedirect = new URL('/callback', window.location.origin)
+    emailRedirect.searchParams.set('next', '/login?verification=confirmed')
+
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: {
         data: { full_name: `${form.first} ${form.last}`.trim() },
+        emailRedirectTo: emailRedirect.toString(),
       },
     })
 
     setLoading(false)
-
-    if (error) {
-      setError(error.message)
-      return
-    }
+if (error) {
+  console.error('signup failed:', error.name, error.status, error.message)
+  const unreachable = error.name === 'AuthRetryableFetchError' || error.message === '{}'
+  setError(
+    unreachable
+      ? "Can't reach the server right now. Check your connection and try again."
+      : error.message || 'Something went wrong. Please try again.'
+  )
+  return
+}
 
     const typedCode = form.referralCode.trim()
 
@@ -230,40 +233,69 @@ export function Signup() {
   }
 
   return (
-    <div style={s.page}>
-      <div style={s.card}>
-        <div style={s.logo}>
-          <VestoraMark size={32} />
-          <span style={s.logoText}>Vestora</span>
-        </div>
-        <p style={s.title}>Start investing today</p>
-        <p style={s.sub}>Create your free account in seconds</p>
+    <AuthExperienceShell
+      className="auth-experience--signup"
+      topAction={<>Already have an account? <Link href="/login">Sign in</Link></>}
+    >
+      <div className="auth-experience__form">
+        <header className="auth-experience__form-heading">
+          <span className="auth-experience__form-eyebrow">A thoughtful start</span>
+          <h2 className="auth-experience__form-title">Create your account</h2>
+          <p className="auth-experience__form-description">Your Vestora account begins here.</p>
+        </header>
 
-        {error && <div style={s.error}>{error}</div>}
-        {success && <div style={s.success}>{success}</div>}
+        {error && <div className="auth-experience__message" role="alert">{error}</div>}
+        {success && <div className="auth-experience__message auth-experience__message--success" role="status">{success}</div>}
 
         {!success && (
           <form onSubmit={handle}>
-            <div style={{...s.row, marginBottom: '0'}}>
-              <div style={{...s.field, ...s.half}}>
-                <label style={s.label}>First name</label>
-                <input style={s.input} placeholder="John" value={form.first} onChange={e=>setForm({...form,first:e.target.value})} required />
-              </div>
-              <div style={{...s.field, ...s.half}}>
-                <label style={s.label}>Last name</label>
-                <input style={s.input} placeholder="Doe" value={form.last} onChange={e=>setForm({...form,last:e.target.value})} required />
-              </div>
-            </div>
-            <div style={s.field}>
-              <label style={s.label}>Email address</label>
-              <input style={s.input} type="email" placeholder="you@example.com" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required />
-            </div>
-            <div style={s.field}>
-              <label style={s.label}>Password</label>
-              <div style={s.passWrap}>
+            <div className="auth-experience__field-row">
+              <div className="auth-experience__field">
+                <label className="auth-experience__label" htmlFor="signup-first-name">First name</label>
                 <input
-                  style={{ ...s.input, paddingRight: '44px' }}
+                  className="auth-experience__input"
+                  id="signup-first-name"
+                  autoComplete="given-name"
+                  placeholder="First name"
+                  value={form.first}
+                  onChange={e=>setForm({...form,first:e.target.value})}
+                  required
+                />
+              </div>
+              <div className="auth-experience__field">
+                <label className="auth-experience__label" htmlFor="signup-last-name">Last name</label>
+                <input
+                  className="auth-experience__input"
+                  id="signup-last-name"
+                  autoComplete="family-name"
+                  placeholder="Last name"
+                  value={form.last}
+                  onChange={e=>setForm({...form,last:e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+            <div className="auth-experience__field">
+              <label className="auth-experience__label" htmlFor="signup-email">Email address</label>
+              <input
+                className="auth-experience__input"
+                id="signup-email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={e=>setForm({...form,email:e.target.value})}
+                required
+              />
+            </div>
+            <div className="auth-experience__field">
+              <label className="auth-experience__label" htmlFor="signup-password">Password</label>
+              <div className="auth-experience__password-wrap">
+                <input
+                  className="auth-experience__input"
+                  id="signup-password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   placeholder="Min. 8 characters"
                   value={form.password}
                   onChange={e=>setForm({...form,password:e.target.value})}
@@ -272,7 +304,7 @@ export function Signup() {
                 />
                 <button
                   type="button"
-                  style={s.eyeBtn}
+                  className="auth-experience__password-toggle"
                   onClick={() => setShowPassword(v => !v)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
@@ -280,12 +312,14 @@ export function Signup() {
                 </button>
               </div>
             </div>
-            <div style={s.field}>
-              <label style={s.label}>Confirm password</label>
-              <div style={s.passWrap}>
+            <div className="auth-experience__field">
+              <label className="auth-experience__label" htmlFor="signup-confirm-password">Confirm password</label>
+              <div className="auth-experience__password-wrap">
                 <input
-                  style={{ ...s.input, paddingRight: '44px' }}
+                  className="auth-experience__input"
+                  id="signup-confirm-password"
                   type={showConfirm ? 'text' : 'password'}
+                  autoComplete="new-password"
                   placeholder="Re-enter your password"
                   value={form.confirm}
                   onChange={e=>setForm({...form,confirm:e.target.value})}
@@ -294,7 +328,7 @@ export function Signup() {
                 />
                 <button
                   type="button"
-                  style={s.eyeBtn}
+                  className="auth-experience__password-toggle"
                   onClick={() => setShowConfirm(v => !v)}
                   aria-label={showConfirm ? 'Hide password' : 'Show password'}
                 >
@@ -302,17 +336,29 @@ export function Signup() {
                 </button>
               </div>
             </div>
-            <div style={s.field}>
-              <label style={s.label}>Referral code (optional)</label>
+            <div className="auth-experience__field">
+              <label className="auth-experience__label" htmlFor="signup-referral">Referral code (optional)</label>
               <input
-                style={s.input}
+                className="auth-experience__input"
+                id="signup-referral"
                 placeholder="e.g. X7K2M9QP"
                 value={form.referralCode}
                 onChange={e => setForm({ ...form, referralCode: e.target.value.toUpperCase() })}
               />
             </div>
+            <label className="auth-experience__checkbox">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={e => setAcceptedTerms(e.target.checked)}
+                required
+              />
+              <span>
+                I agree to the <a href="/legal/terms-of-service.pdf" target="_blank" rel="noreferrer">Terms of Service</a> and <a href="/legal/privacy-policy.pdf" target="_blank" rel="noreferrer">Privacy Policy</a>.
+              </span>
+            </label>
             <button
-              style={{ ...s.btn, ...(loading ? s.btnDisabled : {}) }}
+              className="auth-experience__submit"
               type="submit"
               disabled={loading}
             >
@@ -321,9 +367,10 @@ export function Signup() {
           </form>
         )}
 
-        <div style={s.divider}><div style={s.divLine}/><span style={s.divText}>or</span><div style={s.divLine}/></div>
-        <p style={s.link}>Already have an account? <Link href="/login" style={s.linkA}>Sign in</Link></p>
+        <p className="auth-experience__form-footer">
+          Already have an account? <Link href="/login">Sign in</Link>
+        </p>
       </div>
-    </div>
+    </AuthExperienceShell>
   )
 }

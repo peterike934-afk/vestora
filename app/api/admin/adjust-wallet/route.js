@@ -21,7 +21,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { userId, type, amount, reason } = await request.json();
+  const { userId, type, amount, reason, investmentId } = await request.json();
 
   if (!userId || !["credit", "debit"].includes(type)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -30,9 +30,6 @@ export async function POST(request) {
   if (!amt || amt <= 0) {
     return NextResponse.json({ error: "Amount must be a positive number" }, { status: 400 });
   }
-  // A required reason isn't optional politeness here — it's what
-  // makes the audit trail actually mean something. "Admin adjusted
-  // balance" with no reason is barely better than no log at all.
   if (!reason || !reason.trim()) {
     return NextResponse.json({ error: "A reason is required for manual wallet adjustments" }, { status: 400 });
   }
@@ -49,27 +46,45 @@ export async function POST(request) {
     return NextResponse.json({ error: "Wallet not found for this user" }, { status: 404 });
   }
 
-  const delta = type === "credit" ? amt : -amt;
-  const newBalance = Number(wallet.balance_usd) + delta;
+  // A credit with an investment chosen = profit on that investment.
+  // Anything else (bonus, debit) goes straight through the wallet.
+  const toInvestment = type === "credit" && !!investmentId;
+  let newBalance = Number(wallet.balance_usd);
+  let investment = null;
 
-  if (newBalance < 0) {
-    return NextResponse.json({ error: "This would take the user's balance negative." }, { status: 400 });
+  if (toInvestment) {
+    const { data: inv, error: invError } = await supabaseAdmin
+      .from("investments")
+      .select("id, user_id, status, admin_profit")
+      .eq("id", investmentId)
+      .single();
+
+    if (invError || !inv || inv.user_id !== userId) {
+      return NextResponse.json({ error: "Investment not found for this user" }, { status: 404 });
+    }
+    if (inv.status !== "active") {
+      return NextResponse.json({ error: "Profit can only be added to an active investment" }, { status: 400 });
+    }
+    investment = inv;
+  } else {
+    const delta = type === "credit" ? amt : -amt;
+    newBalance = newBalance + delta;
+
+    if (newBalance < 0) {
+      return NextResponse.json({ error: "This would take the user's balance negative." }, { status: 400 });
+    }
+
+    const { error: walletUpdateError } = await supabaseAdmin
+      .from("wallets")
+      .update({ balance_usd: newBalance, updated_at: new Date().toISOString() })
+      .eq("user_id", userId);
+
+    if (walletUpdateError) {
+      return NextResponse.json({ error: walletUpdateError.message }, { status: 500 });
+    }
   }
 
-  const { error: walletUpdateError } = await supabaseAdmin
-    .from("wallets")
-    .update({ balance_usd: newBalance, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);
-
-  if (walletUpdateError) {
-    return NextResponse.json({ error: walletUpdateError.message }, { status: 500 });
-  }
-
-  // Record it as a real transaction, not just a silent balance edit —
-  // it shows up in the user's own transaction history (Dashboard,
-  // Wallet page) exactly like a deposit or withdrawal would, already
-  // verified since there's nothing pending about a direct admin action.
-  const { error: txnError } = await supabaseAdmin
+  const { data: txn, error: txnError } = await supabaseAdmin
     .from("transactions")
     .insert({
       user_id: userId,
@@ -79,10 +94,25 @@ export async function POST(request) {
       admin_note: reason.trim(),
       verified_by: admin.id,
       verified_at: new Date().toISOString(),
-    });
+      investment_id: toInvestment ? investmentId : null,
+    })
+    .select("id")
+    .single();
 
   if (txnError) {
     return NextResponse.json({ error: txnError.message }, { status: 500 });
+  }
+
+  if (toInvestment) {
+    const { error: profitError } = await supabaseAdmin
+      .from("investments")
+      .update({ admin_profit: Number(investment.admin_profit) + amt })
+      .eq("id", investmentId);
+
+    if (profitError) {
+      await supabaseAdmin.from("transactions").delete().eq("id", txn.id);
+      return NextResponse.json({ error: profitError.message }, { status: 500 });
+    }
   }
 
   try {

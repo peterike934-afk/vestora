@@ -12,7 +12,7 @@ export default function Features() {
   const items = t.raw("items");
 
   return (
-    <section className="features" id="product" ref={ref}>
+    <section className="features" id="markets" ref={ref}>
       <div className="features__inner">
         <motion.p className="section-eyebrow" animate={fadeUp(0)}>
           {t("eyebrow")}

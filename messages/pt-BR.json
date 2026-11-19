@@ -125,8 +125,11 @@
   "switchToDark": "Mudar para modo escuro",
   "switchToLight": "Mudar para modo claro",
   "toggleMenu": "Alternar menu",
+  "mobileNavigation": "Navegação móvel",
+  "more": "Mais",
   "expandSidebar": "Expandir barra lateral",
   "collapseSidebar": "Recolher barra lateral",
+  "backToWebsite": "Voltar ao site",
   "maintenanceTitle": "Já voltamos",
   "maintenanceSub": "A Vestora está em manutenção programada. Volte em breve."
 },
@@ -134,6 +137,11 @@
   "greeting": "Bom dia",
   "greetingWithName": "Bom dia, {name}",
   "subtitle": "Veja o que está acontecendo com sua conta hoje",
+  "accountOverview": "Visão geral da conta",
+  "availableBalance": "Saldo disponível",
+  "accountCurrency": "Moeda principal da conta",
+  "dataLoadFailed": "Não foi possível carregar os dados da sua conta. Verifique sua conexão e tente novamente.",
+  "retry": "Tentar novamente",
   "txnTypes": { "deposit": "Depósito", "withdrawal": "Saque", "adminCredit": "Crédito administrativo", "adminDebit": "Débito administrativo" },
   "common": { "loading": "Carregando…" },
   "platformStatus": { "title": "Status da plataforma", "viewStatusPage": "Ver página de status", "checkingSystems": "Verificando sistemas…" },
@@ -179,7 +187,8 @@
     "noTransactions": "Ainda não há transações",
     "noTransactionsSub": "Quando você fizer um depósito, ele aparecerá aqui — pendente até ser verificado.",
     "pending": "pendente",
-    "rejected": "rejeitada"
+    "rejected": "rejeitada",
+    "verified": "Concluída"
   }
 },
 "Deposit": {
@@ -253,6 +262,7 @@
 },
 "Portfolio": {
   "title": "Portfólio",
+  "closedInvestments": "Investimentos encerrados",
   "subtitle": "Seus investimentos ativos e planos disponíveis",
   "errors": {
     "validAmount": "Digite um valor válido.",
@@ -394,12 +404,31 @@
   "availableBalance": "Saldo disponível",
   "totalDeposited": "Total depositado",
   "totalWithdrawn": "Total sacado",
+  "netBalance": "Saldo líquido",
+  "walletBalanceLabel": "Saldo da carteira",
+  "verifiedActivity": "Transações verificadas",
+  "cardPreviewLabel": "Prévia visual do Vestora Card",
+  "cardPreviewOnly": "PRÉVIA · NÃO EMITIDO",
+  "cardNumberMasked": "Número do cartão oculto na prévia",
+  "cardholderLabel": "TITULAR",
+  "cardholderPlaceholder": "SEU NOME",
+  "cardExpiryLabel": "VÁLIDO ATÉ",
+  "cardComingSoon": "Em breve",
+  "cardFeatureTitle": "Conheça o Vestora Card",
+  "cardFeatureDescription": "Uma forma mais inteligente de acessar e usar seu dinheiro.",
+  "applyForCard": "Solicitar cartão",
+  "cardPreviewDisclaimer": "Apenas prévia visual · Nenhum cartão foi emitido",
+  "cardNoticeTitle": "O Vestora Card chega em breve",
+  "cardNoticeMessage": "O Vestora Card chega em breve. Estamos trabalhando para oferecer uma experiência premium com cartão. Você será avisado quando as solicitações forem abertas.",
+  "closeCardNotice": "Fechar",
   "history": "Histórico de transações",
   "loading": "Carregando…",
+  "loadError": "Não foi possível carregar os dados da sua carteira. Tente novamente mais tarde.",
   "noTransactions": "Ainda não há transações",
   "noTransactionsSub": "Faça um depósito para começar — ele aparecerá aqui assim que enviado, e será atualizado quando verificado.",
   "pendingVerification": "verificação pendente",
   "rejectedHint": "Rejeitada — toque para ver o motivo",
+  "statuses": { "verified": "Concluída", "rejected": "Rejeitada" },
   "txnTypes": {
     "deposit": "Depósito",
     "withdrawal": "Saque",
@@ -519,4 +548,3 @@
   }
 }
 }
-

@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ChevronRight, LayoutDashboard, PieChart, Wallet,
   ArrowDownToLine, ArrowUpFromLine, Settings, Mail, TrendingUp,
-  Activity, ShieldCheck, Sun, Moon, LineChart, Gift,
+    Activity, ShieldCheck, Sun, Moon, LineChart, Gift, Globe, MoreHorizontal,
 } from "lucide-react";
 import ChatWidget from "@/components/ChatWidget";
 import { getSettings, getUnreadUserMessageCount, subscribeToMessageCountChanges, getPendingTransactionCount, subscribeToPendingTransactionChanges, getUnreadGuestMessageCount, subscribeToGuestMessageCountChanges } from "@/lib/queries";
@@ -62,9 +62,9 @@ const s = {
   logoCollapsed: { padding: "28px 0 24px", justifyContent: "center" },
   logoText: { fontFamily: "Playfair Display, serif", fontSize: "18px", fontWeight: "600", color: "var(--text)", whiteSpace: "nowrap" },
   navList: { padding: "16px 12px", flex: 1, display: "flex", flexDirection: "column", gap: "4px" },
-  link: { display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", borderRadius: "var(--radius-sm)", fontSize: "14px", fontWeight: "500", color: "var(--text2)", transition: "background 0.15s, color 0.15s", textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden", border: "none", background: "transparent", cursor: "pointer", width: "100%", textAlign: "left", font: "inherit" },
+  link: { display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", borderRadius: "var(--radius-sm)", fontSize: "14px", fontWeight: "500", color: "var(--text2)", transition: "background 0.15s, color 0.15s", textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden", border: "none", background: "transparent", cursor: "pointer", width: "100%", textAlign: "left", fontFamily: "inherit" },
   linkCollapsed: { justifyContent: "center", padding: "10px 0" },
-  linkActive: { color: "var(--text)", background: "var(--bg4)" },
+  linkActive: { color: "var(--green)", background: "var(--green-tint)", fontWeight: "600" },
   icon: { display: "flex", alignItems: "center", justifyContent: "center", width: "20px", flexShrink: 0 },
   bottom: { padding: "16px 12px", borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "4px" },
   avatar: { display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "var(--radius-sm)", cursor: "pointer", overflow: "hidden" },
@@ -127,6 +127,8 @@ function NavLink({ href, Icon, label, active, collapsed, badgeCount, badgeCountB
   return (
     <LinkComponent
       href={href}
+      className="dashboard-nav-link"
+      aria-current={active ? "page" : undefined}
       title={collapsed ? label : undefined}
       style={{
         ...s.link,
@@ -171,6 +173,7 @@ function ThemeSwitch({ theme, onToggle, collapsed, t }) {
       type="button"
       role="switch"
       aria-checked={isLight}
+      aria-label={isLight ? t("lightMode") : t("darkMode")}
       onClick={onToggle}
       title={collapsed ? (isLight ? t("switchToDark") : t("switchToLight")) : undefined}
       style={{
@@ -179,7 +182,7 @@ function ThemeSwitch({ theme, onToggle, collapsed, t }) {
         gap: "10px", padding: collapsed ? "10px 0" : "10px 14px",
         borderRadius: "var(--radius-sm)", background: "transparent", border: "none",
         cursor: "pointer", width: "100%", color: "var(--text2)",
-        fontSize: "14px", fontWeight: 500, font: "inherit",
+        fontSize: "14px", fontWeight: 500, fontFamily: "inherit",
       }}
     >
       {!collapsed && (
@@ -219,7 +222,7 @@ export default function DashboardShell({ profile, children }) {
   const [guestUnreadCount, setGuestUnreadCount] = useState(0);
   const [pendingTxnCount, setPendingTxnCount] = useState(0);
   const [isDesktop, setIsDesktop] = useState(true);
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState("light");
   const locale = useLocale();
   const { user } = useUser();
 
@@ -234,16 +237,26 @@ export default function DashboardShell({ profile, children }) {
   }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    if (saved === "light" || saved === "dark") setTheme(saved);
+    let saved = null;
+    try {
+      saved = localStorage.getItem(THEME_STORAGE_KEY);
+    } catch (error) {
+      console.error("Failed to load dashboard theme preference:", error);
+    }
+    const next = saved === "dark" ? "dark" : "light";
+    document.documentElement.dataset.dashboardTheme = next;
+    setTheme(next);
   }, []);
 
   function toggleTheme() {
-    setTheme(prev => {
-      const next = prev === "dark" ? "light" : "dark";
+    const next = theme === "dark" ? "light" : "dark";
+    try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
-      return next;
-    });
+    } catch (error) {
+      console.error("Failed to save dashboard theme preference:", error);
+    }
+    document.documentElement.dataset.dashboardTheme = next;
+    setTheme(next);
   }
 
   useEffect(() => {
@@ -294,6 +307,13 @@ export default function DashboardShell({ profile, children }) {
     return unsubscribe;
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!user?.id || isAdmin) return;
+    updatePreferredLocale(user.id, locale).catch(err =>
+      console.error("Failed to sync preferred locale:", err)
+    );
+  }, [locale, user?.id, isAdmin]);
+
   if (checkedMaintenance && maintenanceMode && !isAdmin) {
     return (
       <div style={s.maintenancePage}>
@@ -304,13 +324,6 @@ export default function DashboardShell({ profile, children }) {
     );
   }
 
-  useEffect(() => {
-  if (!user?.id || isAdmin) return;
-  updatePreferredLocale(user.id, locale).catch(err =>
-    console.error("Failed to sync preferred locale:", err)
-  );
-}, [locale, user?.id, isAdmin]);
-
   const sidebarX = !isDesktop ? (mobileMenuOpen ? 0 : "-100%") : 0;
   const collapsed = isDesktop && sidebarCollapsed;
   const sidebarWidth = !isDesktop ? SIDEBAR_WIDTH : (collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH);
@@ -319,7 +332,7 @@ export default function DashboardShell({ profile, children }) {
 
   return (
     <motion.div
-      className={`dashboard-scope ${theme === "light" ? "theme-light" : ""}`}
+      className={`dashboard-scope ${isAdmin ? "" : "dashboard-scope--customer"} ${theme === "light" ? "theme-light" : "theme-dark"}`}
       style={s.layout}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -330,6 +343,8 @@ export default function DashboardShell({ profile, children }) {
         style={s.hamburgerBtn}
         onClick={() => setMobileMenuOpen(v => !v)}
         aria-label={t("toggleMenu")}
+        aria-expanded={mobileMenuOpen}
+        aria-controls="dashboard-navigation"
       >
         <span style={{ fontSize: "20px", color: "var(--text)" }}>{mobileMenuOpen ? "✕" : "☰"}</span>
       </button>
@@ -362,13 +377,18 @@ export default function DashboardShell({ profile, children }) {
       </AnimatePresence>
 
       <motion.aside
+        id="dashboard-navigation"
         className="app-sidebar"
+        aria-hidden={!isDesktop && !mobileMenuOpen}
+        inert={!isDesktop && !mobileMenuOpen}
         style={s.sidebar}
         animate={{ x: sidebarX, width: sidebarWidth }}
         transition={{ type: "spring", stiffness: 320, damping: 34 }}
       >
-        <div style={{ ...s.logo, ...(collapsed ? s.logoCollapsed : {}) }}>
-          <VestoraMark size={collapsed ? 20 : 22} />
+        <div className={!isAdmin ? "customer-brand" : undefined} style={{ ...s.logo, ...(collapsed ? s.logoCollapsed : {}) }}>
+          <span className={!isAdmin ? "customer-brand__mark" : undefined}>
+            <VestoraMark size={collapsed ? 19 : 21} />
+          </span>
           {!collapsed && <span style={s.logoText}>Vestora</span>}
         </div>
         <nav style={s.navList}>
@@ -443,10 +463,28 @@ export default function DashboardShell({ profile, children }) {
             </>
           )}
         </nav>
-        <div style={s.bottom}>
+                <div style={s.bottom}>
+          <Link
+            href="/"
+            title={collapsed ? t("backToWebsite") : undefined}
+            style={{ ...s.link, ...(collapsed ? s.linkCollapsed : {}) }}
+          >
+            <span style={s.icon}><Globe size={ICON_SIZE} strokeWidth={1.75} /></span>
+            {!collapsed && t("backToWebsite")}
+          </Link>
           <ThemeSwitch theme={theme} onToggle={toggleTheme} collapsed={collapsed} t={t} />
-          <div
-            style={{ ...s.avatar, ...(collapsed ? s.avatarCollapsed : {}) }}
+          <button
+            type="button"
+            style={{
+              ...s.avatar,
+              ...(collapsed ? s.avatarCollapsed : {}),
+              width: "100%",
+              border: "none",
+              background: "transparent",
+              color: "inherit",
+              font: "inherit",
+              textAlign: "left",
+            }}
             onClick={() => router.push("/settings")}
             title={collapsed ? displayName : undefined}
           >
@@ -457,7 +495,7 @@ export default function DashboardShell({ profile, children }) {
                 <div style={s.avatarSub}>{isAdmin ? t("adminRole") : t("investorRole")}</div>
               </div>
             )}
-          </div>
+          </button>
         </div>
       </motion.aside>
 
@@ -474,6 +512,37 @@ export default function DashboardShell({ profile, children }) {
           </motion.div>
         </AnimatePresence>
       </main>
+      {!isAdmin && (
+        <nav className="dashboard-mobile-nav" aria-label={t("mobileNavigation")}>
+          {nav.slice(0, 4).map((item) => {
+            const Icon = item.icon;
+            const active = pathname === item.to;
+            return (
+              <Link
+                key={item.to}
+                href={item.to}
+                className="dashboard-mobile-nav__link"
+                aria-current={active ? "page" : undefined}
+                title={t(`nav.${item.key}`)}
+              >
+                <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
+                <span>{t(`nav.${item.key}`)}</span>
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            className="dashboard-mobile-nav__link"
+            aria-label={t("more")}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="dashboard-navigation"
+            onClick={() => setMobileMenuOpen(v => !v)}
+          >
+            <MoreHorizontal size={20} strokeWidth={1.8} aria-hidden="true" />
+            <span>{t("more")}</span>
+          </button>
+        </nav>
+      )}
       {!isAdmin && <ChatWidget />}
     </motion.div>
   );

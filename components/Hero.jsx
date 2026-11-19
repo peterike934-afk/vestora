@@ -12,42 +12,44 @@ export default function Hero() {
       <div className="hero__glow" aria-hidden="true" />
 
       <div className="hero__inner">
-        <motion.p
-          className="hero__eyebrow"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          {t("eyebrow")}
-        </motion.p>
+        <div className="hero__copy">
+          <motion.p
+            className="hero__eyebrow"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {t("eyebrow")}
+          </motion.p>
 
-        <motion.h1
-          className="hero__headline"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        >
-          {t("headlineLine1")}<br />{t("headlineLine2")}
-        </motion.h1>
+          <motion.h1
+            className="hero__headline"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            {t("headlineLine1")}<br />{t("headlineLine2")}
+          </motion.h1>
 
-        <motion.p
-          className="hero__subhead"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          {t("subhead")}
-        </motion.p>
+          <motion.p
+            className="hero__subhead"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            {t("subhead")}
+          </motion.p>
 
-        <motion.div
-          className="hero__ctas"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
-          <a href="/signup" className="btn btn--primary">{t("ctaPrimary")}</a>
-          <a href="/#product" className="btn btn--ghost">{t("ctaSecondary")}</a>
-        </motion.div>
+          <motion.div
+            className="hero__ctas"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <a href="/signup" className="btn btn--primary">{t("ctaPrimary")}</a>
+            <a href="/#product" className="btn btn--ghost">{t("ctaSecondary")}</a>
+          </motion.div>
+        </div>
 
         <motion.div
           className="hero__card-wrap"
