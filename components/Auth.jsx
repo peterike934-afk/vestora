@@ -185,11 +185,15 @@ export function Signup() {
 
     setLoading(true)
 
+    const emailRedirect = new URL('/callback', window.location.origin)
+    emailRedirect.searchParams.set('next', '/login?verification=confirmed')
+
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: {
         data: { full_name: `${form.first} ${form.last}`.trim() },
+        emailRedirectTo: emailRedirect.toString(),
       },
     })
 
