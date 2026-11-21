@@ -8,6 +8,7 @@ import { getAuthLevel, listMfaFactors, verifyMfaLogin } from '@/lib/mfa'
 import AuthTransitionOverlay from '@/components/AuthTransitionOverlay'
 import VestoraMark from '@/components/VestoraMark'
 import { applyReferralCode } from '@/lib/queries'
+import { getSignInErrorMessage, VERIFICATION_MESSAGES, SUCCESS_VERIFICATION_STATUSES } from '@/lib/authMessages'
 
 const s = {
   page: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '24px' },
@@ -28,6 +29,7 @@ const s = {
   divText: { fontSize: '12px', color: 'var(--text3)' },
   google: { width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border2)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' },
   error: { fontSize: '13px', color: 'var(--red)', background: 'var(--red-dim)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' },
+  success: { fontSize: '13px', color: 'var(--green)', background: 'var(--green-dim)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' },
   codeInput: { width: '100%', padding: '14px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '20px', textAlign: 'center', letterSpacing: '6px', outline: 'none', marginBottom: '20px' },
   passWrap: { position: 'relative' },
   eyeBtn: { position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--text3)' },
@@ -66,17 +68,9 @@ export default function Login() {
 
   useEffect(() => {
     const verification = new URLSearchParams(window.location.search).get('verification')
-    const messages = {
-      confirmed: 'Your email is verified. Sign in to continue.',
-      expired: 'This verification link has expired. Request a fresh verification email.',
-      used: 'This verification link has already been used. Try signing in to your account.',
-      invalid: 'This verification link is invalid or has already been used. Request a fresh link or sign in if your email is verified.',
-      missing: 'The verification link is incomplete. Open the full link from your email or request a new one.',
-      failed: 'We could not complete email verification right now. Please try again later.',
-    }
 
-    if (verification && messages[verification]) {
-      setVerificationMessage(messages[verification])
+    if (verification && Object.hasOwn(VERIFICATION_MESSAGES, verification)) {
+      setVerificationMessage(VERIFICATION_MESSAGES[verification])
       setVerificationStatus(verification)
     }
   }, [])
@@ -89,7 +83,7 @@ export default function Login() {
   const overlayStartedAt = Date.now()
 
   const { error } = await supabase.auth.signInWithPassword({
-    email: form.email,
+    email: form.email.trim(),
     password: form.password,
   })
 
@@ -97,7 +91,7 @@ export default function Login() {
 
   if (error) {
     setShowOverlay(false)
-    setError(error.message)
+    setError(getSignInErrorMessage(error))
     return
   }
 
@@ -223,7 +217,7 @@ export default function Login() {
 
         {verificationMessage && (
           <div
-            style={verificationStatus === 'confirmed' ? s.success : s.error}
+            style={SUCCESS_VERIFICATION_STATUSES.has(verificationStatus) ? s.success : s.error}
             role="status"
           >
             {verificationMessage}

@@ -22,13 +22,30 @@ function getVerificationStatus(code, description = "") {
   return "invalid";
 }
 
+// Code-exchange failures meaning the link was opened on a different
+// browser or device from the one that signed up (the PKCE code verifier
+// cookie only exists in the original browser). For email links, Supabase
+// has already confirmed the address before redirecting here with ?code=,
+// so the user only needs to sign in on this device.
+const DIFFERENT_DEVICE_CODE_ERRORS = new Set([
+  "pkce_code_verifier_not_found",
+  "bad_code_verifier",
+  "flow_state_not_found",
+]);
+
 function getSafeDestination(next, origin) {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) {
     return "/dashboard";
   }
 
   const destination = new URL(next, origin);
-  if (destination.origin !== origin || destination.pathname === "/callback") {
+  // A signed-in user is never sent back to /login. This also covers links
+  // already emailed with the older next=/login?verification=confirmed.
+  if (
+    destination.origin !== origin ||
+    destination.pathname === "/callback" ||
+    destination.pathname === "/login"
+  ) {
     return "/dashboard";
   }
 
@@ -74,6 +91,9 @@ export async function GET(request) {
 
     if (error) {
       console.error("Email auth callback failed.", error.code || "verification_error");
+      if (!tokenHash && DIFFERENT_DEVICE_CODE_ERRORS.has(error.code)) {
+        return redirectToLogin(request, "signin_required");
+      }
       return redirectToLogin(request, getVerificationStatus(error.code, error.message));
     }
 
@@ -87,9 +107,8 @@ export async function GET(request) {
 
     const destination = getSafeDestination(next, origin);
     if (!data.session) {
-      const loginUrl = new URL("/login", origin);
-      loginUrl.searchParams.set("verification", "confirmed");
-      return NextResponse.redirect(loginUrl);
+      // Verified, but no session could be created on this device.
+      return redirectToLogin(request, "signin_required");
     }
 
     return NextResponse.redirect(new URL(destination, origin));

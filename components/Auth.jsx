@@ -185,11 +185,14 @@ export function Signup() {
 
     setLoading(true)
 
+    // After the link verifies the email, /callback has a session and sends
+    // the user straight to the dashboard. If no session can be created on
+    // the device that opens the link, /callback asks them to sign in.
     const emailRedirect = new URL('/callback', window.location.origin)
-    emailRedirect.searchParams.set('next', '/login?verification=confirmed')
+    emailRedirect.searchParams.set('next', '/dashboard')
 
     const { data, error } = await supabase.auth.signUp({
-      email: form.email,
+      email: form.email.trim(),
       password: form.password,
       options: {
         data: { full_name: `${form.first} ${form.last}`.trim() },
@@ -214,8 +217,13 @@ export function Signup() {
 
     // If email confirmation is required (default Supabase setting),
     // there's no session yet — the user needs to click the link in their inbox.
+    // Supabase deliberately returns this same response when the email is
+    // already registered, without sending a new email and without changing
+    // that account's password. Say so (without revealing whether the
+    // account exists), so a returning user doesn't expect the new password
+    // to work.
     if (data.user && !data.session) {
-      setSuccess('Check your email to confirm your account before signing in.')
+      setSuccess('Check your email for a confirmation link to activate your account. If you already have a Vestora account with this email, no new link is sent and your existing password is unchanged: sign in, or use "Forgot password" instead.')
       return
     }
 

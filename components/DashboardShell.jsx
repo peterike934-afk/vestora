@@ -14,7 +14,7 @@ import ChatWidget from "@/components/ChatWidget";
 import { getSettings, getUnreadUserMessageCount, subscribeToMessageCountChanges, getPendingTransactionCount, subscribeToPendingTransactionChanges, getUnreadGuestMessageCount, subscribeToGuestMessageCountChanges } from "@/lib/queries";
 import { useLocale } from "next-intl";
 import { useUser } from "@/contexts/UserContext";
-import { updatePreferredLocale } from "@/lib/queries";
+import { updatePreferredLocale, applyReferralCode } from "@/lib/queries";
 
 
 const nav = [
@@ -222,6 +222,26 @@ export default function DashboardShell({ profile, children }) {
   const [theme, setTheme] = useState("dark");
   const locale = useLocale();
   const { user } = useUser();
+
+  // A referral code typed at signup is saved until the first signed-in
+  // session. Users who verify their email are now signed in by /callback
+  // and land here without passing through the login form (which also
+  // applies it), so apply any pending code once on arrival. The key is
+  // removed before the request so the code can only be submitted once.
+  useEffect(() => {
+    if (!user) return;
+    let savedCode = null;
+    try {
+      savedCode = localStorage.getItem("vestora_referral_code");
+      if (savedCode) localStorage.removeItem("vestora_referral_code");
+    } catch {
+      return;
+    }
+    if (!savedCode) return;
+    applyReferralCode(savedCode).catch((err) => {
+      console.error("Failed to apply referral code:", err);
+    });
+  }, [user]);
 
   const displayName = profile?.full_name || t("defaultInvestorName");
   const isAdmin = profile?.role === "admin";
