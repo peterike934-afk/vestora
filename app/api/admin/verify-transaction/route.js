@@ -4,7 +4,15 @@ import { logAdminAction } from "@/lib/audit";
 import { verifyTransaction } from "@/lib/blockchain";
 import { sendCryptoPayout, getHotWalletBalance } from "@/lib/wallet";
 import { getStripe } from "@/lib/stripe";
-import { sendNotificationEmail, depositVerifiedEmail, depositRejectedEmail, withdrawalVerifiedEmail, withdrawalRejectedEmail, investmentWithdrawalVerifiedEmail, investmentWithdrawalRejectedEmail } from "@/lib/email";
+import {
+  sendNotificationEmail,
+  depositVerifiedEmail,
+  depositRejectedEmail,
+  withdrawalVerifiedEmail,
+  withdrawalRejectedEmail,
+  investmentWithdrawalVerifiedEmail,
+  investmentWithdrawalRejectedEmail,
+} from "@/lib/email";
 import { NextResponse } from "next/server";
 
 async function requireAdmin() {
@@ -33,6 +41,23 @@ function addressColumnFor(currency) {
   return map[currency] || null;
 }
 
+function isDefinitiveStripeRejection(error) {
+  return (
+    Number(error?.statusCode) >= 400 &&
+    Number(error?.statusCode) < 500 &&
+    !["StripeRateLimitError", "StripeAPIError"].includes(error?.type)
+  );
+}
+
+async function updateClaim(supabase, rpcName, transactionId, claimToken, evidence) {
+  const { error } = await supabase.rpc(rpcName, {
+    p_transaction_id: transactionId,
+    p_claim_token: claimToken,
+    p_provider_evidence: evidence,
+  });
+  return error;
+}
+
 export async function POST(request) {
   const { user: admin, supabase } = await requireAdmin();
   if (!admin) {
@@ -40,13 +65,11 @@ export async function POST(request) {
   }
 
   const { transactionId, action, adminNote, skipBlockchainCheck } = await request.json();
-
   if (!transactionId || !["verify", "reject", "check"].includes(action)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
   const supabaseAdmin = createAdminClient();
-
   const { data: txn, error: fetchError } = await supabaseAdmin
     .from("transactions")
     .select("*")
@@ -57,7 +80,6 @@ export async function POST(request) {
     return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
   }
 
-  // "check" — read-only blockchain verification for deposits, unchanged.
   if (action === "check") {
     if (!txn.crypto_currency || !txn.tx_hash) {
       return NextResponse.json({ error: "Nothing to check — no crypto currency or tx hash on this transaction" }, { status: 400 });
@@ -70,7 +92,6 @@ export async function POST(request) {
 
     const addressColumn = addressColumnFor(txn.crypto_currency);
     const expectedAddress = addressColumn ? settings?.[addressColumn] : null;
-
     if (!expectedAddress) {
       return NextResponse.json(
         { error: `No deposit address configured for ${txn.crypto_currency} in Settings` },
@@ -78,8 +99,12 @@ export async function POST(request) {
       );
     }
 
-    const result = await verifyTransaction(txn.crypto_currency, txn.tx_hash, expectedAddress, txn.crypto_amount);
-
+    const result = await verifyTransaction(
+      txn.crypto_currency,
+      txn.tx_hash,
+      expectedAddress,
+      txn.crypto_amount
+    );
     await supabaseAdmin
       .from("transactions")
       .update({ onchain_verification: result, onchain_checked_at: new Date().toISOString() })
@@ -93,17 +118,16 @@ export async function POST(request) {
   }
 
   if (action === "reject") {
-    const { error } = await supabaseAdmin
-      .from("transactions")
-      .update({
-        status: "rejected",
-        admin_note: adminNote || null,
-        verified_by: admin.id,
-        verified_at: new Date().toISOString(),
-      })
-      .eq("id", transactionId);
+    const { error } = await supabase.rpc("reject_pending_transaction", {
+      p_transaction_id: transactionId,
+      p_admin_note: adminNote || null,
+    });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      const status = error.message?.includes("no longer pending") ||
+        error.message?.includes("processing claim") ? 409 : 500;
+      return NextResponse.json({ error: error.message }, { status });
+    }
 
     try {
       await logAdminAction(supabase, {
@@ -123,28 +147,67 @@ export async function POST(request) {
       .single();
 
     if (profile) {
-      // NOTE: investment_interest_claim rejections currently fall through
-      // to the generic withdrawalRejectedEmail wording ("your withdrawal
-      // was rejected"), same as admin_credit does today. Add a dedicated
-      // investmentGainClaimRejectedEmail in lib/email.js if you want
-      // wording specific to gains claims — this route already has the
-      // right branch point to plug it into.
       const emailContent = txn.type === "deposit"
         ? depositRejectedEmail(txn.amount_usd, adminNote)
         : txn.type === "investment_withdrawal"
-        ? investmentWithdrawalRejectedEmail(txn.amount_usd, adminNote)
-        : withdrawalRejectedEmail(txn.amount_usd, adminNote);
-      await sendNotificationEmail({ to: profile.email, notificationsEnabled: profile.email_notifications, ...emailContent });
+          ? investmentWithdrawalRejectedEmail(txn.amount_usd, adminNote)
+          : withdrawalRejectedEmail(txn.amount_usd, adminNote);
+      await sendNotificationEmail({
+        to: profile.email,
+        notificationsEnabled: profile.email_notifications,
+        ...emailContent,
+      });
     }
 
     return NextResponse.json({ success: true });
   }
 
-  // ── action === "verify" ──────────────────────────────────────────
+  const { data: claimToken, error: claimError } = await supabase.rpc(
+    "claim_transaction_for_approval",
+    {
+      p_transaction_id: transactionId,
+      p_admin_note: adminNote || null,
+    }
+  );
 
-  // 1. Deposit blockchain verification (unchanged from before)
+  if (claimError || !claimToken) {
+    return NextResponse.json(
+      { error: claimError?.message || "Transaction could not be claimed for approval" },
+      { status: 409 }
+    );
+  }
+
+  const releaseClaim = async (evidence = {}) => {
+    const error = await updateClaim(
+      supabase,
+      "release_transaction_claim",
+      transactionId,
+      claimToken,
+      evidence
+    );
+    if (error) {
+      console.error("Unable to release transaction claim.", error.code || "claim_release_error");
+      return false;
+    }
+    return true;
+  };
+
+  const markUncertain = async (evidence = {}) => {
+    const error = await updateClaim(
+      supabase,
+      "mark_transaction_claim_uncertain",
+      transactionId,
+      claimToken,
+      evidence
+    );
+    if (error) {
+      console.error("Unable to mark transaction claim uncertain.", error.code || "claim_state_error");
+      return false;
+    }
+    return true;
+  };
+
   let blockchainResult = null;
-
   if (txn.type === "deposit" && txn.crypto_currency && txn.tx_hash) {
     const checkedRecently =
       txn.onchain_checked_at &&
@@ -157,45 +220,69 @@ export async function POST(request) {
         .from("settings")
         .select("btc_deposit_address, eth_deposit_address, usdt_deposit_address")
         .single();
-
       const addressColumn = addressColumnFor(txn.crypto_currency);
       const expectedAddress = addressColumn ? settings?.[addressColumn] : null;
 
       if (!expectedAddress) {
-        return NextResponse.json({ error: `No deposit address configured for ${txn.crypto_currency} in Settings` }, { status: 400 });
+        const released = await releaseClaim({ reason: "missing_deposit_address" });
+        return NextResponse.json(
+          { error: released
+            ? `No deposit address configured for ${txn.crypto_currency} in Settings`
+            : "Could not safely release transaction processing; contact support." },
+          { status: released ? 400 : 500 }
+        );
       }
 
-      blockchainResult = await verifyTransaction(txn.crypto_currency, txn.tx_hash, expectedAddress, txn.crypto_amount);
-
+      try {
+        blockchainResult = await verifyTransaction(
+          txn.crypto_currency,
+          txn.tx_hash,
+          expectedAddress,
+          txn.crypto_amount
+        );
+      } catch (verificationError) {
+        const released = await releaseClaim({ reason: "blockchain_verification_unavailable" });
+        return NextResponse.json(
+          { error: released
+            ? "Blockchain verification is temporarily unavailable."
+            : "Could not safely release transaction processing." },
+          { status: released ? 503 : 500 }
+        );
+      }
       await supabaseAdmin
         .from("transactions")
-        .update({ onchain_verification: blockchainResult, onchain_checked_at: new Date().toISOString() })
+        .update({
+          onchain_verification: blockchainResult,
+          onchain_checked_at: new Date().toISOString(),
+        })
         .eq("id", transactionId);
     }
 
     const isClean =
-      blockchainResult.found && blockchainResult.succeeded &&
-      blockchainResult.matchesAddress && blockchainResult.amountMatches && blockchainResult.confirmed;
+      blockchainResult.found &&
+      blockchainResult.succeeded &&
+      blockchainResult.matchesAddress &&
+      blockchainResult.amountMatches &&
+      blockchainResult.confirmed;
 
     if (!isClean && !skipBlockchainCheck) {
-      return NextResponse.json({ error: "Blockchain verification did not pass — review before overriding", blockchainResult }, { status: 409 });
+      const released = await releaseClaim({ reason: "blockchain_verification_failed" });
+      return NextResponse.json(
+        { error: released
+          ? "Blockchain verification did not pass — review before overriding"
+          : "Could not safely release transaction processing; contact support.",
+        blockchainResult },
+        { status: released ? 409 : 500 }
+      );
     }
   }
 
-  // 1b. Bank deposit (Stripe ACH) — the pull is attempted here, on admin
-  // approval, and the wallet is credited as soon as Stripe ACCEPTS the
-  // attempt (status "processing" or "succeeded") — not once it fully
-  // clears with the real bank days later. Known tradeoff: if a pull later
-  // bounces (insufficient funds, closed account), the balance won't
-  // automatically reverse. A webhook-based version that waits for real
-  // confirmation exists in app/api/stripe/webhook/route.js if you want
-  // to switch to the safer version later — not wired in for now per your
-  // choice to keep this simple and immediate.
   let stripePaymentIntentStatus = null;
+  let sentTxHash = null;
+  const providerEvidence = {};
+  let externalPaymentAccepted = false;
 
   if (txn.type === "deposit" && txn.payment_method === "bank" && txn.linked_bank_account_id) {
-    const stripe = getStripe();
-
     const { data: bankAccount, error: bankFetchError } = await supabaseAdmin
       .from("linked_bank_accounts")
       .select("stripe_payment_method_id, status")
@@ -203,7 +290,13 @@ export async function POST(request) {
       .single();
 
     if (bankFetchError || !bankAccount || bankAccount.status !== "active") {
-      return NextResponse.json({ error: "Linked bank account not found or no longer active" }, { status: 400 });
+      const released = await releaseClaim({ reason: "linked_bank_account_unavailable" });
+      return NextResponse.json(
+        { error: released
+          ? "Linked bank account not found or no longer active"
+          : "Could not safely release transaction processing; contact support." },
+        { status: released ? 400 : 500 }
+      );
     }
 
     const { data: profile } = await supabaseAdmin
@@ -213,100 +306,124 @@ export async function POST(request) {
       .single();
 
     if (!profile?.stripe_customer_id) {
-      return NextResponse.json({ error: "No Stripe customer on file for this user" }, { status: 400 });
+      const released = await releaseClaim({ reason: "stripe_customer_missing" });
+      return NextResponse.json(
+        { error: released
+          ? "No Stripe customer on file for this user"
+          : "Could not safely release transaction processing; contact support." },
+        { status: released ? 400 : 500 }
+      );
+    }
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      const released = await releaseClaim({ reason: "stripe_secret_not_configured" });
+      return NextResponse.json(
+        { error: released
+          ? "Payment processing is not configured."
+          : "Could not safely release transaction processing." },
+        { status: 500 }
+      );
     }
 
     try {
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(Number(txn.amount_usd) * 100), // Stripe uses cents
-        currency: "usd",
-        customer: profile.stripe_customer_id,
-        payment_method: bankAccount.stripe_payment_method_id,
-        payment_method_types: ["us_bank_account"],
-        confirm: true,
-        off_session: true,
-      });
+      const paymentIntent = await getStripe().paymentIntents.create(
+        {
+          amount: Math.round(Number(txn.amount_usd) * 100),
+          currency: "usd",
+          customer: profile.stripe_customer_id,
+          payment_method: bankAccount.stripe_payment_method_id,
+          payment_method_types: ["us_bank_account"],
+          confirm: true,
+          off_session: true,
+        },
+        { idempotencyKey: `vestora-transaction-${txn.id}-ach-deposit` }
+      );
 
       stripePaymentIntentStatus = paymentIntent.status;
+      providerEvidence.stripePaymentIntentId = paymentIntent.id;
+      providerEvidence.stripePaymentIntentStatus = paymentIntent.status;
 
-      await supabaseAdmin
-        .from("transactions")
-        .update({
-          stripe_payment_intent_id: paymentIntent.id,
-          stripe_payment_intent_status: paymentIntent.status,
-        })
-        .eq("id", transactionId);
-
-      // ACH pulls normally come back "processing" immediately — that's
-      // expected and treated as accepted, not a failure. Only a hard
-      // decline/error is treated as a real failure here.
       if (!["processing", "succeeded"].includes(paymentIntent.status)) {
+        const released = await releaseClaim(providerEvidence);
         return NextResponse.json(
-          { error: `Stripe did not accept this pull (status: ${paymentIntent.status})` },
-          { status: 400 }
+          { error: released
+            ? `Stripe did not accept this pull (status: ${paymentIntent.status})`
+            : "Stripe response received, but transaction recovery state could not be saved." },
+          { status: released ? 400 : 500 }
         );
       }
-      // Falls through to the shared wallet-credit logic below —
-      // balance updates now, regardless of "processing" vs "succeeded".
+      externalPaymentAccepted = true;
     } catch (stripeError) {
       console.error("Stripe ACH pull failed:", stripeError);
-      await supabaseAdmin
-        .from("transactions")
-        .update({ stripe_payment_intent_status: "failed" })
-        .eq("id", transactionId);
-      return NextResponse.json({ error: `Bank pull failed: ${stripeError.message}` }, { status: 500 });
-    }
-  }
-
-  // 2. REAL crypto payout for external withdrawals — this is the new part.
-  //
-  // Critical ordering: we attempt the actual send BEFORE touching the
-  // wallet balance. If the send fails (insufficient hot wallet funds,
-  // network error, bad address), nothing about the user's balance
-  // changes and the transaction stays pending — instead of the old
-  // behavior where a database number would just go down regardless
-  // of whether money actually moved anywhere.
-  let sentTxHash = null;
-
-  if (txn.type === "withdrawal" && txn.crypto_currency && txn.destination_address) {
-    try {
-      const hotBalance = await getHotWalletBalance(txn.crypto_currency);
-      if (hotBalance < Number(txn.crypto_amount)) {
+      const evidence = {
+        sendError: stripeError.message || "Stripe payment request failed",
+        stripeErrorType: stripeError.type || null,
+        stripeStatusCode: stripeError.statusCode || null,
+      };
+      if (isDefinitiveStripeRejection(stripeError)) {
+        await releaseClaim(evidence);
         return NextResponse.json(
-          { error: `Platform hot wallet only has ${hotBalance} ${txn.crypto_currency} — cannot cover this ${txn.crypto_amount} ${txn.crypto_currency} withdrawal. Fund the wallet first.` },
-          { status: 400 }
+          { error: stripeError.message },
+          { status: 500 }
         );
       }
 
-      const result = await sendCryptoPayout(txn.crypto_currency, txn.destination_address, txn.crypto_amount);
-      sentTxHash = result.txHash;
-
-      await supabaseAdmin
-        .from("transactions")
-        .update({ sent_tx_hash: sentTxHash, sent_at: new Date().toISOString(), send_error: null })
-        .eq("id", transactionId);
-    } catch (sendError) {
-      console.error("Crypto send failed:", sendError);
-      await supabaseAdmin
-        .from("transactions")
-        .update({ send_error: sendError.message })
-        .eq("id", transactionId);
-      return NextResponse.json({ error: `Failed to send crypto: ${sendError.message}` }, { status: 500 });
+      await markUncertain(evidence);
+      return NextResponse.json(
+        { error: "Stripe payment outcome is uncertain; this transaction is blocked pending reconciliation." },
+        { status: 503 }
+      );
     }
   }
 
-  // 3. Wallet balance update (deposits, admin credits/debits, investment
-  //    withdrawals, investment gain claims, and now also confirmed
-  //    external withdrawals whose send just succeeded above)
-  // 2b. REAL bank payout for withdrawals via Stripe Connect — same
-  // "send before touching balance" pattern as crypto. Only runs for
-  // withdrawals where payment_method === "bank" (Withdraw page needs
-  // updating to actually offer this — currently crypto-only).
-  let stripeTransferId = null;
+  if (txn.type === "withdrawal" && txn.crypto_currency && txn.destination_address) {
+    let hotBalance;
+    try {
+      hotBalance = await getHotWalletBalance(txn.crypto_currency);
+    } catch (balanceError) {
+      const released = await releaseClaim({ reason: "hot_wallet_balance_unavailable" });
+      return NextResponse.json(
+        { error: released ? balanceError.message : "Could not safely release transaction processing." },
+        { status: released ? 500 : 500 }
+      );
+    }
+
+    if (hotBalance < Number(txn.crypto_amount)) {
+      const released = await releaseClaim({ reason: "insufficient_hot_wallet_balance" });
+      return NextResponse.json(
+        { error: released
+          ? `Platform hot wallet only has ${hotBalance} ${txn.crypto_currency} — cannot cover this ${txn.crypto_amount} ${txn.crypto_currency} withdrawal. Fund the wallet first.`
+          : "Could not safely release transaction processing." },
+        { status: released ? 400 : 500 }
+      );
+    }
+
+    try {
+      const result = await sendCryptoPayout(
+        txn.crypto_currency,
+        txn.destination_address,
+        txn.crypto_amount
+      );
+      sentTxHash = result.txHash;
+      providerEvidence.sentTxHash = sentTxHash;
+      providerEvidence.sentAt = new Date().toISOString();
+      externalPaymentAccepted = true;
+    } catch (sendError) {
+      console.error("Crypto send outcome requires reconciliation:", sendError);
+      await markUncertain({
+        sendError: sendError.message || "Crypto send outcome is uncertain",
+        cryptoCurrency: txn.crypto_currency,
+        destinationAddress: txn.destination_address,
+        cryptoAmount: txn.crypto_amount,
+      });
+      return NextResponse.json(
+        { error: "Crypto payment outcome is uncertain; this transaction is blocked pending reconciliation." },
+        { status: 503 }
+      );
+    }
+  }
 
   if (txn.type === "withdrawal" && txn.payment_method === "bank") {
-    const stripe = getStripe();
-
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("stripe_connect_account_id, stripe_connect_onboarded")
@@ -314,127 +431,101 @@ export async function POST(request) {
       .single();
 
     if (!profile?.stripe_connect_account_id || !profile?.stripe_connect_onboarded) {
+      const released = await releaseClaim({ reason: "stripe_connect_not_ready" });
       return NextResponse.json(
-        { error: "User has not completed bank payout onboarding with Stripe — cannot send funds." },
-        { status: 400 }
+        { error: released
+          ? "User has not completed bank payout onboarding with Stripe — cannot send funds."
+          : "Could not safely release transaction processing." },
+        { status: released ? 400 : 500 }
+      );
+    }
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      const released = await releaseClaim({ reason: "stripe_secret_not_configured" });
+      return NextResponse.json(
+        { error: released
+          ? "Payment processing is not configured."
+          : "Could not safely release transaction processing." },
+        { status: 500 }
       );
     }
 
     try {
-      const transfer = await stripe.transfers.create({
-        amount: Math.round(Number(txn.amount_usd) * 100),
-        currency: "usd",
-        destination: profile.stripe_connect_account_id,
-      });
-      stripeTransferId = transfer.id;
-
-      await supabaseAdmin
-        .from("transactions")
-        .update({ sent_tx_hash: transfer.id, sent_at: new Date().toISOString() }) // reusing sent_tx_hash/sent_at columns — same "proof money left the platform" concept as crypto
-        .eq("id", transactionId);
+      const transfer = await getStripe().transfers.create(
+        {
+          amount: Math.round(Number(txn.amount_usd) * 100),
+          currency: "usd",
+          destination: profile.stripe_connect_account_id,
+        },
+        { idempotencyKey: `vestora-transaction-${txn.id}-bank-withdrawal` }
+      );
+      providerEvidence.sentTxHash = transfer.id;
+      providerEvidence.sentAt = new Date().toISOString();
+      externalPaymentAccepted = true;
     } catch (transferError) {
-      console.error("Stripe transfer failed:", transferError);
-      await supabaseAdmin
-        .from("transactions")
-        .update({ send_error: transferError.message })
-        .eq("id", transactionId);
-      return NextResponse.json({ error: `Bank payout failed: ${transferError.message}` }, { status: 500 });
+      console.error("Stripe transfer outcome requires review:", transferError);
+      const evidence = {
+        sendError: transferError.message || "Stripe transfer failed",
+        stripeErrorType: transferError.type || null,
+        stripeStatusCode: transferError.statusCode || null,
+      };
+      if (isDefinitiveStripeRejection(transferError)) {
+        await releaseClaim(evidence);
+        return NextResponse.json(
+          { error: transferError.message },
+          { status: 500 }
+        );
+      }
+
+      await markUncertain(evidence);
+      return NextResponse.json(
+        { error: "Stripe transfer outcome is uncertain; this transaction is blocked pending reconciliation." },
+        { status: 503 }
+      );
     }
   }
 
-  const { data: wallet, error: walletFetchError } = await supabaseAdmin
-    .from("wallets")
-    .select("balance_usd")
-    .eq("user_id", txn.user_id)
-    .single();
-
-  if (walletFetchError || !wallet) {
-    return NextResponse.json({ error: "Wallet not found for this user" }, { status: 500 });
-  }
-
-  // Added "investment_interest_claim" here — same credit direction as
-  // an investment_withdrawal, just a different transaction type.
-  const isCredit = txn.type === "deposit" || txn.type === "admin_credit" || txn.type === "investment_withdrawal" || txn.type === "investment_interest_claim";
-  const delta = isCredit ? Number(txn.amount_usd) : -Number(txn.amount_usd);
-  const newBalance = Number(wallet.balance_usd) + delta;
-
-  if (newBalance < 0) {
-    return NextResponse.json({ error: "This would take the user's balance negative — cannot approve." }, { status: 400 });
-  }
-
-  const { error: walletUpdateError } = await supabaseAdmin
-    .from("wallets")
-    .update({ balance_usd: newBalance, updated_at: new Date().toISOString() })
-    .eq("user_id", txn.user_id);
-
-  if (walletUpdateError) {
-    return NextResponse.json({ error: walletUpdateError.message }, { status: 500 });
-  }
-
-  // 4. Investment record update (unchanged from before)
-  if (txn.type === "investment_withdrawal" && txn.investment_id) {
-    const { data: inv, error: invFetchError } = await supabaseAdmin
-      .from("investments")
-      .select("amount_usd, withdrawn_principal")
-      .eq("id", txn.investment_id)
-      .single();
-
-    if (invFetchError || !inv) {
-      return NextResponse.json({ error: "Investment not found — wallet was credited but investment record could not be updated. Investigate manually." }, { status: 500 });
-    }
-
-    const newWithdrawnPrincipal = Number(inv.withdrawn_principal) + Number(txn.principal_portion || 0);
-    const isFullyWithdrawn = newWithdrawnPrincipal >= Number(inv.amount_usd) - 0.005;
-
-    const { error: invUpdateError } = await supabaseAdmin
-      .from("investments")
-      .update({ withdrawn_principal: newWithdrawnPrincipal, status: isFullyWithdrawn ? "withdrawn" : "active" })
-      .eq("id", txn.investment_id);
-
-    if (invUpdateError) {
-      return NextResponse.json({ error: `Wallet was credited but investment record failed to update: ${invUpdateError.message}. Investigate manually.` }, { status: 500 });
+  if (Object.keys(providerEvidence).length > 0) {
+    const evidenceError = await updateClaim(
+      supabase,
+      "record_transaction_claim_evidence",
+      transactionId,
+      claimToken,
+      providerEvidence
+    );
+    if (evidenceError) {
+      console.error("Provider accepted payment but evidence could not be persisted.", evidenceError.code || "evidence_error");
+      return NextResponse.json(
+        { error: "Payment was accepted, but completion is blocked pending reconciliation." },
+        { status: 503 }
+      );
     }
   }
 
-  // 4b. NEW — investment gain claim: bumps claimed_interest so this
-  // same accrued interest can't be paid out again on a future claim.
-  // Never touches withdrawn_principal or status — principal stays
-  // invested exactly as it was.
-  if (txn.type === "investment_interest_claim" && txn.investment_id) {
-    const { data: inv, error: invFetchError } = await supabaseAdmin
-      .from("investments")
-      .select("claimed_interest")
-      .eq("id", txn.investment_id)
-      .single();
-
-    if (invFetchError || !inv) {
-      return NextResponse.json({ error: "Investment not found — wallet was credited but investment record could not be updated. Investigate manually." }, { status: 500 });
+  const { data: completion, error: completionError } = await supabase.rpc(
+    "finalize_transaction_approval",
+    {
+      p_transaction_id: transactionId,
+      p_claim_token: claimToken,
     }
+  );
 
-    const newClaimedInterest = Number(inv.claimed_interest) + Number(txn.amount_usd);
-
-    const { error: invUpdateError } = await supabaseAdmin
-      .from("investments")
-      .update({ claimed_interest: newClaimedInterest })
-      .eq("id", txn.investment_id);
-
-    if (invUpdateError) {
-      return NextResponse.json({ error: `Wallet was credited but investment record failed to update: ${invUpdateError.message}. Investigate manually.` }, { status: 500 });
+  if (completionError) {
+    if (externalPaymentAccepted) {
+      await markUncertain({
+        finalizationError: completionError.message,
+        ...providerEvidence,
+      });
+    } else {
+      await releaseClaim({ finalizationError: completionError.message });
     }
-  }
-
-  const { error: txnUpdateError } = await supabaseAdmin
-    .from("transactions")
-    .update({
-      status: "verified",
-      admin_note: adminNote || null,
-      verified_by: admin.id,
-      verified_at: new Date().toISOString(),
-    })
-    .eq("id", transactionId);
-
-  if (txnUpdateError) {
-    return NextResponse.json({ error: txnUpdateError.message }, { status: 500 });
+    console.error("Transaction approval finalization failed.", completionError.code || "finalization_error");
+    return NextResponse.json(
+      { error: externalPaymentAccepted
+        ? "Payment was accepted but database completion needs reconciliation."
+        : completionError.message },
+      { status: externalPaymentAccepted ? 503 : 500 }
+    );
   }
 
   try {
@@ -443,7 +534,11 @@ export async function POST(request) {
       targetUserId: txn.user_id,
       amountUsd: txn.amount_usd,
       reason: adminNote || "Verified by admin",
-      metadata: blockchainResult ? { onchain: blockchainResult } : (sentTxHash ? { sentTxHash } : (stripePaymentIntentStatus ? { stripePaymentIntentStatus } : undefined)),
+      metadata: blockchainResult
+        ? { onchain: blockchainResult }
+        : (sentTxHash
+          ? { sentTxHash }
+          : (stripePaymentIntentStatus ? { stripePaymentIntentStatus } : undefined)),
     });
   } catch (auditError) {
     console.error("Audit log failed after successful verification:", auditError);
@@ -456,15 +551,28 @@ export async function POST(request) {
     .single();
 
   if (profile) {
-    // Same note as the reject branch above — investment_interest_claim
-    // currently uses the generic withdrawalVerifiedEmail wording.
     const emailContent = txn.type === "deposit"
       ? depositVerifiedEmail(txn.amount_usd)
       : txn.type === "investment_withdrawal"
-      ? investmentWithdrawalVerifiedEmail(txn.amount_usd, txn.principal_portion, txn.forfeited_interest, txn.fee_charged)
-      : withdrawalVerifiedEmail(txn.amount_usd);
-    await sendNotificationEmail({ to: profile.email, notificationsEnabled: profile.email_notifications, ...emailContent });
+        ? investmentWithdrawalVerifiedEmail(
+          txn.amount_usd,
+          txn.principal_portion,
+          txn.forfeited_interest,
+          txn.fee_charged
+        )
+        : withdrawalVerifiedEmail(txn.amount_usd);
+    await sendNotificationEmail({
+      to: profile.email,
+      notificationsEnabled: profile.email_notifications,
+      ...emailContent,
+    });
   }
 
-  return NextResponse.json({ success: true, newBalance, blockchainResult, sentTxHash, stripePaymentIntentStatus });
+  return NextResponse.json({
+    success: true,
+    newBalance: completion.newBalance,
+    blockchainResult,
+    sentTxHash: providerEvidence.sentTxHash || null,
+    stripePaymentIntentStatus,
+  });
 }

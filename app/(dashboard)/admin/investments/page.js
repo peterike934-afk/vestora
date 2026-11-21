@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getAllInvestmentsAdmin } from '@/lib/queries'
+import { getDisplayInvestmentStatus } from '@/lib/investmentStatus'
 
 const s = {
   page: { padding: '32px 36px' },
@@ -35,9 +36,8 @@ function formatUsd(n) {
   return `$${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-// Requires a reason before cancelling — this becomes the admin_note on
-// the investment_cancelled transaction the user sees in their own
-// transaction history, so they know why their balance changed.
+// Requires a reason before cancelling — under V2 cancellation it is
+// recorded in the admin audit log (no separate transaction is created).
 function CancelModal({ investment, onClose, onConfirm, submitting, error }) {
   const [reason, setReason] = useState('')
 
@@ -51,7 +51,7 @@ function CancelModal({ investment, onClose, onConfirm, submitting, error }) {
 
         {error && <div style={s.modalError}>{error}</div>}
 
-        <label style={s.label}>Reason (shown to the user)</label>
+        <label style={s.label}>Reason (recorded in the admin audit log)</label>
         <textarea
           style={s.textarea}
           placeholder="e.g. Investment cancelled due to a compliance review"
@@ -167,13 +167,18 @@ export default function AdminInvestmentsPage() {
                   <td style={s.td}>{inv.apy_percent}%</td>
                   <td style={s.td}>{inv.status === 'active' ? Math.ceil(inv.days_remaining) : '—'}</td>
                   <td style={s.td}>
-                    <span style={{
-                      ...s.badge,
-                      background: inv.status === 'active' ? 'var(--green-dim)' : inv.status === 'cancelled' ? 'var(--gold-dim)' : 'var(--bg4)',
-                      color: inv.status === 'active' ? 'var(--green)' : inv.status === 'cancelled' ? 'var(--gold)' : 'var(--text3)',
-                    }}>
-                      {inv.status}
-                    </span>
+                    {(() => {
+                      const displayStatus = getDisplayInvestmentStatus(inv)
+                      return (
+                        <span style={{
+                          ...s.badge,
+                          background: displayStatus === 'active' ? 'var(--green-dim)' : displayStatus === 'cancelled' ? 'var(--gold-dim)' : 'var(--bg4)',
+                          color: displayStatus === 'active' ? 'var(--green)' : displayStatus === 'cancelled' ? 'var(--gold)' : 'var(--text3)',
+                        }}>
+                          {displayStatus}
+                        </span>
+                      )
+                    })()}
                   </td>
                   <td style={s.td}>
                     {inv.status === 'active' ? (

@@ -1,17 +1,36 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
-
 const CONSECUTIVE_FAILS_TO_OPEN_INCIDENT = 2 // require 2 bad checks in a row before alarming
 
+// Created per request, not at module import: Next.js evaluates route
+// modules while collecting page data during `next build`, and an eager
+// createClient() throws there when the env vars are not present.
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !serviceRoleKey) return null
+  return createClient(url, serviceRoleKey)
+}
+
 export async function GET(req) {
-  // Only allow this route to run if the caller knows the secret password
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Only allow this route to run if the caller knows the secret password.
+  // If CRON_SECRET is missing or blank, reject every request — otherwise
+  // the comparison below would accept the literal header "Bearer undefined".
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || !cronSecret.trim()) {
+    console.error('Health check rejected: CRON_SECRET is not configured.')
     return new Response('Unauthorized', { status: 401 })
+  }
+
+  const auth = req.headers.get('authorization')
+  if (auth !== `Bearer ${cronSecret}`) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  const supabase = getSupabase()
+  if (!supabase) {
+    console.error('Health check cannot run: Supabase URL or service role key is not configured.')
+    return new Response('Health check is not configured', { status: 500 })
   }
 
   const { data: services, error } = await supabase.from('services').select('*')
@@ -32,13 +51,13 @@ export async function GET(req) {
       await supabase.from('status_checks').insert({ service_id: svc.id, status, response_ms: null })
     }
 
-    await reconcileIncident(svc, status)
+    await reconcileIncident(supabase, svc, status)
   }
 
   return Response.json({ checked: services.length })
 }
 
-async function reconcileIncident(svc, status) {
+async function reconcileIncident(supabase, svc, status) {
   const { data: links } = await supabase
     .from('incident_services')
     .select('incident_id')

@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { routing } from "@/i18n/routing";
 import { FxRatesProvider } from "@/contexts/FxRatesContext";
 import DashboardShell from "@/components/DashboardShell";
+import { after } from "next/server";
+import { isNewlyVerified, sendWelcomeEmailIfNewlyVerified } from "@/lib/welcome-email";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -23,6 +25,13 @@ export default async function Layout({ children, params }) {
 
   if (!user) {
     redirect("/login");
+  }
+
+  // Covers users who verified on another device or browser and then
+  // signed in manually: the callback had no session for them. Runs after
+  // the response; the ledger guarantees at most one welcome email.
+  if (isNewlyVerified(user)) {
+    after(() => sendWelcomeEmailIfNewlyVerified(user));
   }
 
   const { data: profile } = await supabase

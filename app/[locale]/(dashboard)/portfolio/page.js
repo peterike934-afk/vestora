@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
 import { useMoneyFormatter } from '@/lib/formatting'
 import { getWallet, getInvestmentPlans, getUserInvestments, createInvestment, requestInvestmentWithdrawal, claimInvestmentGains } from '@/lib/queries'
+import { getDisplayInvestmentStatus } from '@/lib/investmentStatus'
 
 const s = {
   page: { padding: '32px 36px' },
@@ -359,6 +360,7 @@ export default function PortfolioPage() {
                   const canWithdraw = inv.status === 'active' && available > 0.01
                   const claimable = inv.status === 'active' ? (Number(inv.available_to_claim) || 0) : 0
                   const canClaim = claimable > 0.01
+                  const displayStatus = getDisplayInvestmentStatus(inv)
                   return (
                     <tr key={inv.id}>
                       <td style={{ ...s.td, fontWeight: '500' }}>{inv.plan_name}</td>
@@ -369,10 +371,10 @@ export default function PortfolioPage() {
                       <td style={s.td}>
                         <span style={{
                           ...s.statusBadge,
-                          background: inv.status === 'active' ? 'var(--green-dim)' : inv.status === 'cancelled' ? 'var(--gold-dim)' : 'var(--bg4)',
-                          color: inv.status === 'active' ? 'var(--green)' : inv.status === 'cancelled' ? 'var(--gold)' : 'var(--text3)',
+                          background: displayStatus === 'active' ? 'var(--green-dim)' : displayStatus === 'cancelled' ? 'var(--gold-dim)' : 'var(--bg4)',
+                          color: displayStatus === 'active' ? 'var(--green)' : displayStatus === 'cancelled' ? 'var(--gold)' : 'var(--text3)',
                         }}>
-                          {t(`status.${inv.status}`, { default: inv.status })}
+                          {t(`status.${displayStatus}`, { default: displayStatus })}
                         </span>
                       </td>
                       <td style={s.td}>
