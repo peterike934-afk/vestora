@@ -3,37 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getAuthLevel, listMfaFactors, verifyMfaLogin } from '@/lib/mfa'
 import AuthTransitionOverlay from '@/components/AuthTransitionOverlay'
-import VestoraMark from '@/components/VestoraMark'
+import AuthExperienceShell from '@/components/auth/AuthExperienceShell'
 import { applyReferralCode } from '@/lib/queries'
 import { getSignInErrorMessage, VERIFICATION_MESSAGES, SUCCESS_VERIFICATION_STATUSES } from '@/lib/authMessages'
-
-const s = {
-  page: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '24px' },
-  card: { width: '100%', maxWidth: '440px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '48px 40px' },
-  logo: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px', justifyContent: 'center' },
-  logoText: { fontFamily: 'Playfair Display, serif', fontSize: '22px', fontWeight: '600', color: 'var(--text)' },
-  title: { fontSize: '24px', fontWeight: '700', color: 'var(--text)', marginBottom: '8px', textAlign: 'center' },
-  sub: { fontSize: '14px', color: 'var(--text2)', textAlign: 'center', marginBottom: '32px' },
-  label: { display: 'block', fontSize: '13px', color: 'var(--text2)', marginBottom: '6px', fontWeight: '500' },
-  input: { width: '100%', padding: '12px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s' },
-  field: { marginBottom: '20px' },
-  btn: { width: '100%', padding: '14px', background: 'var(--green)', border: 'none', borderRadius: 'var(--radius-sm)', color: '#000', fontSize: '15px', fontWeight: '600', marginTop: '8px', transition: 'opacity 0.2s', cursor: 'pointer' },
-  btnDisabled: { opacity: 0.6, cursor: 'not-allowed' },
-  link: { textAlign: 'center', marginTop: '24px', fontSize: '14px', color: 'var(--text2)' },
-  linkA: { color: 'var(--green)', fontWeight: '500' },
-  divider: { display: 'flex', alignItems: 'center', gap: '12px', margin: '24px 0' },
-  divLine: { flex: 1, height: '1px', background: 'var(--border)' },
-  divText: { fontSize: '12px', color: 'var(--text3)' },
-  google: { width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border2)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' },
-  error: { fontSize: '13px', color: 'var(--red)', background: 'var(--red-dim)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' },
-  success: { fontSize: '13px', color: 'var(--green)', background: 'var(--green-dim)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' },
-  codeInput: { width: '100%', padding: '14px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '20px', textAlign: 'center', letterSpacing: '6px', outline: 'none', marginBottom: '20px' },
-  passWrap: { position: 'relative' },
-  eyeBtn: { position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--text3)' },
-}
 
 // Minimum time the full-screen overlay stays visible after a successful
 // sign-in, so it doesn't flash by on a fast connection — the request
@@ -170,21 +146,28 @@ export default function Login() {
 
   if (needsMfa) {
     return (
-      <div style={s.page}>
+      <AuthExperienceShell
+        className="auth-experience--login"
+        topAction={<>Back to <Link href="/login">sign in</Link></>}
+      >
         <AuthTransitionOverlay show={showOverlay} />
-        <div style={s.card}>
-          <div style={s.logo}>
-            <VestoraMark size={32} />
-            <span style={s.logoText}>vestora</span>
-          </div>
-          <p style={s.title}>Two-factor authentication</p>
-          <p style={s.sub}>Enter the 6-digit code from your authenticator app</p>
+        <div className="auth-experience__form">
+          <header className="auth-experience__form-heading">
+            <span className="auth-experience__form-eyebrow">Additional security</span>
+            <h2 className="auth-experience__form-title">Two-factor authentication</h2>
+            <p className="auth-experience__form-description">
+              Enter the 6-digit code from your authenticator app.
+            </p>
+          </header>
 
-          {error && <div style={s.error}>{error}</div>}
+          {error && <div className="auth-experience__message" role="alert">{error}</div>}
 
           <form onSubmit={handleVerifyMfa}>
             <input
-              style={s.codeInput}
+              className="auth-experience__input auth-experience__code-input"
+              aria-label="Authenticator code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
               placeholder="000000"
               maxLength={6}
               autoFocus
@@ -192,50 +175,65 @@ export default function Login() {
               onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
             />
             <button
-              style={{ ...s.btn, ...(verifyingMfa ? s.btnDisabled : {}) }}
+              className="auth-experience__submit"
               type="submit"
               disabled={verifyingMfa}
             >
-              {verifyingMfa ? 'Verifying…' : 'Verify & sign in'}
+              {verifyingMfa ? 'Verifying…' : <>Verify &amp; sign in <ArrowRight size={16} aria-hidden="true" /></>}
             </button>
           </form>
         </div>
-      </div>
+      </AuthExperienceShell>
     )
   }
 
   return (
-    <div style={s.page}>
+    <AuthExperienceShell
+      className="auth-experience--login"
+      topAction={<>New to Vestora? <Link href="/signup">Create an account</Link></>}
+    >
       <AuthTransitionOverlay show={showOverlay} />
-      <div style={s.card}>
-        <div style={s.logo}>
-          <VestoraMark size={32} />
-          <span style={s.logoText}>vestora</span>
-        </div>
-        <p style={s.title}>Welcome back</p>
-        <p style={s.sub}>Sign in to your investment account</p>
+      <div className="auth-experience__form">
+        <header className="auth-experience__form-heading">
+          <span className="auth-experience__form-eyebrow">Secure account access</span>
+          <h2 className="auth-experience__form-title">Welcome back</h2>
+          <p className="auth-experience__form-description">Sign in to your Vestora account.</p>
+        </header>
 
+        {error && <div className="auth-experience__message" role="alert">{error}</div>}
         {verificationMessage && (
           <div
-            style={SUCCESS_VERIFICATION_STATUSES.has(verificationStatus) ? s.success : s.error}
+            className={`auth-experience__message${SUCCESS_VERIFICATION_STATUSES.has(verificationStatus) ? ' auth-experience__message--success' : ''}`}
             role="status"
           >
             {verificationMessage}
           </div>
         )}
-        {error && <div style={s.error}>{error}</div>}
 
         <form onSubmit={handle}>
-          <div style={s.field}>
-            <label style={s.label}>Email address</label>
-            <input style={s.input} type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
+          <div className="auth-experience__field">
+            <label className="auth-experience__label" htmlFor="login-email">Email address</label>
+            <input
+              className="auth-experience__input"
+              id="login-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={e => setForm({...form, email: e.target.value})}
+              required
+            />
           </div>
-          <div style={s.field}>
-            <label style={s.label}>Password</label>
-            <div style={s.passWrap}>
+          <div className="auth-experience__field">
+            <label className="auth-experience__label" htmlFor="login-password">Password</label>
+            <div className="auth-experience__password-wrap">
               <input
-                style={{ ...s.input, paddingRight: '44px' }}
+                className="auth-experience__input"
+                id="login-password"
+                name="password"
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 placeholder="••••••••"
                 value={form.password}
                 onChange={e => setForm({...form, password: e.target.value})}
@@ -243,40 +241,33 @@ export default function Login() {
               />
               <button
                 type="button"
-                style={s.eyeBtn}
+                className="auth-experience__password-toggle"
                 onClick={() => setShowPassword(v => !v)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-10-8-10-8a18.5 18.5 0 0 1 4.22-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s3-8 11-8 11 8 11 8-3 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
+                {showPassword
+                  ? <EyeOff size={17} aria-hidden="true" />
+                  : <Eye size={17} aria-hidden="true" />}
               </button>
             </div>
-            <div style={{ textAlign: 'right', marginTop: '8px' }}>
-              <Link href="/forgot-password" style={{ fontSize: '13px', color: 'var(--text2)' }}>
+            <div className="auth-experience__options">
+              <Link className="auth-experience__text-link" href="/forgot-password">
                 Forgot password?
               </Link>
             </div>
           </div>
           <button
-            style={{ ...s.btn, ...(loading ? s.btnDisabled : {}) }}
+            className="auth-experience__submit"
             type="submit"
             disabled={loading}
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? 'Signing in…' : <>Sign in <ArrowRight size={16} aria-hidden="true" /></>}
           </button>
         </form>
-        <div style={s.divider}><div style={s.divLine}/><span style={s.divText}>or</span><div style={s.divLine}/></div>
-        <p style={s.link}>Don't have an account? <Link href="/signup" style={s.linkA}>Create one</Link></p>
+        <p className="auth-experience__form-footer">
+          Don’t have an account? <Link href="/signup">Create one</Link>
+        </p>
       </div>
-    </div>
+    </AuthExperienceShell>
   )
 }

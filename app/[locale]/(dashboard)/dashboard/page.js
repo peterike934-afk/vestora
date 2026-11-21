@@ -2,11 +2,16 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect, useMemo } from 'react'
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts'
-import { Inbox } from 'lucide-react'
+import { ResponsiveContainer, PieChart, Pie, Tooltip, Cell } from 'recharts'
+import { ArrowDownLeft, ArrowUpRight, CircleDollarSign, ArrowRight, Inbox, ShieldCheck } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { useUser } from '@/contexts/UserContext'
 import { useMoneyFormatter, useDateFormatter } from '@/lib/formatting'
+import FinancialMetric from '@/components/dashboard/FinancialMetric'
+import StatusBadge from '@/components/dashboard/StatusBadge'
+import TransactionRow from '@/components/dashboard/TransactionRow'
+import DashboardState from '@/components/dashboard/DashboardState'
 import {
   getWallet, getTransactions, getUserInvestments,
   getServiceStatuses, getActiveIncidents, subscribeToStatusChanges,
@@ -14,47 +19,38 @@ import {
 } from '@/lib/queries'
 
 const s = {
-  page: { padding: '32px 36px', maxWidth: '1200px' },
-  header: { marginBottom: '32px' },
-  title: { fontSize: '26px', fontWeight: '700', color: 'var(--text)', marginBottom: '4px' },
-  sub: { fontSize: '14px', color: 'var(--text2)' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '20px' },
-  stat: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '20px 24px' },
-  statLabel: { fontSize: '12px', color: 'var(--text3)', fontWeight: '500', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '10px' },
-  statValue: { fontSize: '26px', fontWeight: '700', color: 'var(--text)', marginBottom: '6px', letterSpacing: '-0.02em' },
-  statChange: { fontSize: '12px', fontWeight: '500', padding: '3px 8px', borderRadius: '20px', display: 'inline-block' },
-  statusCard: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '20px 24px', marginBottom: '20px' },
+  page: { maxWidth: '1380px', margin: '0 auto', padding: '34px 44px' },
+  statusCard: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '20px 24px', marginBottom: '20px', boxShadow: '0 4px 16px rgba(24, 49, 34, 0.035)' },
   statusHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' },
   statusStrip: { display: 'flex', gap: '10px', flexWrap: 'wrap' },
   statusPill: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: 'var(--text2)', background: 'var(--bg3)', padding: '6px 12px', borderRadius: '999px' },
   statusDot: { width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0 },
   statusLink: { fontSize: '12px', color: 'var(--green)', fontWeight: '500', textDecoration: 'none' },
   alertBanner: { display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--red-dim)', border: '1px solid var(--red)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', marginTop: '14px', fontSize: '13px', color: 'var(--red)' },
-  grid2: { display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', marginBottom: '20px' },
-  card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '24px' },
+  grid2: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 0.75fr)', gap: '20px', marginBottom: '20px' },
+  card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '24px', boxShadow: '0 4px 16px rgba(24, 49, 34, 0.035)' },
   cardTitle: { fontSize: '15px', fontWeight: '600', color: 'var(--text)', marginBottom: '4px' },
   cardSub: { fontSize: '12px', color: 'var(--text3)', marginBottom: '20px' },
   txnItem: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border)' },
-  txnLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
-  txnIcon: { width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 },
-  txnName: { fontSize: '14px', fontWeight: '500', color: 'var(--text)' },
-  txnDate: { fontSize: '12px', color: 'var(--text3)', marginTop: '2px' },
-  txnAmount: { fontSize: '14px', fontWeight: '600' },
   empty: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '40px 20px', color: 'var(--text3)', textAlign: 'center' },
   emptyTitle: { fontSize: '14px', fontWeight: '500', color: 'var(--text2)' },
   emptySub: { fontSize: '12px', color: 'var(--text3)', maxWidth: '220px' },
   legendRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', fontSize: '13px' },
   legendLeft: { display: 'flex', alignItems: 'center', gap: '8px' },
   legendDot: { width: '9px', height: '9px', borderRadius: '50%' },
-  topItem: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border)' },
-  topLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
-  topRank: { width: '26px', height: '26px', borderRadius: '8px', background: 'var(--bg3)', color: 'var(--text2)', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  topName: { fontSize: '13.5px', fontWeight: '500', color: 'var(--text)' },
-  topMeta: { fontSize: '11.5px', color: 'var(--text3)', marginTop: '2px' },
-  topGain: { fontSize: '13.5px', fontWeight: '600' },
+  investmentItem: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '13px 0', borderBottom: '1px solid var(--border)' },
+  investmentCopy: { minWidth: 0 },
+  investmentName: { overflow: 'hidden', color: 'var(--text)', fontSize: '13px', fontWeight: '600', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  investmentMeta: { color: 'var(--text3)', fontSize: '11px', marginTop: '4px' },
 }
 
 const ALLOCATION_COLORS = ['var(--green)', 'var(--blue)', 'var(--gold)', 'var(--red)', 'var(--text3)'];
+const TRANSACTION_ICONS = {
+  deposit: ArrowDownLeft,
+  withdrawal: ArrowUpRight,
+  admin_credit: CircleDollarSign,
+  admin_debit: CircleDollarSign,
+}
 
 const STATUS_DOT_COLOR = {
   up: 'var(--green)',
@@ -76,44 +72,47 @@ function EmptyState({ title, sub }) {
 function txnIconMeta(type, t) {
   switch (type) {
     case 'deposit':
-      return { icon: '↓', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.deposit') };
+      return { icon: TRANSACTION_ICONS.deposit, tone: 'positive', label: t('txnTypes.deposit') };
     case 'withdrawal':
-      return { icon: '↑', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.withdrawal') };
+      return { icon: TRANSACTION_ICONS.withdrawal, tone: 'negative', label: t('txnTypes.withdrawal') };
     case 'admin_credit':
-      return { icon: '+', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.adminCredit') };
+      return { icon: TRANSACTION_ICONS.admin_credit, tone: 'positive', label: t('txnTypes.adminCredit') };
     case 'admin_debit':
-      return { icon: '−', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.adminDebit') };
+      return { icon: TRANSACTION_ICONS.admin_debit, tone: 'negative', label: t('txnTypes.adminDebit') };
     default:
-      return { icon: '•', color: 'var(--text2)', bg: 'var(--bg3)', label: type };
+      return { icon: CircleDollarSign, tone: 'neutral', label: type };
   }
 }
 
-function valueAt(investment, atDate) {
-  const started = new Date(investment.started_at);
-  if (atDate < started) return 0;
-  const daysElapsed = (atDate - started) / 86400000;
-  const cappedDays = Math.min(daysElapsed, investment.term_days);
-  return Number(investment.amount_usd) * (1 + (Number(investment.apy_percent) / 100) * (cappedDays / 365));
-}
-
-function buildGrowthSeries(investments) {
-  if (!investments.length) return [];
-  const starts = investments.map(i => new Date(i.started_at).getTime());
-  const earliest = new Date(Math.min(...starts));
-  const now = new Date();
-  const totalDays = Math.max(1, Math.ceil((now - earliest) / 86400000));
-  const pointCount = Math.min(30, totalDays + 1);
-  const points = [];
-  for (let i = 0; i < pointCount; i++) {
-    const t = pointCount === 1 ? 0 : i / (pointCount - 1);
-    const date = new Date(earliest.getTime() + t * (now.getTime() - earliest.getTime()));
-    const total = investments.reduce((sum, inv) => sum + valueAt(inv, date), 0);
-    points.push({
-      date: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-      value: Math.round(total * 100) / 100,
-    });
-  }
-  return points;
+function DashboardArtwork() {
+  return (
+    <svg className="customer-dashboard-hero__illustration" viewBox="0 0 360 250" fill="none" aria-hidden="true">
+      <circle cx="210" cy="122" r="112" fill="url(#hero-orb)" />
+      <circle cx="210" cy="122" r="82" stroke="rgba(226,255,234,.25)" strokeWidth="1.2" />
+      <circle cx="210" cy="122" r="58" stroke="rgba(226,255,234,.22)" strokeWidth="1.2" strokeDasharray="3 7" />
+      <path d="M92 211c38-39 49-93 91-116 32-18 76-13 110 7" stroke="url(#hero-line)" strokeWidth="2" strokeLinecap="round" />
+      <path d="M135 203c12-28 15-54 34-74m0 0c-25-2-42-17-48-39 28-2 48 10 54 39Zm19-36c14-25 34-39 59-42-2 29-19 48-47 55" fill="url(#hero-leaf)" stroke="rgba(221,255,230,.78)" strokeWidth="1.2" strokeLinejoin="round" />
+      <path d="M169 129c-7 32-20 56-39 76m39-76 25 4m-25-4-17-28m46-1 20-21" stroke="rgba(232,255,238,.78)" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="293" cy="67" r="6" fill="#B7F5C8" />
+      <circle cx="99" cy="112" r="4" fill="#B7F5C8" opacity=".8" />
+      <circle cx="276" cy="192" r="4" fill="#B7F5C8" opacity=".72" />
+      <defs>
+        <radialGradient id="hero-orb" cx="0" cy="0" r="1" gradientTransform="matrix(121 78 -83 129 170 87)" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#54C988" stopOpacity=".36" />
+          <stop offset="1" stopColor="#54C988" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="hero-line" x1="100" y1="180" x2="293" y2="100" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#A6EAC0" stopOpacity="0" />
+          <stop offset=".55" stopColor="#A6EAC0" />
+          <stop offset="1" stopColor="#A6EAC0" stopOpacity=".22" />
+        </linearGradient>
+        <linearGradient id="hero-leaf" x1="144" y1="74" x2="230" y2="145" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#8DE1AA" stopOpacity=".68" />
+          <stop offset="1" stopColor="#2C8D5B" stopOpacity=".12" />
+        </linearGradient>
+      </defs>
+    </svg>
+  )
 }
 
 function buildAllocation(investments) {
@@ -127,20 +126,6 @@ function buildAllocation(investments) {
   return Object.entries(byPlan)
     .map(([name, value]) => ({ name, value, pct: Math.round((value / totalValue) * 1000) / 10 }))
     .sort((a, b) => b.value - a.value);
-}
-
-function buildTopPerformers(investments) {
-  return investments
-    .filter(i => i.status === 'active' || i.status === 'matured')
-    .map(i => {
-      const invested = Number(i.amount_usd);
-      const current = Number(i.current_value);
-      const gainUsd = current - invested;
-      const gainPct = invested > 0 ? (gainUsd / invested) * 100 : 0;
-      return { ...i, gainUsd, gainPct };
-    })
-    .sort((a, b) => b.gainPct - a.gainPct)
-    .slice(0, 5);
 }
 
 function PlatformStatus() {
@@ -191,43 +176,6 @@ function PlatformStatus() {
         <div style={s.alertBanner}>
           ⚠ {incidents[0].title}
         </div>
-      )}
-    </div>
-  );
-}
-
-function TopPerformers({ investments, loading }) {
-  const t = useTranslations('Dashboard');
-  const formatMoney = useMoneyFormatter();
-  const top = useMemo(() => buildTopPerformers(investments), [investments]);
-
-  return (
-    <div style={s.card}>
-      <div style={s.cardTitle}>{t('topPerformers.title')}</div>
-      <div style={s.cardSub}>{top.length ? t('topPerformers.rankedByReturn') : t('topPerformers.noHoldingsYet')}</div>
-
-      {loading ? (
-        <EmptyState title={t('common.loading')} />
-      ) : top.length === 0 ? (
-        <EmptyState
-          title={t('topPerformers.nothingToRank')}
-          sub={t('topPerformers.nothingToRankSub')}
-        />
-      ) : (
-        top.map((inv, i) => (
-          <div key={inv.id} style={{ ...s.topItem, ...(i === top.length - 1 ? { borderBottom: 'none' } : {}) }}>
-            <div style={s.topLeft}>
-              <div style={s.topRank}>{i + 1}</div>
-              <div>
-                <div style={s.topName}>{inv.plan_name}</div>
-                <div style={s.topMeta}>{t('topPerformers.investedApy', { amount: formatMoney(inv.amount_usd), apy: inv.apy_percent })}</div>
-              </div>
-            </div>
-            <div style={{ ...s.topGain, color: inv.gainPct >= 0 ? 'var(--green)' : 'var(--red)' }}>
-              {inv.gainPct >= 0 ? '+' : ''}{inv.gainPct.toFixed(2)}%
-            </div>
-          </div>
-        ))
       )}
     </div>
   );
@@ -312,6 +260,8 @@ function InvestorActivity() {
 
 export default function Dashboard() {
   const t = useTranslations('Dashboard');
+  const tPortfolio = useTranslations('Portfolio');
+  const tShell = useTranslations('DashboardShell');
   const formatMoney = useMoneyFormatter();
   const formatDate = useDateFormatter();
   const { user, userName } = useUser();
@@ -321,195 +271,277 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (!user?.id) return;
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(false);
     Promise.all([getWallet(user.id), getTransactions(user.id), getUserInvestments(user.id)])
       .then(([walletData, txnData, investmentData]) => {
+        if (cancelled) return;
         setWallet(walletData);
         setTransactions(txnData || []);
         setInvestments(investmentData || []);
       })
-      .catch((err) => console.error('Failed to load dashboard data:', err))
-      .finally(() => setLoading(false));
-  }, [user?.id]);
+      .catch((err) => {
+        console.error('Failed to load dashboard data:', err);
+        if (!cancelled) setLoadError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [user?.id, retryCount]);
 
   const balance = wallet?.balance_usd ?? 0;
   const verifiedTxns = transactions.filter((t) => t.status === 'verified');
-
-  const growthData = useMemo(() => buildGrowthSeries(investments), [investments]);
+  const activeInvestments = investments.filter(i => i.status === 'active');
+  const currentValue = activeInvestments.reduce((sum, i) => sum + Number(i.current_value), 0);
   const allocationData = useMemo(() => buildAllocation(investments), [investments]);
-
-  const investmentGains = investments
-    .filter(i => i.status === 'active' || i.status === 'matured')
-    .reduce((sum, i) => sum + (Number(i.current_value) - Number(i.amount_usd)), 0);
-  const netAdminAdjustments = verifiedTxns
-    .filter(t => t.type === 'admin_credit' || t.type === 'admin_debit')
-    .reduce((sum, t) => sum + (t.type === 'admin_credit' ? Number(t.amount_usd) : -Number(t.amount_usd)), 0);
-  const totalGains = investmentGains + netAdminAdjustments;
-
   const stats = [
-    { label: t('stats.totalBalance'), value: formatMoney(balance), change: t('stats.verifiedDeposits'), up: null },
+    { label: tPortfolio('currentValue'), value: formatMoney(currentValue), detail: tPortfolio('yourInvestments') },
     {
-      label: t('stats.totalGains'),
-      value: `${totalGains >= 0 ? '+' : ''}${formatMoney(totalGains)}`,
-      change: netAdminAdjustments !== 0
-        ? t('stats.gainsBreakdown', { investing: formatMoney(investmentGains), adjustments: formatMoney(netAdminAdjustments) })
-        : t('stats.fromActiveInvestments'),
-      up: totalGains >= 0,
+      label: t('stats.pendingDeposits'),
+      value: String(transactions.filter(t => t.type === 'deposit' && t.status === 'pending').length),
+      detail: t('stats.awaitingVerification'),
     },
-    { label: t('stats.pendingDeposits'), value: String(transactions.filter(t => t.type === 'deposit' && t.status === 'pending').length), change: t('stats.awaitingVerification'), up: null },
-    { label: t('stats.totalDeposited'), value: formatMoney(verifiedTxns.filter(t => t.type === 'deposit' || t.type === 'admin_credit').reduce((sum, t) => sum + Number(t.amount_usd), 0)), change: t('stats.allTime'), up: null },
-    { label: t('stats.transactions'), value: String(transactions.length), change: t('stats.totalActivity'), up: null },
+    {
+      label: t('stats.totalDeposited'),
+      value: formatMoney(verifiedTxns.filter(t => t.type === 'deposit').reduce((sum, t) => sum + Number(t.amount_usd), 0)),
+      detail: t('stats.allTime'),
+    },
   ];
 
   return (
-    <div style={s.page}>
-      <div style={s.header}>
-        <h1 style={s.title}>{firstName ? t('greetingWithName', { name: firstName }) : t('greeting')}</h1>
-        <p style={s.sub}>{t('subtitle')}</p>
-      </div>
-
-      <div style={s.statsGrid}>
-        {stats.map(st => (
-          <div key={st.label} style={s.stat}>
-            <div style={s.statLabel}>{st.label}</div>
-            <div style={{ ...s.statValue, ...(st.up === true ? { color: 'var(--green)' } : st.up === false ? { color: 'var(--red)' } : {}) }}>
-              {loading ? '—' : st.value}
-            </div>
-            <span style={{
-              ...s.statChange,
-              background: st.up === true ? 'var(--green-dim)' : st.up === false ? 'var(--red-dim)' : 'var(--bg3)',
-              color: st.up === true ? 'var(--green)' : st.up === false ? 'var(--red)' : 'var(--text2)',
-            }}>
-              {st.change}
-            </span>
+    <div className="customer-dashboard-page" style={s.page}>
+      <header className="customer-dashboard-hero">
+        <div className="customer-dashboard-hero__copy">
+          <div className="customer-dashboard-hero__eyebrow">
+            <ShieldCheck size={14} strokeWidth={2} aria-hidden="true" />
+            <span>{t('accountOverview')}</span>
           </div>
-        ))}
-      </div>
-
-      <PlatformStatus />
-      <InvestorActivity />
-
-      <div className="responsive-grid-2" style={s.grid2}>
-        <div style={s.card}>
-          <div style={s.cardTitle}>{t('portfolioGrowth.title')}</div>
-          <div style={s.cardSub}>{growthData.length ? t('portfolioGrowth.sinceFirstInvestment') : t('portfolioGrowth.noHoldingsYet')}</div>
-          {loading ? (
-            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <EmptyState title={t('common.loading')} />
-            </div>
-          ) : growthData.length === 0 ? (
-            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <EmptyState
-                title={t('portfolioGrowth.noActivity')}
-                sub={t('portfolioGrowth.noActivitySub')}
-              />
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={growthData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="growthFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--green)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--green)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: 'var(--text3)' }} axisLine={false} tickLine={false} tickFormatter={v => `$${Math.round(v / 1000)}k`} />
-                <Tooltip
-                  formatter={v => formatMoney(v)}
-                  contentStyle={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '12px' }}
-                />
-                <Area type="monotone" dataKey="value" stroke="var(--green)" strokeWidth={2} fill="url(#growthFill)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
+          <h1 className="customer-dashboard-hero__title">
+            {firstName ? t('greetingWithName', { name: firstName }) : t('greeting')}
+          </h1>
+          <p className="customer-dashboard-hero__description">{t('subtitle')}</p>
+          <Link className="customer-dashboard-hero__link" href="/portfolio">
+            {tShell('nav.portfolio')}
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
         </div>
+        <div className="customer-dashboard-hero__art">
+          <DashboardArtwork />
+        </div>
+      </header>
 
-        <div style={s.card}>
-          <div style={s.cardTitle}>{t('assetAllocation.title')}</div>
-          <div style={s.cardSub}>{allocationData.length ? t('assetAllocation.byPlan') : t('assetAllocation.noHoldingsYet')}</div>
+      <section className="customer-dashboard-balance" aria-labelledby="customer-dashboard-balance-title">
+        <div className="customer-dashboard-balance__content">
+          <div className="customer-dashboard-balance__label">
+            <span className="customer-dashboard-balance__icon"><CircleDollarSign size={17} aria-hidden="true" /></span>
+            <h2 id="customer-dashboard-balance-title">{t('availableBalance')}</h2>
+          </div>
+          <div className="customer-dashboard-balance__amount">
+            {loading || loadError ? '—' : formatMoney(balance)}
+          </div>
+          <div className="customer-dashboard-balance__currency">
+            <span>USD</span>
+            <span>{t('accountCurrency')}</span>
+          </div>
+          <div className="customer-dashboard-balance__actions">
+            <Link href="/deposit" className="customer-dashboard-balance__action customer-dashboard-balance__action--primary">
+              <ArrowDownLeft size={17} aria-hidden="true" />
+              {tShell('nav.deposit')}
+            </Link>
+            <Link href="/withdraw" className="customer-dashboard-balance__action customer-dashboard-balance__action--secondary">
+              <ArrowUpRight size={17} aria-hidden="true" />
+              {tShell('nav.withdraw')}
+            </Link>
+          </div>
+        </div>
+        <div className="customer-dashboard-balance__art" aria-hidden="true">
+          <svg viewBox="0 0 360 260" fill="none">
+            <circle cx="228" cy="130" r="115" stroke="rgba(231,255,238,.13)" />
+            <circle cx="228" cy="130" r="84" stroke="rgba(231,255,238,.14)" strokeDasharray="2 7" />
+            <path d="M75 199c34-32 58-62 89-62 30 0 40 29 70 29 30 0 39-41 80-78" stroke="url(#balance-path)" strokeWidth="2" strokeLinecap="round" />
+            <path d="M106 181c13-23 27-40 44-50m0 0c-21-1-35-13-40-32 22-1 39 8 44 32Zm31 2c10-20 27-32 47-34-2 23-15 38-37 43" fill="url(#balance-leaf)" stroke="rgba(231,255,238,.68)" strokeWidth="1.1" />
+            <circle cx="311" cy="61" r="4" fill="#C5F8D1" />
+            <circle cx="88" cy="116" r="3" fill="#C5F8D1" opacity=".8" />
+            <defs>
+              <linearGradient id="balance-path" x1="83" y1="173" x2="312" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#B7F5C8" stopOpacity="0" />
+                <stop offset=".58" stopColor="#B7F5C8" stopOpacity=".75" />
+                <stop offset="1" stopColor="#B7F5C8" stopOpacity=".08" />
+              </linearGradient>
+              <linearGradient id="balance-leaf" x1="115" y1="105" x2="230" y2="159" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#A0E9B5" stopOpacity=".58" />
+                <stop offset="1" stopColor="#3B9B68" stopOpacity=".1" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </section>
+
+      <section className="customer-dashboard-metrics" aria-label={tPortfolio('yourInvestments')}>
+        {stats.map(st => (
+          <FinancialMetric
+            key={st.label}
+            label={st.label}
+            value={loading || loadError ? '—' : st.value}
+            detail={st.detail}
+            tone={st.label === tPortfolio('currentValue') ? 'positive' : 'default'}
+          />
+        ))}
+      </section>
+
+      {loadError ? (
+        <section className="customer-dashboard-card" style={s.card}>
+          <DashboardState
+            variant="error"
+            title={t('dataLoadFailed')}
+            action={(
+              <button
+                type="button"
+                className="customer-dashboard-link"
+                onClick={() => setRetryCount(count => count + 1)}
+              >
+                {t('retry')}
+              </button>
+            )}
+          />
+        </section>
+      ) : (
+      <>
+      <div className="customer-dashboard-grid" style={s.grid2}>
+        <section className="customer-dashboard-card" style={s.card}>
+          <div className="customer-dashboard-card__heading">
+            <div>
+              <h2 style={s.cardTitle}>{tPortfolio('yourInvestments')}</h2>
+            </div>
+            <Link className="customer-dashboard-link" href="/portfolio">{tShell('nav.portfolio')}</Link>
+          </div>
           {loading ? (
-            <EmptyState title={t('common.loading')} />
+            <DashboardState title={t('common.loading')} />
+          ) : activeInvestments.length === 0 ? (
+            <DashboardState
+              title={tPortfolio('noInvestments')}
+              action={<Link className="customer-dashboard-link" href="/portfolio">{tShell('nav.portfolio')}</Link>}
+            />
+          ) : (
+            activeInvestments.slice(0, 4).map((investment, index) => (
+              <div
+                key={investment.id}
+                style={{ ...s.investmentItem, ...(index === Math.min(activeInvestments.length, 4) - 1 ? { borderBottom: 'none' } : {}) }}
+              >
+                <span className="customer-dashboard-investment-mark" aria-hidden="true">
+                  <CircleDollarSign size={17} strokeWidth={1.8} />
+                </span>
+                <div style={s.investmentCopy}>
+                  <div style={s.investmentName}>{investment.plan_name}</div>
+                  <div style={s.investmentMeta}>{tPortfolio('currentValue')}</div>
+                </div>
+                <div className="customer-dashboard-investment-value">
+                  <strong>{formatMoney(investment.current_value)}</strong>
+                  <StatusBadge status={investment.status}>{tPortfolio(`status.${investment.status}`, { default: investment.status })}</StatusBadge>
+                </div>
+              </div>
+            ))
+          )}
+        </section>
+
+        <section className="customer-dashboard-card" style={s.card}>
+          <h2 style={s.cardTitle}>{t('assetAllocation.title')}</h2>
+          <p style={s.cardSub}>{t('assetAllocation.byPlan')}</p>
+          {loading ? (
+            <DashboardState title={t('common.loading')} />
           ) : allocationData.length === 0 ? (
-            <EmptyState title={t('assetAllocation.nothingAllocated')} />
+            <DashboardState title={t('assetAllocation.nothingAllocated')} />
           ) : (
             <>
-              <ResponsiveContainer width="100%" height={160}>
-                <PieChart>
-                  <Pie
-                    data={allocationData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={45}
-                    outerRadius={70}
-                    paddingAngle={2}
-                  >
-                    {allocationData.map((entry, i) => (
-                      <Cell key={entry.name} fill={ALLOCATION_COLORS[i % ALLOCATION_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={v => formatMoney(v)} contentStyle={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '12px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-
+              <div
+                className="customer-dashboard-allocation-chart"
+                role="img"
+                aria-label={`${t('assetAllocation.byPlan')}: ${allocationData.map(item => `${item.name} ${item.pct}%`).join(', ')}`}
+              >
+                <ResponsiveContainer width="100%" height={190}>
+                  <PieChart>
+                    <Pie data={allocationData} dataKey="value" nameKey="name" innerRadius={54} outerRadius={82} paddingAngle={3}>
+                      {allocationData.map((entry, i) => (
+                        <Cell key={entry.name} fill={ALLOCATION_COLORS[i % ALLOCATION_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={value => formatMoney(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="customer-dashboard-allocation-chart__center" aria-hidden="true">
+                  <span>{tPortfolio('currentValue')}</span>
+                  <strong>{formatMoney(currentValue)}</strong>
+                </div>
+              </div>
               <div>
-                {allocationData.map((a, i) => (
-                  <div key={a.name} style={s.legendRow}>
+                {allocationData.map((item, index) => (
+                  <div key={item.name} style={s.legendRow}>
                     <div style={s.legendLeft}>
-                      <span style={{ ...s.legendDot, background: ALLOCATION_COLORS[i % ALLOCATION_COLORS.length] }} />
-                      <span style={{ color: 'var(--text2)' }}>{a.name}</span>
+                      <span style={{ ...s.legendDot, background: ALLOCATION_COLORS[index % ALLOCATION_COLORS.length] }} />
+                      <span style={{ color: 'var(--text2)' }}>{item.name}</span>
                     </div>
-                    <span style={{ color: 'var(--text)', fontWeight: '600' }}>{a.pct}%</span>
+                    <span style={{ color: 'var(--text)', fontWeight: '600' }}>{item.pct}%</span>
                   </div>
                 ))}
               </div>
             </>
           )}
-        </div>
+        </section>
       </div>
 
-      <div className="responsive-grid-2" style={s.grid2}>
-        <div style={s.card}>
-          <div style={s.cardTitle}>{t('recentTransactions.title')}</div>
-          <div style={s.cardSub}>{t('recentTransactions.subtitle')}</div>
-
+      <div className="customer-dashboard-grid customer-dashboard-grid--activity" style={s.grid2}>
+        <section className="customer-dashboard-card" style={s.card}>
+          <div className="customer-dashboard-card__heading">
+            <div>
+              <h2 style={s.cardTitle}>{t('recentTransactions.title')}</h2>
+              <p style={s.cardSub}>{t('recentTransactions.subtitle')}</p>
+            </div>
+            <Link className="customer-dashboard-link" href="/wallet">{tShell('nav.wallet')}</Link>
+          </div>
           {loading ? (
-            <EmptyState title={t('common.loading')} />
+            <DashboardState title={t('common.loading')} />
           ) : transactions.length === 0 ? (
-            <EmptyState
-              title={t('recentTransactions.noTransactions')}
-              sub={t('recentTransactions.noTransactionsSub')}
-            />
+            <DashboardState title={t('recentTransactions.noTransactions')} description={t('recentTransactions.noTransactionsSub')} />
           ) : (
-          transactions.map((tx, i) => {
-  const meta = txnIconMeta(tx.type, t);
-  const isNegative = tx.type === 'withdrawal' || tx.type === 'admin_debit';
-  const isResolved = tx.status === 'verified';
-  const amountColor = isResolved ? meta.color : 'var(--text3)';
-  const statusSuffix = tx.status === 'pending' ? ` (${t('recentTransactions.pending')})` : tx.status === 'rejected' ? ` (${t('recentTransactions.rejected')})` : '';
-  return (
-    <div key={tx.id} style={{ ...s.txnItem, ...(i === transactions.length - 1 ? { borderBottom: 'none' } : {}) }}>
-      <div style={s.txnLeft}>
-        <div style={{ ...s.txnIcon, background: isResolved ? meta.bg : 'var(--bg3)', color: amountColor }}>{meta.icon}</div>
-        <div>
-          <div style={s.txnName}>{meta.label}{statusSuffix}</div>
-          <div style={s.txnDate}>{formatDate(tx.created_at)}</div>
-        </div>
-      </div>
-      <div style={{ ...s.txnAmount, color: amountColor }}>
-        {isNegative ? '−' : '+'}{formatMoney(tx.amount_usd)}
-      </div>
-    </div>
-  );
-})
+            transactions.slice(0, 5).map(tx => {
+              const meta = txnIconMeta(tx.type, t);
+              const negative = tx.type === 'withdrawal' || tx.type === 'admin_debit';
+              const resolved = tx.status === 'verified';
+              const statusLabel = tx.status === 'pending'
+                ? t('recentTransactions.pending')
+                : tx.status === 'rejected'
+                  ? t('recentTransactions.rejected')
+                  : tx.status === 'verified' ? t('recentTransactions.verified') : tx.status;
+              return (
+                <TransactionRow
+                  key={tx.id}
+                  icon={meta.icon}
+                  title={meta.label}
+                  description={formatDate(tx.created_at)}
+                  amount={`${negative ? '−' : '+'}${formatMoney(tx.amount_usd)}`}
+                  positive={!negative && resolved}
+                  negative={negative && resolved}
+                  iconTone={meta.tone}
+                  status={tx.status}
+                  statusLabel={statusLabel}
+                />
+              );
+            })
           )}
-        </div>
-
-        <TopPerformers investments={investments} loading={loading} />
+        </section>
+        <InvestorActivity />
       </div>
+      </>
+      )}
+
+      <PlatformStatus />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const supabase = createClient(
@@ -12,9 +13,9 @@ export async function GET() {
 
   const { data: txns, error } = await supabase
     .from('transactions')
-   .select('user_id, amount_usd, profiles!transactions_user_id_fkey(full_name, email)')
+    .select('user_id, amount_usd, profiles!transactions_user_id_fkey(full_name)')
     .eq('status', 'verified')
-    .in('type', ['deposit', 'admin_credit'])
+    .eq('type', 'deposit')
     .gte('created_at', startOfMonth.toISOString())
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
@@ -23,7 +24,7 @@ export async function GET() {
   for (const t of txns) {
     const key = t.user_id
     if (!byUser[key]) {
-      byUser[key] = { userId: key, fullName: t.profiles?.full_name, email: t.profiles?.email, total: 0 }
+      byUser[key] = { userId: key, fullName: t.profiles?.full_name, total: 0 }
     }
     byUser[key].total += Number(t.amount_usd)
   }

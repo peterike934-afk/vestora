@@ -2,26 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { ArrowLeft, ArrowRight, Check, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-
-const s = {
-  page: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '24px' },
-  card: { width: '100%', maxWidth: '440px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '48px 40px' },
-  logo: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px', justifyContent: 'center' },
-  logoIcon: { width: '36px', height: '36px', background: 'var(--green)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' },
-  logoText: { fontFamily: 'Playfair Display, serif', fontSize: '22px', fontWeight: '600', color: 'var(--text)' },
-  title: { fontSize: '24px', fontWeight: '700', color: 'var(--text)', marginBottom: '8px', textAlign: 'center' },
-  sub: { fontSize: '14px', color: 'var(--text2)', textAlign: 'center', marginBottom: '32px' },
-  label: { display: 'block', fontSize: '13px', color: 'var(--text2)', marginBottom: '6px', fontWeight: '500' },
-  input: { width: '100%', padding: '12px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s' },
-  field: { marginBottom: '20px' },
-  btn: { width: '100%', padding: '14px', background: 'var(--green)', border: 'none', borderRadius: 'var(--radius-sm)', color: '#000', fontSize: '15px', fontWeight: '600', marginTop: '8px', transition: 'opacity 0.2s', cursor: 'pointer' },
-  btnDisabled: { opacity: 0.6, cursor: 'not-allowed' },
-  link: { textAlign: 'center', marginTop: '24px', fontSize: '14px', color: 'var(--text2)' },
-  linkA: { color: 'var(--green)', fontWeight: '500' },
-  error: { fontSize: '13px', color: 'var(--red)', background: 'var(--red-dim)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '20px' },
-  success: { fontSize: '14px', color: 'var(--text)', background: 'var(--bg3)', border: '1px solid var(--border)', padding: '16px', borderRadius: 'var(--radius-sm)', textAlign: 'center' },
-}
+import AuthExperienceShell from '@/components/auth/AuthExperienceShell'
 
 export default function ForgotPassword() {
   const supabase = createClient()
@@ -50,43 +33,49 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div style={s.page}>
-      <div style={s.card}>
-        <div style={s.logo}>
-          <div style={s.logoIcon}>$</div>
-          <span style={s.logoText}>Vestoral</span>
-        </div>
-
+    <AuthExperienceShell
+      className="auth-experience--recovery"
+      topAction={<>Remembered your password? <Link href="/login">Sign in</Link></>}
+    >
+      <div className="auth-experience__form">
         {sent ? (
           <>
-            <p style={s.title}>Check your email</p>
-            <p style={s.sub}>If an account exists for {email}, a reset link is on its way.</p>
-            <div style={s.success}>
-              Didn't get it? Check your spam folder, or{' '}
-              <span
-                style={{ ...s.linkA, cursor: 'pointer' }}
-                onClick={() => setSent(false)}
-              >
-                try again
-              </span>.
+            <header className="auth-experience__form-heading">
+              <span className="auth-experience__form-eyebrow">Check your inbox</span>
+              <h2 className="auth-experience__form-title">Check your email</h2>
+              <p className="auth-experience__form-description">
+                If an account exists for <strong>{email}</strong>, a reset link is on its way.
+              </p>
+            </header>
+            <div className="auth-experience__message auth-experience__message--success" role="status">
+              <Mail size={17} aria-hidden="true" />
+              <span>Didn’t get it? Check your spam folder, or <button type="button" className="auth-experience__inline-button" onClick={() => setSent(false)}>try again</button>.</span>
             </div>
-            <p style={s.link}>
-              <Link href="/login" style={s.linkA}>Back to sign in</Link>
+            <p className="auth-experience__form-footer">
+              <Link href="/login"><ArrowLeft size={14} aria-hidden="true" /> Back to sign in</Link>
             </p>
           </>
         ) : (
           <>
-            <p style={s.title}>Reset your password</p>
-            <p style={s.sub}>Enter the email on your account and we'll send a reset link</p>
+            <header className="auth-experience__form-heading">
+              <span className="auth-experience__form-eyebrow">Account recovery</span>
+              <h2 className="auth-experience__form-title">Reset your password</h2>
+              <p className="auth-experience__form-description">
+                Enter the email address linked to your account and we’ll send a reset link.
+              </p>
+            </header>
 
-            {error && <div style={s.error}>{error}</div>}
+            {error && <div className="auth-experience__message" role="alert">{error}</div>}
 
             <form onSubmit={handle}>
-              <div style={s.field}>
-                <label style={s.label}>Email address</label>
+              <div className="auth-experience__field">
+                <label className="auth-experience__label" htmlFor="recovery-email">Email address</label>
                 <input
-                  style={s.input}
+                  className="auth-experience__input"
+                  id="recovery-email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="you@example.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
@@ -95,19 +84,19 @@ export default function ForgotPassword() {
                 />
               </div>
               <button
-                style={{ ...s.btn, ...(loading ? s.btnDisabled : {}) }}
+                className="auth-experience__submit"
                 type="submit"
                 disabled={loading}
               >
-                {loading ? 'Sending…' : 'Send reset link'}
+                {loading ? 'Sending…' : <>Send reset link <ArrowRight size={16} aria-hidden="true" /></>}
               </button>
             </form>
-            <p style={s.link}>
-              <Link href="/login" style={s.linkA}>Back to sign in</Link>
+            <p className="auth-experience__form-footer">
+              <Link href="/login"><ArrowLeft size={14} aria-hidden="true" /> Back to sign in</Link>
             </p>
           </>
         )}
       </div>
-    </div>
+    </AuthExperienceShell>
   )
 }

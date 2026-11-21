@@ -1,41 +1,42 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { ArrowRight, Check, Coins, Globe2, Landmark, ShieldCheck } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
-import { useMoneyFormatter } from '@/lib/formatting'
+import { useUsdFormatter } from '@/lib/formatting'
 import { createTransaction, getSettings, getLinkedBankAccounts, disconnectBankAccount } from '@/lib/queries'
 import ConnectBankButton from '@/components/ConnectBankButton'
 import AuthTransitionOverlay from '@/components/AuthTransitionOverlay'
 
 const s = {
-  page: { padding: '32px 36px' },
-  title: { fontSize: '26px', fontWeight: '700', color: 'var(--text)', marginBottom: '4px' },
-  sub: { fontSize: '14px', color: 'var(--text2)', marginBottom: '28px' },
-  card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '24px', marginBottom: '20px' },
-  methodTabs: { display: 'flex', gap: '8px', marginBottom: '24px' },
-  methodTab: { flex: 1, padding: '12px', textAlign: 'center', borderRadius: 'var(--radius-sm)', fontSize: '14px', fontWeight: '600', cursor: 'pointer', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text2)' },
-  methodTabActive: { background: 'var(--green-dim)', border: '1px solid var(--green)', color: 'var(--green)' },
-  label: { display: 'block', fontSize: '13px', color: 'var(--text2)', marginBottom: '6px', fontWeight: '500' },
-  input: { width: '100%', padding: '12px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '14px', outline: 'none', marginBottom: '16px' },
-  select: { width: '100%', padding: '12px 16px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '14px', outline: 'none', marginBottom: '16px' },
-  btnGreen: { padding: '13px 28px', background: 'var(--green)', border: 'none', borderRadius: 'var(--radius-sm)', color: '#000', fontSize: '14px', fontWeight: '600', cursor: 'pointer', width: '100%' },
-  btnDisabled: { opacity: 0.5, cursor: 'not-allowed' },
-  error: { fontSize: '13px', color: 'var(--red)', background: 'var(--red-dim)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '16px' },
-  mono: { fontFamily: 'monospace', wordBreak: 'break-all', overflowWrap: 'anywhere' },
-  grid2: { display: 'grid', gap: '20px' },
-  bankOption: { display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', marginBottom: '10px', cursor: 'pointer' },
+  page: { padding: '0 0 32px' },
+  title: { color: 'var(--text)', fontSize: '32px', fontWeight: '650', letterSpacing: '-0.035em', margin: 0 },
+  sub: { color: 'var(--text2)', fontSize: '14px', lineHeight: 1.6, margin: '8px 0 0' },
+  card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '22px', padding: '26px', boxShadow: '0 12px 30px rgba(24,49,34,0.045)' },
+  methodTabs: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '12px', marginBottom: '18px' },
+  methodTab: { minWidth: 0, display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', textAlign: 'left', borderRadius: '16px', fontSize: '14px', fontWeight: '650', cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', boxShadow: '0 3px 12px rgba(24,49,34,0.025)', transition: 'border-color 160ms ease, background 160ms ease, box-shadow 160ms ease' },
+  methodTabActive: { background: 'linear-gradient(145deg, rgba(31,111,74,0.10), rgba(31,111,74,0.035))', border: '1px solid var(--green)', color: 'var(--text)', boxShadow: '0 0 0 2px var(--green-dim)' },
+  label: { display: 'block', fontSize: '13px', color: 'var(--text2)', marginBottom: '7px', fontWeight: '600' },
+  input: { width: '100%', padding: '13px 15px', background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: '12px', color: 'var(--text)', fontSize: '14px', outline: 'none', marginBottom: '17px', transition: 'border-color 160ms ease, box-shadow 160ms ease' },
+  select: { width: '100%', padding: '13px 15px', background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: '12px', color: 'var(--text)', fontSize: '14px', outline: 'none', marginBottom: '17px' },
+  btnGreen: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '9px', padding: '14px 20px', background: 'linear-gradient(110deg, #155638, #20784D)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '13px', color: '#FFFFFF', fontSize: '14px', fontWeight: '650', cursor: 'pointer', width: '100%', boxShadow: '0 8px 18px rgba(21,86,56,0.17)', transition: 'transform 160ms ease, box-shadow 160ms ease' },
+  btnDisabled: { opacity: 0.55, cursor: 'not-allowed' },
+  error: { fontSize: '13px', color: 'var(--red)', background: 'var(--red-dim)', padding: '12px 15px', borderRadius: '12px', marginBottom: '16px', border: '1px solid rgba(201,65,77,0.18)' },
+  mono: { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', wordBreak: 'break-all', overflowWrap: 'anywhere' },
+  grid2: { display: 'grid', gridTemplateColumns: 'minmax(0, 1.08fr) minmax(260px, 0.92fr)', gap: '18px', alignItems: 'start' },
+  bankOption: { display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: '12px', marginBottom: '10px', cursor: 'pointer', background: 'var(--bg2)', transition: 'background 150ms ease, border-color 150ms ease' },
   bankOptionActive: { borderColor: 'var(--green)', background: 'var(--green-dim)' },
-  disconnectBtn: { marginLeft: 'auto', fontSize: '12px', color: 'var(--red)', background: 'transparent', border: '1px solid var(--red)', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer' },
-  wireRow: { display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)', fontSize: '13.5px' },
+  disconnectBtn: { marginLeft: 'auto', flexShrink: 0, fontSize: '12px', color: 'var(--red)', background: 'transparent', border: '1px solid var(--red)', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer' },
+  wireRow: { display: 'flex', justifyContent: 'space-between', gap: '16px', padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: '13px' },
   wireRowLast: { borderBottom: 'none' },
   wireLabel: { color: 'var(--text2)' },
-  wireValue: { color: 'var(--text)', fontWeight: '600', fontFamily: 'monospace', userSelect: 'all' },
+  wireValue: { color: 'var(--text)', fontWeight: '600', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', textAlign: 'right', overflowWrap: 'anywhere', userSelect: 'all' },
 }
 
 export default function DepositPage() {
   const t = useTranslations('Deposit')
-  const formatMoney = useMoneyFormatter()
+  const formatUsd = useUsdFormatter()
   const { user } = useUser()
   const [settings, setSettings] = useState(null)
   const [method, setMethod] = useState('crypto')
@@ -90,6 +91,15 @@ export default function DepositPage() {
     routingNumber: settings?.bank_routing_number || t('notConfigured'),
     accountNumber: settings?.bank_account_number || t('notConfigured'),
   }
+  const methods = [
+    { id: 'crypto', label: t('methods.crypto'), description: t('crypto.steps.1'), icon: Coins },
+    ...(bankTransferEnabled
+      ? [{ id: 'bank', label: t('methods.bank'), description: t('bank.steps.1'), icon: Landmark }]
+      : []),
+    ...(bankWireEnabled
+      ? [{ id: 'wire', label: t('methods.wire'), description: t('wire.steps.1'), icon: Globe2 }]
+      : []),
+  ]
 
   function handleBankLinked(newAccount) {
     setLinkedAccounts(prev => [newAccount, ...prev])
@@ -125,7 +135,7 @@ export default function DepositPage() {
       return
     }
     if (Number(amountUsd) < minDeposit) {
-      setError(t('errors.minDeposit', { amount: formatMoney(minDeposit) }))
+      setError(t('errors.minDeposit', { amount: formatUsd(minDeposit) }))
       return
     }
     setSubmitting(true)
@@ -161,7 +171,7 @@ export default function DepositPage() {
       return
     }
     if (amt < minDeposit) {
-      setError(t('errors.minDeposit', { amount: formatMoney(minDeposit) }))
+      setError(t('errors.minDeposit', { amount: formatUsd(minDeposit) }))
       return
     }
     setSubmitting(true)
@@ -191,7 +201,7 @@ export default function DepositPage() {
       return
     }
     if (amt < minDeposit) {
-      setError(t('errors.minDeposit', { amount: formatMoney(minDeposit) }))
+      setError(t('errors.minDeposit', { amount: formatUsd(minDeposit) }))
       return
     }
     if (!wireReference.trim()) {
@@ -219,11 +229,12 @@ export default function DepositPage() {
 
   if (done) {
     return (
-      <div style={s.page}>
+      <div className="dashboard-money-page dashboard-money-page--deposit" style={s.page}>
         <h1 style={s.title}>{t('title')}</h1>
-        <div style={{ ...s.card, textAlign: 'center', padding: '48px' }}>
-          <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text)', marginBottom: '8px' }}>{t('submitted.title')}</div>
-          <div style={{ fontSize: '14px', color: 'var(--text2)', marginBottom: '24px' }}>
+        <div className="dashboard-deposit-success" style={{ ...s.card, textAlign: 'center', padding: '48px' }} role="status" aria-live="polite">
+          <div className="dashboard-deposit-success__icon"><Check size={24} aria-hidden="true" /></div>
+          <div className="dashboard-deposit-success__title">{t('submitted.title')}</div>
+          <div className="dashboard-deposit-success__description">
             {method === 'bank'
               ? t('submitted.bank')
               : method === 'wire'
@@ -232,6 +243,7 @@ export default function DepositPage() {
           </div>
           <button
             style={s.btnGreen}
+            type="button"
             onClick={() => {
               setDone(false)
               setCryptoAmount(''); setAmountUsd(''); setTxHash('')
@@ -247,83 +259,92 @@ export default function DepositPage() {
   }
 
   return (
-    <div style={s.page}>
+    <div className="dashboard-money-page dashboard-money-page--deposit" style={s.page}>
       <AuthTransitionOverlay show={showOverlay} />
-      <h1 style={s.title}>{t('title')}</h1>
-      <p style={s.sub}>{t('subtitle')}</p>
+      <div className="dashboard-money-page__header">
+        <div>
+          <h1 style={s.title}>{t('title')}</h1>
+          <p style={s.sub}>{t('subtitle')}</p>
+        </div>
+        <div className="dashboard-money-page__currency">USD</div>
+      </div>
 
-      {error && <div style={s.error}>{error}</div>}
+      {error && <div style={s.error} role="alert">{error}</div>}
 
       <div style={s.card}>
-        <div style={s.methodTabs}>
-          <button
-            style={{ ...s.methodTab, ...(method === 'crypto' ? s.methodTabActive : {}) }}
-            onClick={() => setMethod('crypto')}
-          >
-            {t('methods.crypto')}
-          </button>
-          {bankTransferEnabled && (
+        <div className="dashboard-deposit-methods" style={s.methodTabs} role="group" aria-label={t('title')}>
+          {methods.map(({ id, label, description, icon: Icon }) => (
             <button
-              style={{ ...s.methodTab, ...(method === 'bank' ? s.methodTabActive : {}) }}
-              onClick={() => setMethod('bank')}
+              key={id}
+              type="button"
+              className="dashboard-deposit-method"
+              style={{ ...s.methodTab, ...(method === id ? s.methodTabActive : {}) }}
+              aria-pressed={method === id}
+              onClick={() => setMethod(id)}
             >
-              {t('methods.bank')}
+              <span className="dashboard-deposit-method__icon"><Icon size={20} aria-hidden="true" /></span>
+              <span className="dashboard-deposit-method__copy">
+                <span className="dashboard-deposit-method__title">{label}</span>
+                <span className="dashboard-deposit-method__description">{description}</span>
+              </span>
+              <span className="dashboard-deposit-method__selected" aria-hidden="true">
+                {method === id && <Check size={15} />}
+              </span>
             </button>
-          )}
-          {bankWireEnabled && (
-            <button
-              style={{ ...s.methodTab, ...(method === 'wire' ? s.methodTabActive : {}) }}
-              onClick={() => setMethod('wire')}
-            >
-              {t('methods.wire')}
-            </button>
-          )}
+          ))}
         </div>
 
         {method === 'crypto' && (
           <div className="responsive-grid-2" style={s.grid2}>
             <div>
-              <label style={s.label}>{t('crypto.currency')}</label>
-              <select style={s.select} value={currency} onChange={e => setCurrency(e.target.value)}>
+              <label style={s.label} htmlFor="deposit-currency">{t('crypto.currency')}</label>
+              <select id="deposit-currency" style={s.select} value={currency} onChange={e => setCurrency(e.target.value)}>
                 <option value="BTC">Bitcoin (BTC)</option>
                 <option value="ETH">Ethereum (ETH)</option>
                 <option value="USDT">USDT (ERC-20)</option>
               </select>
 
-              <label style={s.label}>{t('crypto.sendTo')}</label>
-              <div style={{ ...s.input, ...s.mono, cursor: 'text', userSelect: 'all' }}>
-                {depositAddresses[currency]}
-              </div>
+              <label style={s.label} htmlFor="deposit-address">{t('crypto.sendTo')}</label>
+              <input
+                id="deposit-address"
+                style={{ ...s.input, ...s.mono, cursor: 'text', userSelect: 'all' }}
+                aria-label={`${t('crypto.sendTo')}: ${depositAddresses[currency]}`}
+                readOnly
+                value={depositAddresses[currency]}
+              />
 
-              <label style={s.label}>{t('crypto.amountSent', { currency })}</label>
-              <input style={s.input} type="number" step="any" placeholder="0.00" value={cryptoAmount} onChange={e => setCryptoAmount(e.target.value)} />
+              <label style={s.label} htmlFor="deposit-crypto-amount">{t('crypto.amountSent', { currency })}</label>
+              <input id="deposit-crypto-amount" style={s.input} type="number" step="any" placeholder="0.00" value={cryptoAmount} onChange={e => setCryptoAmount(e.target.value)} />
 
-              <label style={s.label}>{t('crypto.estimatedUsd')}</label>
-              <input style={s.input} type="number" step="any" placeholder="0.00" value={amountUsd} onChange={e => setAmountUsd(e.target.value)} />
+              <label style={s.label} htmlFor="deposit-usd-amount">{t('crypto.estimatedUsd')}</label>
+              <input id="deposit-usd-amount" style={s.input} type="number" step="any" placeholder="0.00" value={amountUsd} onChange={e => setAmountUsd(e.target.value)} />
 
-              <label style={s.label}>{t('crypto.txHash')}</label>
-              <input style={s.input} placeholder="0x..." value={txHash} onChange={e => setTxHash(e.target.value)} />
+              <label style={s.label} htmlFor="deposit-transaction-hash">{t('crypto.txHash')}</label>
+              <input id="deposit-transaction-hash" style={s.input} placeholder="0x..." value={txHash} onChange={e => setTxHash(e.target.value)} />
 
               <button
                 style={{ ...s.btnGreen, ...(submitting ? s.btnDisabled : {}) }}
                 disabled={submitting}
                 onClick={handleSubmitCrypto}
               >
-                {submitting ? t('submitting') : t('submitDeposit')}
+                {submitting ? t('submitting') : t('submitDeposit')} <ArrowRight size={17} aria-hidden="true" />
               </button>
             </div>
 
-            <div style={{ ...s.card, background: 'var(--bg3)', margin: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text)', marginBottom: '16px' }}>{t('howItWorks')}</div>
+            <div className="dashboard-deposit-guidance" style={{ ...s.card, background: 'var(--bg3)', margin: 0 }}>
+              <div className="dashboard-deposit-guidance__heading">
+                <ShieldCheck size={19} aria-hidden="true" />
+                <span>{t('howItWorks')}</span>
+              </div>
               {[1, 2, 3, 4].map((step) => (
-                <div key={step} style={{ display: 'flex', gap: '12px', marginBottom: '12px', fontSize: '13px' }}>
-                  <span style={{ color: 'var(--green)', fontWeight: '600' }}>{step}</span>
+                <div className="dashboard-deposit-guidance__step" key={step}>
+                  <span className="dashboard-deposit-guidance__number">{step}</span>
                   <span style={{ color: 'var(--text2)' }}>{t(`crypto.steps.${step}`)}</span>
                 </div>
               ))}
-              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)', fontSize: '13px', display: 'flex', justifyContent: 'space-between' }}>
+              <div className="dashboard-deposit-guidance__minimum">
                 <span style={{ color: 'var(--text2)' }}>{t('minimumDeposit')}</span>
-                <span style={{ color: 'var(--text)', fontWeight: '600' }}>{formatMoney(minDeposit)}</span>
+                <span style={{ color: 'var(--text)', fontWeight: '600' }}>{formatUsd(minDeposit)}</span>
               </div>
             </div>
           </div>
@@ -345,8 +366,10 @@ export default function DepositPage() {
                       style={{ ...s.bankOption, ...(selectedAccountId === acct.id ? s.bankOptionActive : {}) }}
                       onClick={() => setSelectedAccountId(acct.id)}
                     >
-                      <input type="radio" checked={selectedAccountId === acct.id} onChange={() => setSelectedAccountId(acct.id)} />
-                      <span>{acct.bank_name} •••• {acct.last4}</span>
+                      <label className="dashboard-deposit-bank-option__label">
+                        <input type="radio" name="deposit-bank-account" checked={selectedAccountId === acct.id} onChange={() => setSelectedAccountId(acct.id)} />
+                        <span>{acct.bank_name} •••• {acct.last4}</span>
+                      </label>
                       <button
                         type="button"
                         style={s.disconnectBtn}
@@ -363,29 +386,32 @@ export default function DepositPage() {
                 </>
               )}
 
-              <label style={s.label}>{t('bank.amountUsd')}</label>
-              <input style={s.input} type="number" step="any" placeholder="0.00" value={bankAmount} onChange={e => setBankAmount(e.target.value)} />
+              <label style={s.label} htmlFor="deposit-bank-amount">{t('bank.amountUsd')}</label>
+              <input id="deposit-bank-amount" style={s.input} type="number" step="any" placeholder="0.00" value={bankAmount} onChange={e => setBankAmount(e.target.value)} />
 
               <button
                 style={{ ...s.btnGreen, ...(submitting || !selectedAccountId ? s.btnDisabled : {}) }}
                 disabled={submitting || !selectedAccountId}
                 onClick={handleSubmitBank}
               >
-                {submitting ? t('submitting') : t('submitDeposit')}
+                {submitting ? t('submitting') : t('submitDeposit')} <ArrowRight size={17} aria-hidden="true" />
               </button>
             </div>
 
-            <div style={{ ...s.card, background: 'var(--bg3)', margin: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text)', marginBottom: '16px' }}>{t('howItWorks')}</div>
+            <div className="dashboard-deposit-guidance" style={{ ...s.card, background: 'var(--bg3)', margin: 0 }}>
+              <div className="dashboard-deposit-guidance__heading">
+                <ShieldCheck size={19} aria-hidden="true" />
+                <span>{t('howItWorks')}</span>
+              </div>
               {[1, 2, 3, 4].map((step) => (
-                <div key={step} style={{ display: 'flex', gap: '12px', marginBottom: '12px', fontSize: '13px' }}>
-                  <span style={{ color: 'var(--green)', fontWeight: '600' }}>{step}</span>
+                <div className="dashboard-deposit-guidance__step" key={step}>
+                  <span className="dashboard-deposit-guidance__number">{step}</span>
                   <span style={{ color: 'var(--text2)' }}>{t(`bank.steps.${step}`)}</span>
                 </div>
               ))}
-              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)', fontSize: '13px', display: 'flex', justifyContent: 'space-between' }}>
+              <div className="dashboard-deposit-guidance__minimum">
                 <span style={{ color: 'var(--text2)' }}>{t('minimumDeposit')}</span>
-                <span style={{ color: 'var(--text)', fontWeight: '600' }}>{formatMoney(minDeposit)}</span>
+                <span style={{ color: 'var(--text)', fontWeight: '600' }}>{formatUsd(minDeposit)}</span>
               </div>
             </div>
           </div>
@@ -414,32 +440,35 @@ export default function DepositPage() {
                 </div>
               </div>
 
-              <label style={s.label}>{t('wire.amountSent')}</label>
-              <input style={s.input} type="number" step="any" placeholder="0.00" value={wireAmount} onChange={e => setWireAmount(e.target.value)} />
+              <label style={s.label} htmlFor="deposit-wire-amount">{t('wire.amountSent')}</label>
+              <input id="deposit-wire-amount" style={s.input} type="number" step="any" placeholder="0.00" value={wireAmount} onChange={e => setWireAmount(e.target.value)} />
 
-              <label style={s.label}>{t('wire.sentFrom')}</label>
-              <input style={s.input} placeholder={t('wire.sentFromPlaceholder')} value={wireReference} onChange={e => setWireReference(e.target.value)} />
+              <label style={s.label} htmlFor="deposit-wire-reference">{t('wire.sentFrom')}</label>
+              <input id="deposit-wire-reference" style={s.input} placeholder={t('wire.sentFromPlaceholder')} value={wireReference} onChange={e => setWireReference(e.target.value)} />
 
               <button
                 style={{ ...s.btnGreen, ...(submitting ? s.btnDisabled : {}) }}
                 disabled={submitting}
                 onClick={handleSubmitWire}
               >
-                {submitting ? t('submitting') : t('submitDeposit')}
+                {submitting ? t('submitting') : t('submitDeposit')} <ArrowRight size={17} aria-hidden="true" />
               </button>
             </div>
 
-            <div style={{ ...s.card, background: 'var(--bg3)', margin: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text)', marginBottom: '16px' }}>{t('howItWorks')}</div>
+            <div className="dashboard-deposit-guidance" style={{ ...s.card, background: 'var(--bg3)', margin: 0 }}>
+              <div className="dashboard-deposit-guidance__heading">
+                <ShieldCheck size={19} aria-hidden="true" />
+                <span>{t('howItWorks')}</span>
+              </div>
               {[1, 2, 3, 4].map((step) => (
-                <div key={step} style={{ display: 'flex', gap: '12px', marginBottom: '12px', fontSize: '13px' }}>
-                  <span style={{ color: 'var(--green)', fontWeight: '600' }}>{step}</span>
+                <div className="dashboard-deposit-guidance__step" key={step}>
+                  <span className="dashboard-deposit-guidance__number">{step}</span>
                   <span style={{ color: 'var(--text2)' }}>{t(`wire.steps.${step}`)}</span>
                 </div>
               ))}
-              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)', fontSize: '13px', display: 'flex', justifyContent: 'space-between' }}>
+              <div className="dashboard-deposit-guidance__minimum">
                 <span style={{ color: 'var(--text2)' }}>{t('minimumDeposit')}</span>
-                <span style={{ color: 'var(--text)', fontWeight: '600' }}>{formatMoney(minDeposit)}</span>
+                <span style={{ color: 'var(--text)', fontWeight: '600' }}>{formatUsd(minDeposit)}</span>
               </div>
             </div>
           </div>

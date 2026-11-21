@@ -23,6 +23,7 @@ export default async function Layout({ children }) {
   return (
     <NextIntlClientProvider locale="en" messages={enMessages}>
       <DashboardShell profile={profile}>{children}</DashboardShell>
+
     </NextIntlClientProvider>
   );
 }
