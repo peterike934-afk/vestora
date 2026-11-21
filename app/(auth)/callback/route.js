@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { sendWelcomeEmailOnce } from "@/lib/welcome-email";
+import { after, NextResponse } from "next/server";
+
+export const runtime = "nodejs";
 
 const EMAIL_OTP_TYPES = new Set([
   "signup",
@@ -70,8 +73,16 @@ export async function GET(request) {
       : await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      console.error("Email auth callback failed:", error.message);
+      console.error("Email auth callback failed.", error.code || "verification_error");
       return redirectToLogin(request, getVerificationStatus(error.code, error.message));
+    }
+
+    if (tokenHash && type === "signup" && data.user) {
+      try {
+        after(() => sendWelcomeEmailOnce(data.user));
+      } catch {
+        console.error("Welcome email could not be scheduled; verification remains successful.");
+      }
     }
 
     const destination = getSafeDestination(next, origin);
@@ -83,7 +94,7 @@ export async function GET(request) {
 
     return NextResponse.redirect(new URL(destination, origin));
   } catch (error) {
-    console.error("Email auth callback could not complete:", error?.message ?? "Unknown callback error");
+    console.error("Email auth callback could not complete.", error?.code || "callback_error");
     return redirectToLogin(request, "failed");
   }
 }

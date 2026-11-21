@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import { useUser } from '@/contexts/UserContext'
 import { createTransaction, getSettings, getLinkedBankAccounts } from '@/lib/queries'
 
@@ -212,6 +212,7 @@ function AdjustWalletModal({ user, onClose, onSuccess }) {
   const [reason, setReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const requestId = useRef(null)
 
   async function handleSubmit() {
     setError('')
@@ -225,10 +226,17 @@ function AdjustWalletModal({ user, onClose, onSuccess }) {
     }
     setSubmitting(true)
     try {
+      requestId.current ||= crypto.randomUUID()
       const res = await fetch('/api/admin/adjust-wallet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, type, amount: Number(amount), reason: reason.trim() }),
+        body: JSON.stringify({
+          userId: user.id,
+          type,
+          amount: Number(amount),
+          reason: reason.trim(),
+          requestId: requestId.current,
+        }),
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
