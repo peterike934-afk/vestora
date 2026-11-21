@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -48,6 +48,8 @@ export default function Login() {
   const supabase = createClient()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
+  const [verificationMessage, setVerificationMessage] = useState('')
+  const [verificationStatus, setVerificationStatus] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
@@ -61,6 +63,23 @@ export default function Login() {
   const [mfaFactorId, setMfaFactorId] = useState(null)
   const [mfaCode, setMfaCode] = useState('')
   const [verifyingMfa, setVerifyingMfa] = useState(false)
+
+  useEffect(() => {
+    const verification = new URLSearchParams(window.location.search).get('verification')
+    const messages = {
+      confirmed: 'Your email is verified. Sign in to continue.',
+      expired: 'This verification link has expired. Request a fresh verification email.',
+      used: 'This verification link has already been used. Try signing in to your account.',
+      invalid: 'This verification link is invalid or has already been used. Request a fresh link or sign in if your email is verified.',
+      missing: 'The verification link is incomplete. Open the full link from your email or request a new one.',
+      failed: 'We could not complete email verification right now. Please try again later.',
+    }
+
+    if (verification && messages[verification]) {
+      setVerificationMessage(messages[verification])
+      setVerificationStatus(verification)
+    }
+  }, [])
 
   async function handle(e) {
   e.preventDefault()
@@ -202,6 +221,14 @@ export default function Login() {
         <p style={s.title}>Welcome back</p>
         <p style={s.sub}>Sign in to your investment account</p>
 
+        {verificationMessage && (
+          <div
+            style={verificationStatus === 'confirmed' ? s.success : s.error}
+            role="status"
+          >
+            {verificationMessage}
+          </div>
+        )}
         {error && <div style={s.error}>{error}</div>}
 
         <form onSubmit={handle}>
