@@ -11,6 +11,7 @@ import {
     Activity, ShieldCheck, Sun, Moon, LineChart, Gift, Globe, MoreHorizontal,
 } from "lucide-react";
 import ChatWidget from "@/components/ChatWidget";
+import InvestmentAssistant from "@/components/InvestmentAssistant";
 import { getSettings, getUnreadUserMessageCount, subscribeToMessageCountChanges, getPendingTransactionCount, subscribeToPendingTransactionChanges, getUnreadGuestMessageCount, subscribeToGuestMessageCountChanges } from "@/lib/queries";
 import { useLocale } from "next-intl";
 import { useUser } from "@/contexts/UserContext";
@@ -563,6 +564,7 @@ export default function DashboardShell({ profile, children }) {
           </button>
         </nav>
       )}
+      {!isAdmin && <InvestmentAssistant />}
       {!isAdmin && <ChatWidget />}
     </motion.div>
   );

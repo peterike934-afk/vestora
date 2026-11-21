@@ -12,6 +12,7 @@ import FinancialMetric from '@/components/dashboard/FinancialMetric'
 import StatusBadge from '@/components/dashboard/StatusBadge'
 import TransactionRow from '@/components/dashboard/TransactionRow'
 import DashboardState from '@/components/dashboard/DashboardState'
+import PortfolioPerformanceChart from '@/components/dashboard/PortfolioPerformanceChart'
 import {
   getWallet, getTransactions, getUserInvestments,
   getServiceStatuses, getActiveIncidents, subscribeToStatusChanges,
@@ -262,6 +263,7 @@ export default function Dashboard() {
   const t = useTranslations('Dashboard');
   const tPortfolio = useTranslations('Portfolio');
   const tShell = useTranslations('DashboardShell');
+  const tChart = useTranslations('PerformanceChart');
   const formatMoney = useMoneyFormatter();
   const formatDate = useDateFormatter();
   const { user, userName } = useUser();
@@ -414,6 +416,15 @@ export default function Dashboard() {
         </section>
       ) : (
       <>
+      <section className="customer-dashboard-card customer-dashboard-performance" style={s.card} aria-labelledby="customer-dashboard-performance-title">
+        <h2 id="customer-dashboard-performance-title" style={s.cardTitle}>{tChart('title')}</h2>
+        {loading ? (
+          <DashboardState variant="loading" title={tChart('loading')} />
+        ) : (
+          <PortfolioPerformanceChart investments={investments} transactions={transactions} />
+        )}
+      </section>
+
       <div className="customer-dashboard-grid" style={s.grid2}>
         <section className="customer-dashboard-card" style={s.card}>
           <div className="customer-dashboard-card__heading">

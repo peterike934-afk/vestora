@@ -546,5 +546,92 @@
     "uptime": "Disponibilidade da plataforma",
     "rating": "Avaliação média dos usuários"
   }
-}
+},
+  "PerformanceChart": {
+    "title": "Investment performance",
+    "loading": "Loading performance…",
+    "emptyTitle": "No investment history yet",
+    "emptyDescription": "Your chart will appear here after your first investment.",
+    "excluded": "{count, plural, one {# closed investment without a recorded end date is not shown.} other {# closed investments without a recorded end date are not shown.}}",
+    "invested": "Invested",
+    "earningsCredited": "Earnings credited",
+    "valueToday": "Value today",
+    "vsRangeStart": "vs. start of period",
+    "rangeLabel": "Time range",
+    "ariaSummary": "Investment performance chart. Current value {value}.",
+    "note": "Based on your recorded investments, principal withdrawals and credited earnings. Today’s value is the current value of your active investments, including accrued earnings."
+  },
+  "InvestmentAssistant": {
+    "title": "Investment Chat",
+    "subtitle": "Answers from your own account",
+    "launcher": "Ask Vestora",
+    "open": "Open Investment Chat",
+    "close": "Close Investment Chat",
+    "refresh": "Refresh account data",
+    "loading": "Loading your account…",
+    "retry": "Try again",
+    "placeholder": "Ask about your balance, investments or transactions",
+    "send": "Send",
+    "openSupport": "Chat with our support team",
+    "rejectionReason": "Reason",
+    "noReasonGiven": "No reason was provided. Contact support for details.",
+    "investmentMeta": "{apy}% APY · {principal} invested",
+    "daysLeft": "{days, plural, one {# day left} other {# days left}}",
+    "type": {
+      "deposit": "Deposit",
+      "withdrawal": "Withdrawal",
+      "investment_withdrawal": "Investment withdrawal",
+      "investment_interest_claim": "Earnings claim",
+      "admin_credit": "Account credit",
+      "admin_debit": "Account debit"
+    },
+    "status": {
+      "pending": "Pending",
+      "verified": "Approved",
+      "rejected": "Rejected"
+    },
+    "metric": {
+      "available": "Available balance",
+      "heldForWithdrawals": "Held for pending withdrawals",
+      "pendingDeposits": "Deposits awaiting approval",
+      "investedValue": "Active investments value",
+      "claimableNow": "Earnings you can claim now",
+      "alreadyClaimed": "Earnings already claimed",
+      "valueAbovePrincipal": "Value above invested principal"
+    },
+    "action": {
+      "balance": "My balance",
+      "investments": "My investments",
+      "earnings": "My earnings",
+      "performance": "Performance chart",
+      "deposits": "Deposit status",
+      "withdrawals": "Withdrawal status",
+      "pending": "Pending transactions",
+      "rejected": "Rejected transactions",
+      "transactions": "Recent activity",
+      "support": "Talk to support"
+    },
+    "reply": {
+      "greeting": "Hi{name}! I can answer questions about your balance, investments, earnings and transactions using your live account data. What would you like to know?",
+      "help": "I can help with your balance, investments, earnings, performance and the status of your deposits and withdrawals. Pick a topic below or ask in your own words.",
+      "balance": "Your available balance is {balanceUsd}.",
+      "noInvestments": "You don’t have any active investments right now.",
+      "investments": "{count, plural, one {You have # active investment} other {You have # active investments}} worth {valueUsd} in total, from {principalUsd} invested.",
+      "noEarnings": "You don’t have any investment earnings yet.",
+      "earnings": "You can claim {claimableUsd} in earnings right now.",
+      "performance": "Here’s how your investments have moved over time.",
+      "noDeposits": "You haven’t made any deposits yet.",
+      "noWithdrawals": "You haven’t requested any withdrawals yet.",
+      "deposits": "Your deposits: {pending} pending, {approved} approved, {rejected} rejected. Pending deposits are added to your balance once an admin approves them.",
+      "withdrawals": "Your withdrawals: {pending} pending, {approved} approved, {rejected} rejected. Funds for pending withdrawals are held until they’re approved or returned to your balance if rejected.",
+      "noPending": "You have no pending transactions.",
+      "pending": "{count, plural, one {You have # pending transaction} other {You have # pending transactions}} awaiting review.",
+      "noRejected": "None of your transactions have been rejected.",
+      "rejected": "{count, plural, one {# transaction was rejected} other {# transactions were rejected}}. The reason from our team is shown below.",
+      "noTransactions": "You don’t have any transactions yet.",
+      "transactions": "Here’s your recent activity.",
+      "support": "Our support team can help with anything I can’t. Your conversation with them stays in the support chat.",
+      "loadFailed": "I couldn’t load your account data right now."
+    }
+  }
 }

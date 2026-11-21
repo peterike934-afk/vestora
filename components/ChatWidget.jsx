@@ -95,6 +95,15 @@ export default function ChatWidget() {
     }
   }
 
+  // The Investment Chat hands users over to support with this event.
+  useEffect(() => {
+    const openFromAssistant = () => {
+      if (!open) handleOpen()
+    }
+    window.addEventListener('vestora:open-support', openFromAssistant)
+    return () => window.removeEventListener('vestora:open-support', openFromAssistant)
+  })
+
   async function handleSend() {
     if (!text.trim() || !user || sending) return
     setSending(true)
