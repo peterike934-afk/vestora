@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { sendWelcomeEmailOnce } from "@/lib/welcome-email";
+import { sendWelcomeEmailIfNewlyVerified } from "@/lib/welcome-email";
 import { after, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -97,9 +97,12 @@ export async function GET(request) {
       return redirectToLogin(request, getVerificationStatus(error.code, error.message));
     }
 
-    if (tokenHash && type === "signup" && data.user) {
+    // Both link formats: token_hash (verifyOtp) and code
+    // (exchangeCodeForSession). Only users whose email was confirmed in
+    // the last 24 hours qualify, and the ledger guarantees one send.
+    if (data.user) {
       try {
-        after(() => sendWelcomeEmailOnce(data.user));
+        after(() => sendWelcomeEmailIfNewlyVerified(data.user));
       } catch {
         console.error("Welcome email could not be scheduled; verification remains successful.");
       }
