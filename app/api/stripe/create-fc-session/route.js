@@ -7,6 +7,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
+import { bankDepositPullsEnabled, BANK_PULLS_DISABLED_CODE } from "@/lib/financial-controls";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -17,6 +18,15 @@ export async function POST() {
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // Bank Pull is "Coming Soon": linking a bank account for pulls is refused
+  // unless BANK_DEPOSIT_PULLS_ENABLED is exactly 'true' (missing = off).
+  if (!bankDepositPullsEnabled()) {
+    return NextResponse.json(
+      { error: "Bank Pull is coming soon and is not available yet.", code: BANK_PULLS_DISABLED_CODE },
+      { status: 503 }
+    );
   }
 
   const stripe = getStripe();

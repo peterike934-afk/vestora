@@ -41,19 +41,27 @@ insert into public.settings (id, min_withdrawal_usd, daily_withdrawal_limit_usd)
 \echo '=== Withdrawal request: funds held at request time'
 select set_config('request.jwt.claim.sub', '11111111-0000-0000-0000-000000000001', false);
 set role authenticated;
-insert into public.t_ids select 'w1', (public.request_withdrawal('00000000-0000-0000-0000-0000000000a1', 60, 'crypto', 'BTC', 0.001, 'bc1qtest', 'my note')->>'transactionId')::uuid;
+insert into public.t_ids select 'w1', (public.request_withdrawal('00000000-0000-0000-0000-0000000000a1', 60, 'crypto', 'BTC', 0.001, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', 'my note')->>'transactionId')::uuid;
 select public.t_ok(public.bal('11111111-0000-0000-0000-000000000001') = 40, 'request 60 of 100 -> available balance 40');
 select public.t_ok(public.txstatus((select v from t_ids where k='w1')) = 'pending', 'new withdrawal starts as pending');
 select public.t_ok(public.held((select v from t_ids where k='w1')) = 'held', 'funds recorded as held');
 select public.t_ok(public.txnote((select v from t_ids where k='w1')) = 'my note', 'user note preserved in admin_note as before');
-select public.t_ok((public.request_withdrawal('00000000-0000-0000-0000-0000000000a1', 60, 'crypto', 'BTC', 0.001, 'bc1qtest')->>'duplicate')::boolean, 'same request replayed -> duplicate, not a second withdrawal');
+-- 20261127000000: the customer-typed crypto amount (0.001) is not stored; the server calculates it at approval.
+select public.t_ok((select crypto_amount is null and crypto_currency = 'BTC' and destination_address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' from public.transactions where id = (select v from t_ids where k='w1')),
+                   'customer-typed crypto amount not stored; coin and address kept');
+select public.t_ok((public.request_withdrawal('00000000-0000-0000-0000-0000000000a1', 60, 'crypto', 'BTC', 0.001, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq')->>'duplicate')::boolean, 'same request replayed -> duplicate, not a second withdrawal');
 select public.t_ok(public.bal('11111111-0000-0000-0000-000000000001') = 40, 'replay did not debit again');
 select public.t_ok((select count(*) from public.transactions where user_id='11111111-0000-0000-0000-000000000001' and type='withdrawal') = 1, 'exactly one withdrawal row exists');
 select public.t_err($$select public.request_withdrawal('00000000-0000-0000-0000-0000000000a2', 60, 'bank')$$, 'Insufficient available balance', 'second request beyond held balance rejected (double spend)');
 select public.t_err($$select public.request_withdrawal('00000000-0000-0000-0000-0000000000a1', 30, 'bank')$$, 'already used for a different withdrawal', 'reused request id with different amount rejected');
 select public.t_err($$select public.request_withdrawal('00000000-0000-0000-0000-0000000000a3', 5, 'bank')$$, 'below the minimum', 'minimum withdrawal enforced on server');
 select public.t_err($$select public.request_withdrawal('00000000-0000-0000-0000-0000000000a4', 10.005, 'bank')$$, 'Invalid withdrawal request', 'sub-cent amount rejected');
-select public.t_err($$select public.request_withdrawal('00000000-0000-0000-0000-0000000000a5', 20, 'crypto')$$, 'need a currency', 'crypto withdrawal without address rejected');
+select public.t_err($$select public.request_withdrawal('00000000-0000-0000-0000-0000000000a5', 20, 'crypto')$$, 'need BTC, ETH or USDT', 'crypto withdrawal without address rejected');
+select public.t_err($$select public.request_withdrawal('00000000-0000-0000-0000-0000000000a6', 20, 'crypto', 'DOGE', null, 'D8bad')$$, 'need BTC, ETH or USDT', 'unsupported coin rejected');
+select public.t_err($$select public.request_withdrawal('00000000-0000-0000-0000-0000000000a7', 20, 'crypto', 'ETH', null, '0x123')$$, 'valid destination address', 'malformed ETH address rejected');
+select public.t_err($$insert into public.transactions (user_id, type, amount_usd, status, payment_method, crypto_currency, crypto_amount, destination_address)
+                      values ('11111111-0000-0000-0000-000000000001', 'withdrawal', 10, 'pending', 'crypto', 'BTC', 5, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq')$$,
+                    'row-level security', 'customer cannot insert a withdrawal directly (only request_withdrawal)');
 reset role;
 
 select set_config('request.jwt.claim.sub', '33333333-0000-0000-0000-000000000003', false);
@@ -93,26 +101,21 @@ select public.t_err(format($$select public.reject_pending_transaction(%L, 'twice
 select public.t_ok(public.bal('22222222-0000-0000-0000-000000000002') = 100, 'balance still 100 after blocked second rejection');
 reset role;
 
-\echo '=== Legacy / direct-insert withdrawals: held at claim time'
-select set_config('request.jwt.claim.sub', '22222222-0000-0000-0000-000000000002', false);
-set role authenticated;
+\echo '=== Legacy withdrawals without a hold (created before holds existed): blocked for manual review'
+-- 20261127000000: these rows can no longer be inserted by customers; they
+-- exist only from before (inserted here as the database owner). They are
+-- never paid and no hold is created for them; the balance is not touched.
 insert into public.transactions (user_id, type, amount_usd, status, payment_method) values ('22222222-0000-0000-0000-000000000002', 'withdrawal', 70, 'pending', 'wire') returning id \gset l1_
 insert into public.transactions (user_id, type, amount_usd, status, payment_method) values ('22222222-0000-0000-0000-000000000002', 'withdrawal', 70, 'pending', 'wire') returning id \gset l2_
-select public.t_ok(public.bal('22222222-0000-0000-0000-000000000002') = 100, 'direct inserts do not move the balance');
-reset role;
+select public.t_ok(public.bal('22222222-0000-0000-0000-000000000002') = 100, 'legacy rows do not move the balance');
 select set_config('request.jwt.claim.sub', 'aaaaaaaa-0000-0000-0000-000000000001', false);
 set role authenticated;
-select public.claim_transaction_for_approval(:'l1_id', null) as tok \gset l1_
-select public.t_ok(public.bal('22222222-0000-0000-0000-000000000002') = 30, 'claiming legacy withdrawal holds 70 -> 30');
-select public.t_err(format($$select public.claim_transaction_for_approval(%L, null)$$, :'l2_id'), 'Insufficient balance to reserve', 'second 70 withdrawal cannot be claimed: double spend prevented before any payout');
-select public.t_ok(public.claimcount(:'l2_id') = 0, 'failed claim left no claim row');
-select public.t_ok(public.claimcount(:'l1_id') = 1, 'legacy claim created its claim row');
-select public.finalize_transaction_approval(:'l1_id', :'l1_tok');
-select public.t_ok(public.txstatus(:'l1_id') = 'verified', 'legacy withdrawal approved (finalize succeeded)');
-select public.t_ok(public.held(:'l1_id') = 'consumed', 'legacy hold consumed');
-select public.t_ok(public.bal('22222222-0000-0000-0000-000000000002') = 30, 'legacy approval: single debit (100 -> 30)');
+select public.t_err(format($$select public.claim_transaction_for_approval(%L, null)$$, :'l1_id'), 'no valid funds hold; manual review required', 'legacy withdrawal without a hold cannot be approved');
+select public.t_ok(public.bal('22222222-0000-0000-0000-000000000002') = 100, 'no hold created, balance unchanged (100)');
+select public.t_ok(public.claimcount(:'l1_id') = 0 and public.held(:'l1_id') is null, 'no claim row and no hold were created');
+select public.t_ok(public.txstatus(:'l1_id') = 'pending', 'legacy withdrawal stays pending for manual review');
 select public.reject_pending_transaction(:'l2_id', 'Insufficient funds');
-select public.t_ok(public.bal('22222222-0000-0000-0000-000000000002') = 30, 'rejecting an unheld legacy withdrawal does not credit anything');
+select public.t_ok(public.bal('22222222-0000-0000-0000-000000000002') = 100, 'rejecting an unheld legacy withdrawal does not credit anything');
 reset role;
 
 \echo '=== Release after failed payout keeps funds held; later rejection returns them'
@@ -138,6 +141,9 @@ insert into public.transactions (user_id, type, amount_usd, status) values ('111
 insert into public.transactions (user_id, type, amount_usd, status) values ('11111111-0000-0000-0000-000000000001', 'deposit', 999, 'pending') returning id \gset d2_
 select public.t_ok(public.bal('11111111-0000-0000-0000-000000000001') = 40, 'pending deposits do not increase balance');
 select public.t_err($$insert into public.transactions (user_id, type, amount_usd, status) values ('11111111-0000-0000-0000-000000000001', 'deposit', 5, 'verified')$$, 'row-level security', 'user cannot insert an already-verified deposit');
+select public.t_err($$insert into public.transactions (user_id, type, amount_usd, status, verified_at) values ('11111111-0000-0000-0000-000000000001', 'deposit', 5, 'pending', now())$$, 'row-level security', 'user cannot pre-fill verification fields');
+select public.t_err($$insert into public.transactions (user_id, type, amount_usd, status, payment_method) values ('11111111-0000-0000-0000-000000000001', 'deposit', 5, 'pending', 'bank')$$, 'row-level security', 'user cannot submit a bank-pull deposit (Coming Soon)');
+select public.t_err($$insert into public.transactions (user_id, type, amount_usd, status) values ('33333333-0000-0000-0000-000000000003', 'deposit', 5, 'pending')$$, 'row-level security', 'user cannot submit a deposit for someone else');
 select public.t_err(format($$select public.claim_transaction_for_approval(%L, null)$$, :'d1_id'), 'Only admins', 'user cannot approve their own deposit');
 reset role;
 select set_config('request.jwt.claim.sub', 'aaaaaaaa-0000-0000-0000-000000000001', false);

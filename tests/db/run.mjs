@@ -25,6 +25,9 @@ const rollbackDir = join(root, 'supabase', 'rollback')
 // 20261126000000 freezes referral payouts. Suites that test payments switch
 // them on through the one audited function, exactly as an operator would.
 const ENABLE_PAYOUTS = `select public.set_referral_payouts_enabled(true, 'test operator', 'test: payments under test', 'ENABLE REFERRAL PAYOUTS');`
+// 20261127000000 freezes withdrawal payouts. Suites that approve withdrawals
+// switch them on through the one audited function, as an operator would.
+const ENABLE_WITHDRAWALS = `select public.set_financial_operation_enabled('withdrawal_payouts', true, 'test operator', 'test: withdrawal approvals under test', 'ENABLE WITHDRAWAL PAYOUTS');`
 const suitesDir = join(here, 'suites')
 const container = `vestora-financial-tests-${process.pid}`
 
@@ -120,6 +123,7 @@ async function main() {
   {
     const db = freshDb()
     apply(db, allMigrations())
+    psql(db, ENABLE_WITHDRAWALS, { stopOnError: true })
     record('withdrawal holds, approvals, rejections, deposits, access control', psqlAll(db, suite('withdrawal_holds.sql')))
   }
 
@@ -643,6 +647,105 @@ async function main() {
       from pg_proc where oid = 'public.pay_referral(bigint)'::regprocedure;`, { stopOnError: true, tuplesOnly: true }).trim()
     out += `\n${failed && leftovers === 'false|1ffe439817eee8875eea7b31ab33dafc' ? 'PASS' : 'FAIL'}  an error late in the migration (single transaction) leaves nothing behind (${leftovers})`
     record('payout freeze upgrade from referral-programme state, rollback, guards', out)
+  }
+
+  // 18. Financial operation controls (20261127000000): withdrawal payouts and
+  //     bank pulls frozen by default, valid hold required, validation before
+  //     payment, customer insert policy, request_withdrawal checks; plus real
+  //     concurrent sessions around the switch and duplicate approvals.
+  {
+    const db = freshDb()
+    apply(db, allMigrations())
+    let out = psqlAll(db, suite('financial_controls.sql'))
+    const q1 = (sql) => psql(db, sql, { stopOnError: true, tuplesOnly: true }).trim()
+    let n = 100
+    const newWithdrawal = () => q1(`select public.t_request('11111111-0000-0000-0000-000000000001', 'c0000000-0000-4000-8000-0000000${String(++n).padStart(5, '0')}', 10, 'bank');`).split(/\s+/).pop()
+    const race = async (a, b) => {
+      const first = psqlCapture(db, a)
+      await new Promise((r) => setTimeout(r, 500))
+      const started = Date.now()
+      const second = await psqlCapture(db, b)
+      return [await first, second, Date.now() - started]
+    }
+    const slowClaim = (t) => `begin; select public.t_claim('${t}'); select pg_sleep(2); commit;`
+    const fastClaim = (t) => `select public.t_claim('${t}');`
+    const enable = `select public.set_financial_operation_enabled('withdrawal_payouts', true, 'ops', 'race', 'ENABLE WITHDRAWAL PAYOUTS');`
+    const claimState = (t) => q1(`select public.claims('${t}') || '|' || public.hold('${t}') || '|' || public.st('${t}');`)
+
+    // a) A claim is in progress when an operator freezes payouts: the freeze
+    //    waits for that claim to commit; the next claim is refused.
+    q1(enable)
+    const a1 = newWithdrawal(), a2 = newWithdrawal()
+    const [ca, offA, waitedA] = await race(slowClaim(a1), `select public.set_financial_operation_enabled('withdrawal_payouts', false, 'ops', 'freeze during claim');`)
+    const after = psql(db, fastClaim(a2))
+    out += `\n${!/ERROR/.test(ca) && !/ERROR/.test(offA) && waitedA >= 1300 && claimState(a1) === '1|held|pending'
+      && /Withdrawal payouts are disabled/.test(after) && claimState(a2) === '0|held|pending' ? 'PASS' : 'FAIL'}  freeze during a claim waited ${waitedA} ms for it; the next claim was refused (${claimState(a2)})`
+
+    // b) A freeze is being committed while an admin claims: the claim waits and is refused.
+    q1(enable)
+    const b1 = newWithdrawal()
+    const [, cb, waitedB] = await race(`begin; select public.set_financial_operation_enabled('withdrawal_payouts', false, 'ops', 'freeze'); select pg_sleep(2); commit;`, fastClaim(b1))
+    out += `\n${/Withdrawal payouts are disabled/.test(cb) && waitedB >= 1300 && claimState(b1) === '0|held|pending' ? 'PASS' : 'FAIL'}  claim during a committed freeze waited ${waitedB} ms, then refused; nothing claimed`
+
+    // c) Two admins approve the same withdrawal at the same moment: one claim only.
+    q1(enable)
+    const c1 = newWithdrawal()
+    const [c1a, c1b] = await race(slowClaim(c1), fastClaim(c1))
+    out += `\n${!/ERROR/.test(c1a) && /already has an active/.test(c1b) && claimState(c1) === '1|held|pending' ? 'PASS' : 'FAIL'}  two simultaneous approvals: exactly one claim, the other refused (no duplicate payment)`
+
+    // d) Every committed switch change is logged.
+    const log = q1(`select count(*) from public.financial_operation_control_events where operation = 'withdrawal_payouts';`)
+    out += `\n${Number(log) === 8 ? 'PASS' : 'FAIL'}  every withdrawal switch change logged (${log} entries)`
+    record('financial operation controls: freeze, valid hold, validation, customer inserts, concurrency', out)
+  }
+
+  // 19. Financial controls upgrade from the post-20261126000000 state, then
+  //     rollback; ordering and drift guards; a late error leaves nothing.
+  {
+    const db = freshDb()
+    apply(db, migrationsBefore('20261127000000'))
+    psql(db, suite('fc_upgrade_a_snapshot.sql'), { stopOnError: true })
+    apply(db, [migration('20261127000000')])
+    let out = psqlAll(db, suite('fc_upgrade_b_after.sql'))
+    apply(db, [join(rollbackDir, '20261127000000_financial_operation_controls_rollback.sql')])
+    out += psqlAll(db, suite('fc_upgrade_c_after_rollback.sql'))
+    let refused = false
+    try { apply(db, [migration('20261127000000')]) } catch (err) { refused = /applied before/.test(err.message) }
+    out += `\n${refused ? 'PASS' : 'FAIL'}  re-applying after rollback is refused by its guard`
+
+    const guard = (label, setup, re) => {
+      const d = freshDb()
+      apply(d, migrationsBefore('20261127000000'))
+      if (setup) psql(d, setup, { stopOnError: true })
+      let ok = false
+      try { apply(d, [migration('20261127000000')]) } catch (err) { ok = re.test(err.message) }
+      const made = psql(d, `select (to_regclass('public.financial_operation_controls') is not null)::text;`, { stopOnError: true, tuplesOnly: true }).trim()
+      out += `\n${ok && made === 'false' ? 'PASS' : 'FAIL'}  ${label}: refused, nothing created`
+    }
+    {
+      const d = freshDb()
+      apply(d, migrationsBefore('20261126000000'))
+      let ok = false
+      try { apply(d, [migration('20261127000000')]) } catch (err) { ok = /Apply 20261126000000_referral_payout_freeze.sql first/.test(err.message) }
+      out += `\n${ok ? 'PASS' : 'FAIL'}  applied before 20261126000000: refused`
+    }
+    guard('claim_transaction_for_approval changed since review', `update pg_proc set prosrc = prosrc || ' ' where oid = 'public.claim_transaction_for_approval(uuid, text)'::regprocedure;`, /claim_transaction_for_approval\(uuid, text\) differs/)
+    guard('request_withdrawal changed since review', `update pg_proc set prosrc = prosrc || ' ' where oid = 'public.request_withdrawal(uuid, numeric, text, text, numeric, text, text)'::regprocedure;`, /request_withdrawal\(.*\) differs/)
+    guard('an unexpected customer insert policy exists', `create policy t_extra on public.transactions for insert to authenticated with check (true);`, /Unexpected INSERT policies on public.transactions/)
+    {
+      const d = freshDb()
+      apply(d, migrationsBefore('20261127000000'))
+      psql(d, `create table public.financial_operation_control_events_x (x int);`, { stopOnError: true })
+      let failed = false
+      try {
+        psql(d, `begin;\n${read(migration('20261127000000')).replace('create policy "Customers can submit pending deposit claims"', 'create policy "Customers can submit pending deposit claims" on public.no_such_table for insert with check (true); --')}\ncommit;`, { stopOnError: true })
+      } catch (err) { failed = /does not exist/.test(err.message) }
+      const left = psql(d, `select (to_regclass('public.financial_operation_controls') is not null)::text || '|' || md5(replace(prosrc, chr(13), ''))
+        || '|' || (select count(*) from pg_policy where polrelid = 'public.transactions'::regclass and polname = 'Users can submit their own deposit claims')
+        from pg_proc where oid = 'public.claim_transaction_for_approval(uuid, text)'::regprocedure;`, { stopOnError: true, tuplesOnly: true }).trim()
+      out += `\n${failed && left === 'false|8e37d7cc0cf29ce765e497cfd7b26b6e|1' ? 'PASS' : 'FAIL'}  an error late in the migration (single transaction) leaves everything as before (${left})`
+    }
+    record('financial controls upgrade from post-26 state, rollback, guards', out)
   }
 
   // 7. Concurrency on one investment: simultaneous gains claims, and

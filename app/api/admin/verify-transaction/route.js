@@ -2,8 +2,20 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/audit";
 import { verifyTransaction } from "@/lib/blockchain";
-import { sendCryptoPayout, getHotWalletBalance } from "@/lib/wallet";
-import { getStripe } from "@/lib/stripe";
+import { sendCryptoPayout, getHotWalletBalance, isValidPayoutAddress } from "@/lib/wallet";
+import { createBankPullPaymentIntent, createWithdrawalTransfer } from "@/lib/stripe";
+import { getPayoutQuote, confirmedAmountAcceptable, PAYOUT_DECIMALS } from "@/lib/crypto-price";
+import { getBlockchainNetwork } from "@/lib/blockchain-network";
+import {
+  withdrawalPayoutsEnabled,
+  bankDepositPullsEnabled,
+  PaymentDisabledError,
+  WITHDRAWAL_PAYOUTS_DISABLED_CODE,
+  WITHDRAWAL_PAYOUTS_DISABLED_MESSAGE,
+  BANK_PULLS_DISABLED_CODE,
+  BANK_PULLS_DISABLED_MESSAGE,
+} from "@/lib/financial-controls";
+import { checkSameOriginJson } from "@/lib/request-origin";
 import {
   sendNotificationEmail,
   depositVerifiedEmail,
@@ -14,6 +26,34 @@ import {
   investmentWithdrawalRejectedEmail,
 } from "@/lib/email";
 import { NextResponse } from "next/server";
+
+// Admin approval, rejection and checking of pending transactions. This is
+// the ONLY route that can move real money (crypto payouts, Stripe bank
+// transfers and Stripe bank pulls). Layers, each sufficient on its own:
+//   1. Application switches WITHDRAWAL_PAYOUTS_ENABLED / BANK_DEPOSIT_PULLS_ENABLED
+//      (exactly 'true'; missing = off), checked here before the claim.
+//   2. Database switches (financial_operation_controls, 20261127000000),
+//      enforced by claim_transaction_for_approval, which also requires a
+//      valid funds hold and validates the withdrawal before any payment.
+//   3. The payment libraries (lib/wallet.js, lib/stripe.js) check the
+//      application switch again immediately before contacting a provider.
+// Crypto payout amounts are calculated on the server from two trusted
+// price sources and confirmed by the admin; a customer-typed crypto amount
+// is never paid. The transaction hash is saved the moment a payment is
+// broadcast, and a payment whose outcome is unclear is marked uncertain
+// (never released), so it can never be sent twice.
+
+// Time for a crypto send to be broadcast and confirmed on Vercel (seconds).
+export const maxDuration = 60;
+
+const PAYMENT_DISABLED_RESPONSES = {
+  [WITHDRAWAL_PAYOUTS_DISABLED_CODE]: WITHDRAWAL_PAYOUTS_DISABLED_MESSAGE,
+  [BANK_PULLS_DISABLED_CODE]: BANK_PULLS_DISABLED_MESSAGE,
+};
+
+function disabledResponse(code) {
+  return NextResponse.json({ error: PAYMENT_DISABLED_RESPONSES[code], code }, { status: 503 });
+}
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -49,6 +89,16 @@ function isDefinitiveStripeRejection(error) {
   );
 }
 
+// Truncates (never rounds up) a positive decimal to the coin's payout precision.
+function truncateAmount(value, currency) {
+  const decimals = PAYOUT_DECIMALS[currency];
+  const text = typeof value === "number" ? value.toFixed(12) : String(value ?? "").trim();
+  if (!/^\d+(\.\d+)?$/.test(text)) return null;
+  const [whole, frac = ""] = text.split(".");
+  const out = `${whole}.${(frac + "0".repeat(decimals)).slice(0, decimals)}`;
+  return Number(out) > 0 ? out : null;
+}
+
 async function updateClaim(supabase, rpcName, transactionId, claimToken, evidence) {
   const { error } = await supabase.rpc(rpcName, {
     p_transaction_id: transactionId,
@@ -58,14 +108,50 @@ async function updateClaim(supabase, rpcName, transactionId, claimToken, evidenc
   return error;
 }
 
+// Database refusals from claim_transaction_for_approval.
+function claimRefusal(message) {
+  if (/Withdrawal payouts are disabled/.test(message)) return disabledResponse(WITHDRAWAL_PAYOUTS_DISABLED_CODE);
+  if (/Bank deposit pulls are disabled/.test(message)) return disabledResponse(BANK_PULLS_DISABLED_CODE);
+  return NextResponse.json({ error: message || "Transaction could not be claimed for approval" }, { status: 409 });
+}
+
+// Read-only status of the money-moving switches, for the admin page.
+export async function GET() {
+  const { user: admin, supabase } = await requireAdmin();
+  if (!admin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { data, error } = await supabase.from("financial_operation_controls").select("operation, enabled");
+  const db = Object.fromEntries((data || []).map((r) => [r.operation, r.enabled === true]));
+  let network = null;
+  try { network = getBlockchainNetwork(); } catch { /* reported as null */ }
+  const status = (app, op) => ({ application: app, database: error ? null : db[op] === true, enabled: app && !error && db[op] === true });
+  return NextResponse.json({
+    withdrawalPayouts: status(withdrawalPayoutsEnabled(), "withdrawal_payouts"),
+    bankDepositPulls: status(bankDepositPullsEnabled(), "bank_deposit_pulls"),
+    blockchainNetwork: network,
+  });
+}
+
 export async function POST(request) {
+  const origin = checkSameOriginJson(request);
+  if (!origin.ok) {
+    return NextResponse.json({ error: origin.error }, { status: origin.status });
+  }
+
   const { user: admin, supabase } = await requireAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { transactionId, action, adminNote, skipBlockchainCheck } = await request.json();
-  if (!transactionId || !["verify", "reject", "check"].includes(action)) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+  const { transactionId, action, adminNote, skipBlockchainCheck, confirmedCryptoAmount } = body || {};
+  if (!transactionId || !["verify", "reject", "check", "quote"].includes(action)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
@@ -99,12 +185,17 @@ export async function POST(request) {
       );
     }
 
-    const result = await verifyTransaction(
-      txn.crypto_currency,
-      txn.tx_hash,
-      expectedAddress,
-      txn.crypto_amount
-    );
+    let result;
+    try {
+      result = await verifyTransaction(
+        txn.crypto_currency,
+        txn.tx_hash,
+        expectedAddress,
+        txn.crypto_amount
+      );
+    } catch (checkError) {
+      return NextResponse.json({ error: checkError.message || "Blockchain verification is temporarily unavailable." }, { status: 503 });
+    }
     await supabaseAdmin
       .from("transactions")
       .update({ onchain_verification: result, onchain_checked_at: new Date().toISOString() })
@@ -115,6 +206,36 @@ export async function POST(request) {
 
   if (txn.status !== "pending") {
     return NextResponse.json({ error: "Transaction has already been processed" }, { status: 400 });
+  }
+
+  const isWithdrawal = txn.type === "withdrawal";
+  const isCryptoWithdrawal = isWithdrawal && txn.payment_method === "crypto";
+  const isBankPull = txn.type === "deposit" && txn.payment_method === "bank";
+
+  // Read-only: the server-calculated payout for a crypto withdrawal, for the
+  // admin to review and confirm. Writes nothing and sends nothing.
+  if (action === "quote") {
+    if (!isCryptoWithdrawal) {
+      return NextResponse.json({ error: "Quotes are only for crypto withdrawals" }, { status: 400 });
+    }
+    let network;
+    try { network = getBlockchainNetwork(); } catch (networkError) {
+      return NextResponse.json({ error: networkError.message }, { status: 503 });
+    }
+    try {
+      const quote = await getPayoutQuote(txn.crypto_currency, txn.amount_usd);
+      return NextResponse.json({
+        success: true,
+        quote,
+        network,
+        destinationAddress: txn.destination_address,
+        destinationValid: isValidPayoutAddress(txn.crypto_currency, txn.destination_address),
+        customerTypedCryptoAmount: txn.crypto_amount ?? null,
+        payoutsEnabled: withdrawalPayoutsEnabled(),
+      });
+    } catch (quoteError) {
+      return NextResponse.json({ error: quoteError.message || "No payout amount can be calculated right now." }, { status: 503 });
+    }
   }
 
   if (action === "reject") {
@@ -162,6 +283,52 @@ export async function POST(request) {
     return NextResponse.json({ success: true });
   }
 
+  // ---- verify: every refusal below happens before the claim and before any payment ----
+  if (isWithdrawal && !withdrawalPayoutsEnabled()) {
+    return disabledResponse(WITHDRAWAL_PAYOUTS_DISABLED_CODE);
+  }
+  if (isBankPull && !bankDepositPullsEnabled()) {
+    return disabledResponse(BANK_PULLS_DISABLED_CODE);
+  }
+
+  // Crypto withdrawals: explicit network, valid destination, and an amount
+  // calculated by the server that the admin has confirmed.
+  let payout = null;
+  if (isCryptoWithdrawal) {
+    let network;
+    try { network = getBlockchainNetwork(); } catch (networkError) {
+      return NextResponse.json({ error: networkError.message }, { status: 503 });
+    }
+    if (!isValidPayoutAddress(txn.crypto_currency, txn.destination_address)) {
+      return NextResponse.json(
+        { error: `The destination is not a valid ${txn.crypto_currency} address on ${network}; reject this withdrawal or contact the customer.` },
+        { status: 409 }
+      );
+    }
+    const confirmed = truncateAmount(confirmedCryptoAmount, txn.crypto_currency);
+    if (!confirmed) {
+      return NextResponse.json(
+        { error: "Get the calculated payout amount (quote) and confirm it before approving this withdrawal." },
+        { status: 400 }
+      );
+    }
+    let fresh;
+    try {
+      fresh = await getPayoutQuote(txn.crypto_currency, txn.amount_usd);
+    } catch (quoteError) {
+      return NextResponse.json({ error: quoteError.message || "No payout amount can be calculated right now." }, { status: 503 });
+    }
+    if (!confirmedAmountAcceptable(confirmed, fresh.cryptoAmount)) {
+      return NextResponse.json(
+        { error: "The price has moved since the amount was confirmed. Review the new amount and confirm again.", quote: fresh },
+        { status: 409 }
+      );
+    }
+    // Never more than the admin confirmed, never more than the current fair amount.
+    const amount = Number(confirmed) <= Number(fresh.cryptoAmount) ? confirmed : fresh.cryptoAmount;
+    payout = { amount, priceUsd: fresh.priceUsd, quotedAt: fresh.quotedAt, network, sources: fresh.sources };
+  }
+
   const { data: claimToken, error: claimError } = await supabase.rpc(
     "claim_transaction_for_approval",
     {
@@ -171,10 +338,7 @@ export async function POST(request) {
   );
 
   if (claimError || !claimToken) {
-    return NextResponse.json(
-      { error: claimError?.message || "Transaction could not be claimed for approval" },
-      { status: 409 }
-    );
+    return claimRefusal(claimError?.message);
   }
 
   const releaseClaim = async (evidence = {}) => {
@@ -205,6 +369,14 @@ export async function POST(request) {
       return false;
     }
     return true;
+  };
+
+  // A payment library refused before contacting the provider: nothing was sent.
+  const refusedBeforeSending = async (paymentError) => {
+    const released = await releaseClaim({ reason: paymentError.code });
+    return released
+      ? disabledResponse(paymentError.code)
+      : NextResponse.json({ error: "Could not safely release transaction processing; contact support." }, { status: 500 });
   };
 
   let blockchainResult = null;
@@ -282,7 +454,7 @@ export async function POST(request) {
   const providerEvidence = {};
   let externalPaymentAccepted = false;
 
-  if (txn.type === "deposit" && txn.payment_method === "bank" && txn.linked_bank_account_id) {
+  if (isBankPull && txn.linked_bank_account_id) {
     const { data: bankAccount, error: bankFetchError } = await supabaseAdmin
       .from("linked_bank_accounts")
       .select("stripe_payment_method_id, status")
@@ -326,7 +498,7 @@ export async function POST(request) {
     }
 
     try {
-      const paymentIntent = await getStripe().paymentIntents.create(
+      const paymentIntent = await createBankPullPaymentIntent(
         {
           amount: Math.round(Number(txn.amount_usd) * 100),
           currency: "usd",
@@ -354,6 +526,7 @@ export async function POST(request) {
       }
       externalPaymentAccepted = true;
     } catch (stripeError) {
+      if (stripeError instanceof PaymentDisabledError) return refusedBeforeSending(stripeError);
       console.error("Stripe ACH pull failed:", stripeError);
       const evidence = {
         sendError: stripeError.message || "Stripe payment request failed",
@@ -376,7 +549,7 @@ export async function POST(request) {
     }
   }
 
-  if (txn.type === "withdrawal" && txn.crypto_currency && txn.destination_address) {
+  if (isCryptoWithdrawal) {
     let hotBalance;
     try {
       hotBalance = await getHotWalletBalance(txn.crypto_currency);
@@ -384,46 +557,64 @@ export async function POST(request) {
       const released = await releaseClaim({ reason: "hot_wallet_balance_unavailable" });
       return NextResponse.json(
         { error: released ? balanceError.message : "Could not safely release transaction processing." },
-        { status: released ? 500 : 500 }
+        { status: 500 }
       );
     }
 
-    if (hotBalance < Number(txn.crypto_amount)) {
+    if (hotBalance < Number(payout.amount)) {
       const released = await releaseClaim({ reason: "insufficient_hot_wallet_balance" });
       return NextResponse.json(
         { error: released
-          ? `Platform hot wallet only has ${hotBalance} ${txn.crypto_currency} — cannot cover this ${txn.crypto_amount} ${txn.crypto_currency} withdrawal. Fund the wallet first.`
+          ? `Platform hot wallet only has ${hotBalance} ${txn.crypto_currency} — cannot cover this ${payout.amount} ${txn.crypto_currency} withdrawal. Fund the wallet first.`
           : "Could not safely release transaction processing." },
         { status: released ? 400 : 500 }
       );
     }
 
+    // Saved the moment the payment is broadcast, before waiting for it to
+    // confirm: if anything later fails or the function is stopped, the claim
+    // stays processing/uncertain with the hash, and is never paid again.
+    const payoutEvidence = {
+      payoutCryptoAmount: payout.amount,
+      payoutPriceUsd: payout.priceUsd,
+      payoutQuotedAt: payout.quotedAt,
+      payoutNetwork: payout.network,
+    };
+    const onBroadcast = async (hash) => {
+      sentTxHash = hash;
+      const evidenceError = await updateClaim(supabase, "record_transaction_claim_evidence", transactionId, claimToken,
+        { ...payoutEvidence, sentTxHash: hash, sentAt: new Date().toISOString() });
+      if (evidenceError) console.error("Broadcast hash could not be saved; claim stays processing.", evidenceError.code || "evidence_error");
+    };
+
     try {
       const result = await sendCryptoPayout(
         txn.crypto_currency,
         txn.destination_address,
-        txn.crypto_amount
+        payout.amount,
+        { onBroadcast }
       );
       sentTxHash = result.txHash;
-      providerEvidence.sentTxHash = sentTxHash;
-      providerEvidence.sentAt = new Date().toISOString();
+      Object.assign(providerEvidence, payoutEvidence, { sentTxHash, sentAt: new Date().toISOString() });
       externalPaymentAccepted = true;
     } catch (sendError) {
+      if (sendError instanceof PaymentDisabledError) return refusedBeforeSending(sendError);
       console.error("Crypto send outcome requires reconciliation:", sendError);
       await markUncertain({
+        ...payoutEvidence,
         sendError: sendError.message || "Crypto send outcome is uncertain",
         cryptoCurrency: txn.crypto_currency,
         destinationAddress: txn.destination_address,
-        cryptoAmount: txn.crypto_amount,
+        sentTxHash: sendError.txHash || sentTxHash || null,
       });
       return NextResponse.json(
-        { error: "Crypto payment outcome is uncertain; this transaction is blocked pending reconciliation." },
+        { error: "Crypto payment outcome is uncertain; this transaction is blocked pending reconciliation.", sentTxHash: sendError.txHash || sentTxHash || null },
         { status: 503 }
       );
     }
   }
 
-  if (txn.type === "withdrawal" && txn.payment_method === "bank") {
+  if (isWithdrawal && txn.payment_method === "bank") {
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("stripe_connect_account_id, stripe_connect_onboarded")
@@ -451,7 +642,7 @@ export async function POST(request) {
     }
 
     try {
-      const transfer = await getStripe().transfers.create(
+      const transfer = await createWithdrawalTransfer(
         {
           amount: Math.round(Number(txn.amount_usd) * 100),
           currency: "usd",
@@ -463,6 +654,7 @@ export async function POST(request) {
       providerEvidence.sentAt = new Date().toISOString();
       externalPaymentAccepted = true;
     } catch (transferError) {
+      if (transferError instanceof PaymentDisabledError) return refusedBeforeSending(transferError);
       console.error("Stripe transfer outcome requires review:", transferError);
       const evidence = {
         sendError: transferError.message || "Stripe transfer failed",
@@ -537,7 +729,7 @@ export async function POST(request) {
       metadata: blockchainResult
         ? { onchain: blockchainResult }
         : (sentTxHash
-          ? { sentTxHash }
+          ? { sentTxHash, payoutCryptoAmount: payout?.amount, payoutPriceUsd: payout?.priceUsd }
           : (stripePaymentIntentStatus ? { stripePaymentIntentStatus } : undefined)),
     });
   } catch (auditError) {
@@ -573,6 +765,7 @@ export async function POST(request) {
     newBalance: completion.newBalance,
     blockchainResult,
     sentTxHash: providerEvidence.sentTxHash || null,
+    payoutCryptoAmount: payout?.amount ?? null,
     stripePaymentIntentStatus,
   });
 }

@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
 import { useMoneyFormatter } from '@/lib/formatting'
-import { createTransaction, getSettings, getLinkedBankAccounts, disconnectBankAccount } from '@/lib/queries'
-import ConnectBankButton from '@/components/ConnectBankButton'
+import { createTransaction, getSettings } from '@/lib/queries'
 import AuthTransitionOverlay from '@/components/AuthTransitionOverlay'
 
 const s = {
@@ -45,14 +44,9 @@ export default function DepositPage() {
   const [amountUsd, setAmountUsd] = useState('')
   const [txHash, setTxHash] = useState('')
 
-  const [linkedAccounts, setLinkedAccounts] = useState([])
-  const [selectedAccountId, setSelectedAccountId] = useState(null)
-  const [bankAmount, setBankAmount] = useState('')
-  const [loadingBank, setLoadingBank] = useState(true)
-  const [disconnectingId, setDisconnectingId] = useState(null)
-
   const [wireAmount, setWireAmount] = useState('')
   const [wireReference, setWireReference] = useState('')
+  const [wireBankReference, setWireBankReference] = useState('')
 
   const [submitting, setSubmitting] = useState(false)
   const [showOverlay, setShowOverlay] = useState(false)
@@ -63,20 +57,16 @@ export default function DepositPage() {
     getSettings().then(setSettings).catch(err => console.error('Failed to load settings:', err))
   }, [])
 
-  useEffect(() => {
-    if (!user) return
-    getLinkedBankAccounts(user.id)
-      .then(accounts => {
-        setLinkedAccounts(accounts)
-        if (accounts.length > 0) setSelectedAccountId(accounts[0].id)
-      })
-      .catch(err => console.error('Failed to load linked bank accounts:', err))
-      .finally(() => setLoadingBank(false))
-  }, [user])
-
   const minDeposit = settings?.min_deposit_usd ?? 100
-  const bankTransferEnabled = settings?.bank_transfer_enabled ?? false
+  // Bank Transfer (method 'wire'): the customer sends the money themselves to
+  // the bank details below; an admin approves the deposit only after
+  // confirming the money arrived. Shown when an admin has enabled it in
+  // Settings (so unconfigured bank details are never displayed).
   const bankWireEnabled = settings?.bank_wire_enabled ?? false
+  // Bank Pull (method 'bank') is always shown but is "Coming Soon": selecting
+  // it only displays a message. Nothing on this page links or charges a bank
+  // account, and the server refuses bank linking and bank pulls while they
+  // are disabled (BANK_DEPOSIT_PULLS_ENABLED and the database switch).
 
   const depositAddresses = {
     BTC: settings?.btc_deposit_address || t('notConfigured'),
@@ -91,32 +81,6 @@ export default function DepositPage() {
     accountNumber: settings?.bank_account_number || t('notConfigured'),
   }
 
-  function handleBankLinked(newAccount) {
-    setLinkedAccounts(prev => [newAccount, ...prev])
-    setSelectedAccountId(newAccount.id)
-  }
-
-  async function handleDisconnect(accountId, e) {
-    e.stopPropagation()
-    if (!window.confirm(t('confirmDisconnect'))) return
-
-    setDisconnectingId(accountId)
-    setError('')
-    try {
-      await disconnectBankAccount(accountId)
-      setLinkedAccounts(prev => {
-        const remaining = prev.filter(a => a.id !== accountId)
-        if (selectedAccountId === accountId) {
-          setSelectedAccountId(remaining.length > 0 ? remaining[0].id : null)
-        }
-        return remaining
-      })
-    } catch (err) {
-      setError(err.message || t('errors.disconnectFailed'))
-    } finally {
-      setDisconnectingId(null)
-    }
-  }
 
   async function handleSubmitCrypto() {
     setError('')
@@ -139,40 +103,6 @@ export default function DepositPage() {
         cryptoCurrency: currency,
         cryptoAmount: Number(cryptoAmount),
         txHash: txHash.trim(),
-      })
-      setDone(true)
-    } catch (err) {
-      setError(err.message || t('errors.genericSubmit'))
-    } finally {
-      setSubmitting(false)
-      setShowOverlay(false)
-    }
-  }
-
-  async function handleSubmitBank() {
-    setError('')
-    if (!selectedAccountId) {
-      setError(t('errors.selectBank'))
-      return
-    }
-    const amt = Number(bankAmount)
-    if (!amt || amt <= 0) {
-      setError(t('errors.validAmount'))
-      return
-    }
-    if (amt < minDeposit) {
-      setError(t('errors.minDeposit', { amount: formatMoney(minDeposit) }))
-      return
-    }
-    setSubmitting(true)
-    setShowOverlay(true)
-    try {
-      await createTransaction({
-        userId: user.id,
-        type: 'deposit',
-        amountUsd: amt,
-        paymentMethod: 'bank',
-        linkedBankAccountId: selectedAccountId,
       })
       setDone(true)
     } catch (err) {
@@ -206,7 +136,9 @@ export default function DepositPage() {
         type: 'deposit',
         amountUsd: amt,
         paymentMethod: 'wire',
-        note: `Sent from: ${wireReference.trim()}`,
+        note: wireBankReference.trim()
+          ? `Sent from: ${wireReference.trim()} | Bank reference: ${wireBankReference.trim().slice(0, 120)}`
+          : `Sent from: ${wireReference.trim()}`,
       })
       setDone(true)
     } catch (err) {
@@ -224,9 +156,7 @@ export default function DepositPage() {
         <div style={{ ...s.card, textAlign: 'center', padding: '48px' }}>
           <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text)', marginBottom: '8px' }}>{t('submitted.title')}</div>
           <div style={{ fontSize: '14px', color: 'var(--text2)', marginBottom: '24px' }}>
-            {method === 'bank'
-              ? t('submitted.bank')
-              : method === 'wire'
+            {method === 'wire'
               ? t('submitted.wire')
               : t('submitted.crypto')}
           </div>
@@ -235,8 +165,7 @@ export default function DepositPage() {
             onClick={() => {
               setDone(false)
               setCryptoAmount(''); setAmountUsd(''); setTxHash('')
-              setBankAmount('')
-              setWireAmount(''); setWireReference('')
+              setWireAmount(''); setWireReference(''); setWireBankReference('')
             }}
           >
             {t('submitted.makeAnother')}
@@ -262,14 +191,6 @@ export default function DepositPage() {
           >
             {t('methods.crypto')}
           </button>
-          {bankTransferEnabled && (
-            <button
-              style={{ ...s.methodTab, ...(method === 'bank' ? s.methodTabActive : {}) }}
-              onClick={() => setMethod('bank')}
-            >
-              {t('methods.bank')}
-            </button>
-          )}
           {bankWireEnabled && (
             <button
               style={{ ...s.methodTab, ...(method === 'wire' ? s.methodTabActive : {}) }}
@@ -278,6 +199,13 @@ export default function DepositPage() {
               {t('methods.wire')}
             </button>
           )}
+          <button
+            style={{ ...s.methodTab, ...(method === 'bank' ? s.methodTabActive : {}) }}
+            onClick={() => setMethod('bank')}
+          >
+            {t('methods.bank')}
+            <span style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'var(--text3)', marginTop: '2px' }}>{t('bankPull.badge')}</span>
+          </button>
         </div>
 
         {method === 'crypto' && (
@@ -330,64 +258,8 @@ export default function DepositPage() {
         )}
 
         {method === 'bank' && (
-          <div className="responsive-grid-2" style={s.grid2}>
-            <div>
-              {loadingBank ? (
-                <div style={{ color: 'var(--text3)', fontSize: '14px', marginBottom: '16px' }}>{t('bank.loadingAccounts')}</div>
-              ) : linkedAccounts.length === 0 ? (
-                <ConnectBankButton linkedAccount={null} onLinked={handleBankLinked} />
-              ) : (
-                <>
-                  <label style={s.label}>{t('bank.depositFrom')}</label>
-                  {linkedAccounts.map(acct => (
-                    <div
-                      key={acct.id}
-                      style={{ ...s.bankOption, ...(selectedAccountId === acct.id ? s.bankOptionActive : {}) }}
-                      onClick={() => setSelectedAccountId(acct.id)}
-                    >
-                      <input type="radio" checked={selectedAccountId === acct.id} onChange={() => setSelectedAccountId(acct.id)} />
-                      <span>{acct.bank_name} •••• {acct.last4}</span>
-                      <button
-                        type="button"
-                        style={s.disconnectBtn}
-                        disabled={disconnectingId === acct.id}
-                        onClick={(e) => handleDisconnect(acct.id, e)}
-                      >
-                        {disconnectingId === acct.id ? t('bank.removing') : t('bank.disconnect')}
-                      </button>
-                    </div>
-                  ))}
-                  <div style={{ marginBottom: '16px' }}>
-                    <ConnectBankButton linkedAccount={null} onLinked={handleBankLinked} />
-                  </div>
-                </>
-              )}
-
-              <label style={s.label}>{t('bank.amountUsd')}</label>
-              <input style={s.input} type="number" step="any" placeholder="0.00" value={bankAmount} onChange={e => setBankAmount(e.target.value)} />
-
-              <button
-                style={{ ...s.btnGreen, ...(submitting || !selectedAccountId ? s.btnDisabled : {}) }}
-                disabled={submitting || !selectedAccountId}
-                onClick={handleSubmitBank}
-              >
-                {submitting ? t('submitting') : t('submitDeposit')}
-              </button>
-            </div>
-
-            <div style={{ ...s.card, background: 'var(--bg3)', margin: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text)', marginBottom: '16px' }}>{t('howItWorks')}</div>
-              {[1, 2, 3, 4].map((step) => (
-                <div key={step} style={{ display: 'flex', gap: '12px', marginBottom: '12px', fontSize: '13px' }}>
-                  <span style={{ color: 'var(--green)', fontWeight: '600' }}>{step}</span>
-                  <span style={{ color: 'var(--text2)' }}>{t(`bank.steps.${step}`)}</span>
-                </div>
-              ))}
-              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)', fontSize: '13px', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text2)' }}>{t('minimumDeposit')}</span>
-                <span style={{ color: 'var(--text)', fontWeight: '600' }}>{formatMoney(minDeposit)}</span>
-              </div>
-            </div>
+          <div role="status" style={{ ...s.card, background: 'var(--bg3)', margin: 0, textAlign: 'center', padding: '40px 24px', fontSize: '15px', color: 'var(--text)' }}>
+            {t('bankPull.comingSoon')}
           </div>
         )}
 
@@ -419,6 +291,9 @@ export default function DepositPage() {
 
               <label style={s.label}>{t('wire.sentFrom')}</label>
               <input style={s.input} placeholder={t('wire.sentFromPlaceholder')} value={wireReference} onChange={e => setWireReference(e.target.value)} />
+
+              <label style={s.label}>{t('wire.reference')}</label>
+              <input style={s.input} maxLength={120} placeholder={t('wire.referencePlaceholder')} value={wireBankReference} onChange={e => setWireBankReference(e.target.value)} />
 
               <button
                 style={{ ...s.btnGreen, ...(submitting ? s.btnDisabled : {}) }}

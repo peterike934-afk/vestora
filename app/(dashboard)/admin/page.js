@@ -343,6 +343,57 @@ function TopInvestorsCard() {
   );
 }
 
+// Crypto withdrawals are paid in an amount the SERVER calculates from two
+// trusted price sources (never the customer-typed amount). The admin sees
+// it here and confirms; the server re-checks it against a fresh quote.
+function PayoutConfirmModal({ txn, quote, error, submitting, onConfirm, onCancel }) {
+  const q = quote?.quote
+  return (
+    <div style={s.modalOverlay} onClick={submitting ? undefined : onCancel}>
+      <div style={{ ...s.modal, width: '440px', maxWidth: '100%' }} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+        <div style={s.modalTitle}>Confirm crypto payout</div>
+        <div style={s.modalSub}>Real funds will be sent from the platform hot wallet ({quote?.network || '—'}).</div>
+        {error && <div style={s.modalError}>{error}</div>}
+        {q ? (
+          <div style={{ fontSize: '13px', color: 'var(--text)', display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 14px', marginBottom: '18px' }}>
+            <span style={{ color: 'var(--text3)' }}>Withdrawal (held)</span><span>{formatUsd(txn.amount_usd)}</span>
+            <span style={{ color: 'var(--text3)' }}>Amount to send</span><strong>{q.cryptoAmount} {q.currency}</strong>
+            <span style={{ color: 'var(--text3)' }}>Price used</span><span>{formatUsd(q.priceUsd)} per {q.currency} ({q.sources.map(x => `${x.name} ${formatUsd(x.priceUsd)}`).join(', ')})</span>
+            <span style={{ color: 'var(--text3)' }}>Destination</span><span style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>{quote.destinationAddress}</span>
+            <span style={{ color: 'var(--text3)' }}>Address check</span><span style={{ color: quote.destinationValid ? 'var(--green)' : 'var(--red)' }}>{quote.destinationValid ? 'Valid for this network' : 'NOT valid for this network — do not send'}</span>
+            {quote.customerTypedCryptoAmount != null && (<><span style={{ color: 'var(--text3)' }}>Customer typed</span><span>{quote.customerTypedCryptoAmount} {q.currency} (ignored)</span></>)}
+            <span style={{ color: 'var(--text3)' }}>Quoted at</span><span>{new Date(q.quotedAt).toLocaleString()}</span>
+          </div>
+        ) : !error && <div style={{ fontSize: '13px', color: 'var(--text3)', marginBottom: '18px' }}>Calculating…</div>}
+        <div style={s.modalActions}>
+          <button style={{ ...s.btnSmall, background: 'var(--bg4)', color: 'var(--text2)' }} disabled={submitting} onClick={onCancel}>Cancel</button>
+          <button
+            style={{ ...s.btnSmall, background: 'var(--green)', color: '#000', ...((!q || !quote.destinationValid || submitting) ? { opacity: 0.4, cursor: 'not-allowed' } : {}) }}
+            disabled={!q || !quote.destinationValid || submitting}
+            onClick={() => onConfirm(q.cryptoAmount)}
+          >
+            {submitting ? 'Sending…' : `Confirm & send ${q ? `${q.cryptoAmount} ${q.currency}` : ''}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Withdrawal payouts and bank pulls need BOTH their application switch and
+// their database switch; the server refuses either way. This only explains
+// why an approval would be refused.
+function PaymentSwitchStatus({ status }) {
+  if (!status) return null
+  const line = (label, st) => st?.enabled
+    ? null
+    : <div key={label}>{label} frozen{st ? ` (${[!st.application && 'application switch off', st.database === false && 'database switch off', st.database === null && 'database switch unreadable'].filter(Boolean).join('; ')})` : ''}.</div>
+  const lines = [line('Withdrawal payouts are', status.withdrawalPayouts), line('Bank pulls are', status.bankDepositPulls)].filter(Boolean)
+  if (!status.blockchainNetwork) lines.push(<div key="net">BLOCKCHAIN_NETWORK is not set: crypto payouts and deposit checks are refused.</div>)
+  if (!lines.length) return null
+  return <div style={{ ...s.modalError, marginBottom: '16px' }}>{lines} Rejections and other approvals still work.</div>
+}
+
 export default function AdminPanel() {
   const [tab, setTab] = useState('pending')
   const [users, setUsers] = useState([])
@@ -356,6 +407,11 @@ export default function AdminPanel() {
   const [editingReasonTxn, setEditingReasonTxn] = useState(null)
   const [modalSubmitting, setModalSubmitting] = useState(false)
   const [modalError, setModalError] = useState('')
+  const [payoutTxn, setPayoutTxn] = useState(null)
+  const [payoutQuote, setPayoutQuote] = useState(null)
+  const [payoutError, setPayoutError] = useState('')
+  const [payoutSubmitting, setPayoutSubmitting] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState(null)
 
   async function loadData() {
     setLoading(true)
@@ -377,6 +433,56 @@ export default function AdminPanel() {
   }
 
   useEffect(() => { loadData() }, [])
+  useEffect(() => {
+    fetch('/api/admin/verify-transaction', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(setPaymentStatus)
+      .catch(() => setPaymentStatus(null))
+  }, [])
+
+  async function startCryptoPayout(tx) {
+    setPayoutTxn(tx)
+    setPayoutQuote(null)
+    setPayoutError('')
+    try {
+      const res = await fetch('/api/admin/verify-transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactionId: tx.id, action: 'quote' }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error || 'Could not calculate the payout amount')
+      setPayoutQuote(data)
+    } catch (err) {
+      setPayoutError(err.message)
+    }
+  }
+
+  async function confirmCryptoPayout(cryptoAmount) {
+    setPayoutSubmitting(true)
+    setPayoutError('')
+    try {
+      const res = await fetch('/api/admin/verify-transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactionId: payoutTxn.id, action: 'verify', confirmedCryptoAmount: cryptoAmount }),
+      })
+      const data = await res.json()
+      if (res.status === 409 && data.quote) {
+        // Price moved: show the new amount for a fresh confirmation.
+        setPayoutQuote(prev => ({ ...prev, quote: data.quote }))
+        throw new Error(data.error)
+      }
+      if (!res.ok || data.error) throw new Error(data.error || 'Payout failed')
+      setPayoutTxn(null)
+      await loadData()
+    } catch (err) {
+      setPayoutError(err.message)
+      await loadData()
+    } finally {
+      setPayoutSubmitting(false)
+    }
+  }
 
   async function handleAction(transactionId, action, options = {}) {
     setActingOn(transactionId)
@@ -481,6 +587,7 @@ export default function AdminPanel() {
   return (
     <div style={s.page}>
       <h1 style={s.title}>Admin panel</h1>
+      <PaymentSwitchStatus status={paymentStatus} />
       <p style={s.sub}>Real users, real balances, real verification</p>
 
       {error && (
@@ -559,7 +666,9 @@ export default function AdminPanel() {
                             }}
                             disabled={actingOn === tx.id || (tx.crypto_currency && tx.tx_hash && !tx.onchain_verification)}
                             title={(tx.crypto_currency && tx.tx_hash && !tx.onchain_verification) ? 'Check the blockchain before approving' : undefined}
-                            onClick={() => handleAction(tx.id, 'verify')}
+                            onClick={() => (tx.type === 'withdrawal' && tx.payment_method === 'crypto'
+                              ? startCryptoPayout(tx)
+                              : handleAction(tx.id, 'verify'))}
                           >
                             {actingOn === tx.id ? '…' : 'Verify'}
                           </button>
@@ -668,6 +777,16 @@ export default function AdminPanel() {
         />
       )}
 
+      {payoutTxn && (
+        <PayoutConfirmModal
+          txn={payoutTxn}
+          quote={payoutQuote}
+          error={payoutError}
+          submitting={payoutSubmitting}
+          onConfirm={confirmCryptoPayout}
+          onCancel={() => setPayoutTxn(null)}
+        />
+      )}
       {rejectingTxn && (
         <RejectModal
           txn={rejectingTxn}

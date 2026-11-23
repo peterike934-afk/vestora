@@ -203,7 +203,8 @@
     "crypto": "Ihre Einzahlung wird verifiziert. Sobald wir die Transaktion On-Chain bestätigt haben, wird Ihr Guthaben aktualisiert.",
     "makeAnother": "Weitere Einzahlung vornehmen"
   },
-  "methods": { "crypto": "Krypto", "bank": "Banküberweisung", "wire": "SWIFT-Überweisung" },
+  "methods": { "crypto": "Krypto", "bank": "Bankeinzug", "wire": "Banküberweisung" },
+  "bankPull": { "badge": "Demnächst", "comingSoon": "Demnächst verfügbar — Wir arbeiten daran. Diese Zahlungsmethode wird bald verfügbar sein." },
   "crypto": {
     "currency": "Währung",
     "sendTo": "An diese Adresse senden",
@@ -242,7 +243,7 @@
     "accountNumber": "Kontonummer",
     "amountSent": "Gesendeter Betrag (USD)",
     "sentFrom": "Gesendet von (Name auf Ihrem Konto)",
-    "sentFromPlaceholder": "z. B. Julia Meier",
+    "sentFromPlaceholder": "z. B. Julia Meier", "reference": "Bankreferenz oder Bestätigungsnummer (optional)", "referencePlaceholder": "z. B. die Referenz aus Ihrer Banking-App",
     "steps": {
       "1": "Überweisen Sie von Ihrer eigenen Bank an das angezeigte Konto",
       "2": "Geben Sie den Betrag und den Namen des Absenders ein",
@@ -348,7 +349,7 @@
   "subtitle": "Geld aus Ihrem Wallet abheben",
   "availableToWithdraw": "Verfügbar zum Abheben",
   "methods": { "crypto": "Krypto", "bank": "Banküberweisung", "wire": "SWIFT-Überweisung" },
-  "crypto": { "currency": "Währung", "amountToWithdraw": "Abzuhebender Betrag ({currency})", "usdEquivalent": "USD-Gegenwert", "destinationAddress": "Ziel-{currency}-Adresse" },
+  "crypto": { "currency": "Währung", "amountToWithdraw": "Abzuhebender Betrag ({currency})", "usdEquivalent": "USD-Gegenwert", "amountUsd": "Auszahlungsbetrag (USD)", "amountCalculated": "Wir senden den Gegenwert in {currency}, berechnet zum Marktpreis bei Genehmigung Ihrer Auszahlung.", "destinationAddress": "Ziel-{currency}-Adresse" },
   "feePreview": "Gebühr ({feePercent}%): {fee} · Vom Guthaben abgezogen: {amount}",
   "noteOptional": "Notiz (optional)",
   "notePlaceholder": "Wofür ist das?",
@@ -377,7 +378,7 @@
     "title": "Auszahlung angefragt",
     "bank": "Ihre Auszahlung wird geprüft. Nach Genehmigung werden die Gelder an Ihr verbundenes Bankkonto gesendet.",
     "wire": "Ihre Überweisungsauszahlung wird geprüft. Nach Genehmigung werden die Gelder an das von Ihnen angegebene Bankkonto gesendet.",
-    "crypto": "Ihre Auszahlung wird geprüft. Nach Genehmigung werden {amount} {currency} an die von Ihnen angegebene Adresse gesendet.",
+    "crypto": "Ihre Auszahlung wird geprüft. Nach Genehmigung werden {amount} {currency} an die von Ihnen angegebene Adresse gesendet.", "cryptoCalculated": "Ihre Auszahlung über {amount} wird geprüft. Nach Genehmigung wird der Gegenwert in {currency} zum Marktpreis an die von Ihnen angegebene Adresse gesendet.",
     "makeAnother": "Weitere Auszahlung vornehmen"
   },
   "errors": {

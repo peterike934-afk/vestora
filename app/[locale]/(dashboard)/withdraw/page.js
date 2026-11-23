@@ -58,7 +58,6 @@ export default function WithdrawPage() {
   const [method, setMethod] = useState('crypto')
 
   const [currency, setCurrency] = useState('ETH')
-  const [cryptoAmount, setCryptoAmount] = useState('')
   const [amount, setAmount] = useState('')
   const [address, setAddress] = useState('')
 
@@ -149,12 +148,10 @@ export default function WithdrawPage() {
 
   async function handleSubmitCrypto() {
     setError('')
-    if (!cryptoAmount || Number(cryptoAmount) <= 0) {
-      setError(t('errors.enterAmount'))
-      return
-    }
+    // Only the USD amount is entered; the crypto amount is calculated by the
+    // server from a trusted price when an admin approves the withdrawal.
     if (!amt || amt <= 0) {
-      setError(t('errors.enterUsdEquivalent'))
+      setError(t('errors.enterAmount'))
       return
     }
     if (!address || !looksLikeValidAddress(currency, address)) {
@@ -181,7 +178,6 @@ export default function WithdrawPage() {
         amountUsd: amt,
         paymentMethod: 'crypto',
         cryptoCurrency: currency,
-        cryptoAmount: Number(cryptoAmount),
         destinationAddress: address.trim(),
         note: note || null,
       })
@@ -281,13 +277,13 @@ export default function WithdrawPage() {
               ? t('requested.bank')
               : method === 'wire'
               ? t('requested.wire')
-              : t('requested.crypto', { amount: cryptoAmount, currency })}
+              : t('requested.cryptoCalculated', { amount: formatMoney(amt), currency })}
           </div>
           <button
             style={s.btnRed}
             onClick={() => {
               setDone(false)
-              setAmount(''); setCryptoAmount(''); setAddress('')
+              setAmount(''); setAddress('')
               setBankAmount(''); setNote('')
               setWireBankAmount(''); setWireBankName(''); setWireAccountName(''); setWireRoutingNumber(''); setWireAccountNumber('')
             }}
@@ -350,11 +346,9 @@ export default function WithdrawPage() {
                 <option value="BTC">Bitcoin (BTC)</option>
               </select>
 
-              <label style={s.label}>{t('crypto.amountToWithdraw', { currency })}</label>
-              <input style={s.input} type="number" step="any" placeholder="0.00" value={cryptoAmount} onChange={e => setCryptoAmount(e.target.value)} />
-
-              <label style={s.label}>{t('crypto.usdEquivalent')}</label>
+              <label style={s.label}>{t('crypto.amountUsd')}</label>
               <input style={s.input} type="number" step="any" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} />
+              <div style={{ fontSize: '12px', color: 'var(--text3)', margin: '-8px 0 14px' }}>{t('crypto.amountCalculated', { currency })}</div>
 
               {amt > 0 && (
                 <div style={s.feePreview}>
