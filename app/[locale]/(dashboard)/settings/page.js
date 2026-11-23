@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
 import { createClient } from '@/lib/supabase/client'
 import { startMfaEnrollment, verifyMfaEnrollment, listMfaFactors, unenrollMfaFactor } from '@/lib/mfa'
-import { updateEmailNotificationPref } from '@/lib/queries'
+import { updateEmailNotificationPref, getMyMarketingConsent, setMyMarketingConsent } from '@/lib/queries'
 
 const s = {
   page: { padding: '32px 36px' },
@@ -117,6 +117,10 @@ export default function Settings() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [notify, setNotify] = useState(true)
+  // Promotional email consent: separate from account notifications, off
+  // until the customer explicitly opts in. null = not loaded yet.
+  const [marketing, setMarketing] = useState(null)
+  const [marketingSaving, setMarketingSaving] = useState(false)
   const [mfaFactor, setMfaFactor] = useState(null)
   const [loadingMfa, setLoadingMfa] = useState(true)
   const [showEnrollModal, setShowEnrollModal] = useState(false)
@@ -133,7 +137,28 @@ export default function Settings() {
     supabase.from('profiles').select('email_notifications').eq('id', user.id).single()
       .then(({ data }) => { if (data) setNotify(data.email_notifications) })
       .catch(err => console.error('Failed to load notification preference:', err))
+    getMyMarketingConsent(user.id)
+      .then(setMarketing)
+      .catch(err => console.error('Failed to load marketing preference:', err))
   }, [user, userName])
+
+  // Saved through set_my_marketing_consent, which records an audit event.
+  // The toggle only changes after the server confirms.
+  async function handleToggleMarketing() {
+    if (marketing === null || marketingSaving) return
+    const next = !marketing
+    setMarketingSaving(true)
+    setError('')
+    try {
+      await setMyMarketingConsent(next, 'settings')
+      setMarketing(next)
+    } catch (err) {
+      console.error('Failed to save marketing preference:', err)
+      setError(t('marketing.saveFailed'))
+    } finally {
+      setMarketingSaving(false)
+    }
+  }
 
   async function handleToggleNotify() {
     const next = !notify
@@ -222,6 +247,25 @@ export default function Settings() {
               </div>
               <div onClick={handleToggleNotify} style={{ ...s.toggle, background: notify ? 'var(--green)' : 'var(--bg4)' }}>
                 <div style={{ ...s.toggleKnob, left: notify ? '23px' : '3px' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '20px' }}>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text)' }}>{t('marketing.title')}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '2px' }}>{t('marketing.description')}</div>
+              </div>
+              <div
+                role="switch"
+                aria-checked={marketing === true}
+                aria-label={t('marketing.title')}
+                aria-disabled={marketing === null || marketingSaving}
+                tabIndex={0}
+                onClick={handleToggleMarketing}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleMarketing() } }}
+                style={{ ...s.toggle, flexShrink: 0, background: marketing ? 'var(--green)' : 'var(--bg4)', ...(marketing === null || marketingSaving ? s.btnDisabled : {}) }}
+              >
+                <div style={{ ...s.toggleKnob, left: marketing ? '23px' : '3px' }} />
               </div>
             </div>
 

@@ -326,6 +326,11 @@
     "disableFailed": "Não foi possível desativar a 2FA"
   },
   "profile": { "title": "Perfil", "fullName": "Nome completo", "email": "Endereço de e-mail", "saving": "Salvando…", "saved": "Salvo ✓", "saveChanges": "Salvar alterações" },
+  "marketing": {
+    "title": "E-mails promocionais",
+    "description": "E-mails ocasionais sobre ofertas como o programa de indicação. Separados dos alertas da conta. Você pode retirar o consentimento a qualquer momento.",
+    "saveFailed": "Não foi possível atualizar sua preferência de e-mails promocionais. Tente novamente."
+  },
   "security": {
     "title": "Segurança",
     "emailNotifications": "Notificações por e-mail",
@@ -411,20 +416,41 @@
 },
 "Referrals": {
   "title": "Indicações",
-  "subtitle": "Convide amigos — você recebe {referrerBonus}, eles recebem {referredBonus}",
+  "subtitle": "Convide amigos para a Vestora. As recompensas atuais são {referrerBonus} para você e {referredBonus} para seu amigo, pagas somente após análise.",
+  "rewardConditions": "As recompensas valem apenas para novos clientes genuínos que se cadastrarem pelo seu link e verificarem o e-mail. Cada indicação é analisada antes do pagamento e pode não ser aprovada.",
+  "shareInstructions": "Compartilhe seu link. Seu amigo precisa se cadastrar por ele — não é possível adicionar uma indicação depois do cadastro.",
   "programInactive": "O programa de indicações não está ativo no momento.",
   "yourCode": "Seu código de indicação",
   "copied": "Copiado!",
   "copyLink": "Copiar link",
   "loading": "Carregando…",
   "totalReferred": "Total indicados",
-  "pending": "Pendente",
+  "pending": "Em análise",
   "earnedSoFar": "Ganho até agora",
   "yourReferrals": "Suas indicações",
   "noReferralsYet": "Você ainda não tem indicações — compartilhe seu link para começar.",
   "newInvestor": "Novo investidor",
-  "table": { "name": "Nome", "bonus": "Bônus", "status": "Status", "date": "Data" },
-  "status": { "paid": "pago", "pending": "pendente" }
+  "table": { "name": "Nome", "role": "Função", "bonus": "Bônus", "status": "Status", "date": "Data" },
+  "role": { "referrer": "Indicado por você", "referred": "Indicou você" },
+  "status": { "paid": "pago", "pending": "em análise", "rejected": "não aprovada" },
+  "reason": {
+    "not_eligible": "A indicação não atendeu aos requisitos de elegibilidade do programa.",
+    "duplicate_account": "A nova conta não pôde ser aceita como novo cliente no programa de indicação.",
+    "terms_not_met": "Os termos do programa de indicação não foram atendidos.",
+    "other": "A indicação não pôde ser aprovada."
+  }
+},
+"ReferralAnnouncement": {
+  "title": "Convide amigos para a Vestora",
+  "body": "Quando um amigo se cadastrar pelo seu link de indicação e verificar o e-mail, você poderá receber {referrerBonus} e ele {referredBonus}, pagos após nossa equipe analisar a indicação.",
+  "viewReferrals": "Obter seu link de indicação",
+  "termsLink": "Termos do programa",
+  "optIn": "Receber ofertas por e-mail",
+  "optInExplainer": "Opcional. Só enviamos e-mails promocionais se você consentir, e você pode retirar o consentimento a qualquer momento em Configurações ou em qualquer e-mail promocional.",
+  "optInDone": "Obrigado — você pode alterar isso a qualquer momento em Configurações.",
+  "optInFailed": "Não foi possível salvar sua preferência. Tente novamente.",
+  "saving": "Salvando…",
+  "dismiss": "Fechar"
 },
 "Markets": {
   "title": "Mercados",

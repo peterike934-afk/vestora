@@ -1,0 +1,5 @@
+# Migrations, rollbacks and SQL test suites are checked byte for byte
+# (SHA-256) by the release kits, and shell scripts run inside Linux
+# containers. Keep them LF on every checkout, whatever core.autocrlf is.
+*.sql text eol=lf
+*.sh  text eol=lf

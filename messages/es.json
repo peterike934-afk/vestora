@@ -326,6 +326,11 @@
     "disableFailed": "No se pudo desactivar la 2FA"
   },
   "profile": { "title": "Perfil", "fullName": "Nombre completo", "email": "Correo electrónico", "saving": "Guardando…", "saved": "Guardado ✓", "saveChanges": "Guardar cambios" },
+  "marketing": {
+    "title": "Correos promocionales",
+    "description": "Correos ocasionales sobre ofertas como el programa de referidos. Independientes de las alertas de la cuenta. Puedes retirar tu consentimiento en cualquier momento.",
+    "saveFailed": "No se pudo actualizar tu preferencia de correos promocionales. Inténtalo de nuevo."
+  },
   "security": {
     "title": "Seguridad",
     "emailNotifications": "Notificaciones por correo",
@@ -411,20 +416,41 @@
 },
 "Referrals": {
   "title": "Referidos",
-  "subtitle": "Invita amigos — tú recibes {referrerBonus}, ellos reciben {referredBonus}",
+  "subtitle": "Invita a tus amigos a Vestora. Las recompensas actuales son {referrerBonus} para ti y {referredBonus} para tu amigo, pagadas solo después de una revisión.",
+  "rewardConditions": "Las recompensas solo aplican a clientes nuevos genuinos que se registren con tu enlace y verifiquen su correo. Cada referido se revisa antes del pago y puede no ser aprobado.",
+  "shareInstructions": "Comparte tu enlace. Tu amigo debe registrarse con él: un referido no se puede añadir después del registro.",
   "programInactive": "El programa de referidos no está activo en este momento.",
   "yourCode": "Tu código de referido",
   "copied": "¡Copiado!",
   "copyLink": "Copiar enlace",
   "loading": "Cargando…",
   "totalReferred": "Total referidos",
-  "pending": "Pendiente",
+  "pending": "En revisión",
   "earnedSoFar": "Ganado hasta ahora",
   "yourReferrals": "Tus referidos",
   "noReferralsYet": "Aún no tienes referidos — comparte tu enlace para comenzar.",
   "newInvestor": "Nuevo inversor",
-  "table": { "name": "Nombre", "bonus": "Bono", "status": "Estado", "date": "Fecha" },
-  "status": { "paid": "pagado", "pending": "pendiente" }
+  "table": { "name": "Nombre", "role": "Rol", "bonus": "Bono", "status": "Estado", "date": "Fecha" },
+  "role": { "referrer": "Referido por ti", "referred": "Te refirió" },
+  "status": { "paid": "pagado", "pending": "en revisión", "rejected": "no aprobado" },
+  "reason": {
+    "not_eligible": "El referido no cumplió los requisitos de elegibilidad del programa.",
+    "duplicate_account": "La nueva cuenta no pudo aceptarse como cliente nuevo para el programa de referidos.",
+    "terms_not_met": "No se cumplieron los términos del programa de referidos.",
+    "other": "El referido no pudo ser aprobado."
+  }
+},
+"ReferralAnnouncement": {
+  "title": "Invita a tus amigos a Vestora",
+  "body": "Cuando un amigo se registre con tu enlace de referido y verifique su correo, podrías recibir {referrerBonus} y tu amigo {referredBonus}, pagados después de que nuestro equipo revise el referido.",
+  "viewReferrals": "Obtén tu enlace de referido",
+  "termsLink": "Términos del programa",
+  "optIn": "Recibir ofertas por correo",
+  "optInExplainer": "Opcional. Solo enviamos correos promocionales si das tu consentimiento, y puedes retirarlo en cualquier momento en Ajustes o desde cualquier correo promocional.",
+  "optInDone": "Gracias. Puedes cambiar esto en cualquier momento en Ajustes.",
+  "optInFailed": "No se pudo guardar tu preferencia. Inténtalo de nuevo.",
+  "saving": "Guardando…",
+  "dismiss": "Cerrar"
 },
 "Markets": {
   "title": "Mercados",

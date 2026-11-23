@@ -326,6 +326,11 @@
     "disableFailed": "2FA konnte nicht deaktiviert werden"
   },
   "profile": { "title": "Profil", "fullName": "Vollständiger Name", "email": "E-Mail-Adresse", "saving": "Wird gespeichert…", "saved": "Gespeichert ✓", "saveChanges": "Änderungen speichern" },
+  "marketing": {
+    "title": "Werbe-E-Mails",
+    "description": "Gelegentliche E-Mails zu Angeboten wie dem Empfehlungsprogramm. Getrennt von Kontobenachrichtigungen. Sie können jederzeit widerrufen.",
+    "saveFailed": "Ihre Einstellung für Werbe-E-Mails konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+  },
   "security": {
     "title": "Sicherheit",
     "emailNotifications": "E-Mail-Benachrichtigungen",
@@ -411,20 +416,41 @@
 },
 "Referrals": {
   "title": "Empfehlungen",
-  "subtitle": "Freunde einladen — Sie erhalten {referrerBonus}, sie erhalten {referredBonus}",
+  "subtitle": "Laden Sie Freunde zu Vestora ein. Aktuelle Empfehlungsprämien: {referrerBonus} für Sie und {referredBonus} für Ihren Freund, ausgezahlt erst nach Prüfung.",
+  "rewardConditions": "Prämien gelten nur für echte Neukunden, die sich über Ihren Link registrieren und ihre E-Mail-Adresse bestätigen. Jede Empfehlung wird vor der Auszahlung geprüft und kann abgelehnt werden.",
+  "shareInstructions": "Teilen Sie Ihren Link. Ihr Freund muss sich darüber registrieren – eine Empfehlung kann nach der Registrierung nicht hinzugefügt werden.",
   "programInactive": "Das Empfehlungsprogramm ist derzeit nicht aktiv.",
   "yourCode": "Ihr Empfehlungscode",
   "copied": "Kopiert!",
   "copyLink": "Link kopieren",
   "loading": "Wird geladen…",
   "totalReferred": "Insgesamt empfohlen",
-  "pending": "Ausstehend",
+  "pending": "In Prüfung",
   "earnedSoFar": "Bisher verdient",
   "yourReferrals": "Ihre Empfehlungen",
   "noReferralsYet": "Noch keine Empfehlungen — teilen Sie Ihren Link, um zu starten.",
   "newInvestor": "Neuer Anleger",
-  "table": { "name": "Name", "bonus": "Bonus", "status": "Status", "date": "Datum" },
-  "status": { "paid": "ausgezahlt", "pending": "ausstehend" }
+  "table": { "name": "Name", "role": "Rolle", "bonus": "Bonus", "status": "Status", "date": "Datum" },
+  "role": { "referrer": "Von Ihnen empfohlen", "referred": "Hat Sie empfohlen" },
+  "status": { "paid": "ausgezahlt", "pending": "in Prüfung", "rejected": "nicht genehmigt" },
+  "reason": {
+    "not_eligible": "Die Empfehlung erfüllte nicht die Teilnahmevoraussetzungen des Programms.",
+    "duplicate_account": "Das neue Konto konnte nicht als Neukunde für das Empfehlungsprogramm anerkannt werden.",
+    "terms_not_met": "Die Bedingungen des Empfehlungsprogramms wurden nicht erfüllt.",
+    "other": "Die Empfehlung konnte nicht genehmigt werden."
+  }
+},
+"ReferralAnnouncement": {
+  "title": "Freunde zu Vestora einladen",
+  "body": "Wenn sich ein Freund über Ihren Empfehlungslink registriert und seine E-Mail-Adresse bestätigt, können Sie {referrerBonus} und Ihr Freund {referredBonus} erhalten – ausgezahlt, nachdem unser Team die Empfehlung geprüft hat.",
+  "viewReferrals": "Empfehlungslink abrufen",
+  "termsLink": "Empfehlungsbedingungen",
+  "optIn": "Angebote per E-Mail erhalten",
+  "optInExplainer": "Freiwillig. Werbe-E-Mails senden wir nur mit Ihrer Einwilligung, die Sie jederzeit in den Einstellungen oder über jede Werbe-E-Mail widerrufen können.",
+  "optInDone": "Danke – Sie können dies jederzeit in den Einstellungen ändern.",
+  "optInFailed": "Ihre Einstellung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+  "saving": "Wird gespeichert…",
+  "dismiss": "Schließen"
 },
 "Markets": {
   "title": "Märkte",

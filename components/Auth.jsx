@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import VestoraMark from '@/components/VestoraMark'
 import { useSearchParams } from 'next/navigation'
-import { applyReferralCode } from '@/lib/queries'
 
 const s = {
   page: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '24px' },
@@ -70,19 +69,6 @@ export function Login() {
       setLoading(false)
       setError(error.message)
       return
-    }
-
-    // Apply any referral code saved during signup but not yet processed
-    // (happens when email confirmation was required before a session existed).
-    const savedCode = localStorage.getItem('vestora_referral_code')
-    if (savedCode) {
-      try {
-        await applyReferralCode(savedCode)
-      } catch (err) {
-        console.error('Failed to apply referral code:', err)
-      } finally {
-        localStorage.removeItem('vestora_referral_code')
-      }
     }
 
     setLoading(false)
@@ -191,11 +177,18 @@ export function Signup() {
     const emailRedirect = new URL('/callback', window.location.origin)
     emailRedirect.searchParams.set('next', '/dashboard')
 
+    // The referral code travels with the signup itself. The database captures
+    // it once, when the account is created, and attributes it only after the
+    // email is verified — on any device, with no further client call.
+    const referralCode = form.referralCode.trim().toUpperCase()
     const { data, error } = await supabase.auth.signUp({
       email: form.email.trim(),
       password: form.password,
       options: {
-        data: { full_name: `${form.first} ${form.last}`.trim() },
+        data: {
+          full_name: `${form.first} ${form.last}`.trim(),
+          ...(referralCode ? { referral_code: referralCode } : {}),
+        },
         emailRedirectTo: emailRedirect.toString(),
       },
     })
@@ -205,14 +198,6 @@ export function Signup() {
     if (error) {
       setError(error.message)
       return
-    }
-
-    const typedCode = form.referralCode.trim()
-
-    // Save it either way, so it survives to the next login if email
-    // confirmation is required before a session exists yet.
-    if (typedCode) {
-      localStorage.setItem('vestora_referral_code', typedCode)
     }
 
     // If email confirmation is required (default Supabase setting),
@@ -225,17 +210,6 @@ export function Signup() {
     if (data.user && !data.session) {
       setSuccess('Check your email for a confirmation link to activate your account. If you already have a Vestora account with this email, no new link is sent and your existing password is unchanged: sign in, or use "Forgot password" instead.')
       return
-    }
-
-    // Session exists immediately — apply the code right now.
-    if (typedCode) {
-      try {
-        await applyReferralCode(typedCode)
-      } catch (err) {
-        console.error('Failed to apply referral code:', err)
-      } finally {
-        localStorage.removeItem('vestora_referral_code')
-      }
     }
 
     window.location.href = '/dashboard'

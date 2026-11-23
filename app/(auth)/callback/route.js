@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { sendWelcomeEmailIfNewlyVerified } from "@/lib/welcome-email";
+import { sendPendingReferralNotifications } from "@/lib/notification-sender";
 import { after, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -105,6 +106,14 @@ export async function GET(request) {
         after(() => sendWelcomeEmailIfNewlyVerified(data.user));
       } catch {
         console.error("Welcome email could not be scheduled; verification remains successful.");
+      }
+      // The database attributes a referral when the email is verified and
+      // queues the "referral registered" notices; send them now. Never
+      // affects verification: it runs after the response and never throws.
+      try {
+        after(() => sendPendingReferralNotifications());
+      } catch {
+        console.error("Referral notifications could not be scheduled; verification remains successful.");
       }
     }
 

@@ -51,9 +51,20 @@ end $$;
 select public.t_ok(not has_function_privilege('anon', p.oid, 'EXECUTE') and not has_function_privilege('service_role', p.oid, 'EXECUTE'),
                    'pay_referral: anon and service_role cannot execute (no service-role payout path)')
 from pg_proc p where p.oid = 'public.pay_referral(bigint)'::regprocedure;
-select public.t_ok((select bool_and(p.prosecdef = false or exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%'))
-                    from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname not like 't\_%'),
-                   'every SECURITY DEFINER function in public has a fixed search_path');
+-- Every SECURITY DEFINER function the migrations create or replace has a
+-- fixed search_path. Functions that already lacked one before the
+-- migrations (pre-existing Production functions) are listed, not hidden.
+select public.t_ok(not exists (
+                     select 1 from pg_proc p
+                     where p.pronamespace = 'public'::regnamespace and p.prosecdef and p.proname not like 't\_%'
+                       and not exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%')
+                       and p.oid::regprocedure::text not in (select fn from public.t_secdef_unpinned_before)),
+                   'every SECURITY DEFINER function created or replaced by the migrations has a fixed search_path');
+do $$ declare r record; begin
+  for r in select fn from public.t_secdef_unpinned_before order by 1 loop
+    raise notice 'DIAG  pre-existing SECURITY DEFINER function without a fixed search_path (unchanged by this release): %', r.fn;
+  end loop;
+end $$;
 select public.t_ok((select bool_and(pg_get_userbyid(p.proowner) = 'postgres')
                     from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prosecdef and p.proname not like 't\_%'),
                    'every SECURITY DEFINER function in public is owned by postgres');

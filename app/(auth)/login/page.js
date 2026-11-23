@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client'
 import { getAuthLevel, listMfaFactors, verifyMfaLogin } from '@/lib/mfa'
 import AuthTransitionOverlay from '@/components/AuthTransitionOverlay'
 import VestoraMark from '@/components/VestoraMark'
-import { applyReferralCode } from '@/lib/queries'
 import { getSignInErrorMessage, VERIFICATION_MESSAGES, SUCCESS_VERIFICATION_STATUSES } from '@/lib/authMessages'
 
 const s = {
@@ -93,20 +92,6 @@ export default function Login() {
     setShowOverlay(false)
     setError(getSignInErrorMessage(error))
     return
-  }
-
-  // Apply any referral code saved during signup but not yet processed —
-  // happens whenever email confirmation was required before a real
-  // session existed, so this is the first real chance to attach it.
-  const savedCode = localStorage.getItem('vestora_referral_code')
-  if (savedCode) {
-    try {
-      await applyReferralCode(savedCode)
-    } catch (err) {
-      console.error('Failed to apply referral code:', err)
-    } finally {
-      localStorage.removeItem('vestora_referral_code')
-    }
   }
 
   // Password was correct — now check if this account requires a
