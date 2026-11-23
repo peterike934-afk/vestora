@@ -22,6 +22,9 @@ const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..', '..')
 const migrationsDir = join(root, 'supabase', 'migrations')
 const rollbackDir = join(root, 'supabase', 'rollback')
+// 20261126000000 freezes referral payouts. Suites that test payments switch
+// them on through the one audited function, exactly as an operator would.
+const ENABLE_PAYOUTS = `select public.set_referral_payouts_enabled(true, 'test operator', 'test: payments under test', 'ENABLE REFERRAL PAYOUTS');`
 const suitesDir = join(here, 'suites')
 const container = `vestora-financial-tests-${process.pid}`
 
@@ -73,6 +76,8 @@ function freshDb() {
   psql(name, read(join(here, 'production_baseline.sql')), { stopOnError: true })
   // Production referrals / audit_logs; log_admin_action body partly stand-in (see file).
   psql(name, read(join(here, 'referral_baseline.sql')), { stopOnError: true })
+  // Production auth.users / profiles / settings fidelity for the referral programme.
+  psql(name, read(join(here, 'production_auth_profiles.sql')), { stopOnError: true })
   // Supabase default grants for objects the migrations create.
   psql(name, read(join(here, 'supabase_default_privileges.sql')), { stopOnError: true })
   return name
@@ -95,7 +100,7 @@ function record(suite, output) {
 
 async function main() {
   try { sh(['rm', '-f', container]) } catch {}
-  sh(['run', '-d', '--rm', '--name', container, '-e', 'POSTGRES_PASSWORD=localtest', 'postgres:16'])
+  sh(['run', '-d', '--rm', '--name', container, '-e', 'POSTGRES_PASSWORD=localtest', 'postgres:17'])
   // The postgres image first runs a temporary server for initialisation
   // (which already answers pg_isready) and then restarts. Wait for the
   // image's "init process complete" message before using the database.
@@ -248,6 +253,7 @@ async function main() {
   {
     const db = freshDb()
     apply(db, allMigrations())
+    psql(db, ENABLE_PAYOUTS, { stopOnError: true })
     let out = psqlAll(db, suite('pay_referral.sql'))
     psql(db, `select public.t_people(20);
       insert into public.referrals (id, referrer_id, referred_id, referrer_bonus_usd, referred_bonus_usd)
@@ -442,6 +448,201 @@ async function main() {
     const again = rows(db, preflight).find((r) => r.seq === '2')
     lines.push(`${again?.result === 'BLOCK' && /already applied/.test(again.detail) ? 'PASS' : 'FAIL'}  pre-flight refuses a second application`)
     record('release scripts: pre-flight and post-deployment verification', lines.join('\n'))
+  }
+
+  // 14. Referral programme (20261125000000): attribution, rejection,
+  //     payment, notification ledger, marketing consent, permissions; plus
+  //     real concurrent pay/reject and pay/pay races in separate sessions.
+  {
+    const db = freshDb()
+    apply(db, allMigrations())
+    psql(db, ENABLE_PAYOUTS, { stopOnError: true })
+    let out = psqlAll(db, suite('referral_programme.sql'))
+    const q1 = (sql) => psql(db, sql, { stopOnError: true, tuplesOnly: true }).trim()
+    const admin = q1(`select id from public.profiles where role = 'admin' and email = 'admin@test.local';`)
+    const newReferral = (email) => q1(`select public.t_signup('${email}', public.t_code((select id from public.profiles where email = 'rita@test.local')), true);
+      select r.id from public.referrals r join public.profiles p on p.id = r.referred_id where p.email = '${email}';`).split(/\s+/).pop()
+    const race = async (a, b) => {
+      const first = psqlCapture(db, a)
+      await new Promise((r) => setTimeout(r, 500))
+      const second = psqlCapture(db, b)
+      return [await first, await second]
+    }
+    const slow = (stmt) => `begin; select public.t_as('${admin}', '${stmt.replace(/'/g, "''")}'); select pg_sleep(2); commit;`
+    const fast = (stmt) => `select public.t_as('${admin}', '${stmt.replace(/'/g, "''")}');`
+    const state = (id) => q1(`select r.status || '|' || (select count(*) from public.transactions t where t.type = 'admin_credit' and t.user_id in (r.referrer_id, r.referred_id) and t.admin_note like 'Referral bonus%' and t.created_at >= r.created_at)
+      || '|' || (select string_agg(n.event_type, ',' order by n.event_type) from public.notification_deliveries n where n.referral_id = r.id and n.event_type not like 'referral_registered%')
+      from public.referrals r where r.id = ${id};`)
+
+    const r1 = newReferral('race1@test.local')
+    const [p1, j1] = await race(slow(`select public.pay_referral(${r1})::text`), fast(`select public.reject_referral(${r1}, 'other')::text`))
+    const s1 = state(r1)
+    out += `\n${/Already paid/.test(j1) && s1.startsWith('paid|2|referral_paid_referred,referral_paid_referrer') && !/ERROR/.test(p1) ? 'PASS' : 'FAIL'}  pay and reject at the same moment: payment wins, rejection refused, two credits, payment notices only (${s1})`
+
+    const r2 = newReferral('race2@test.local')
+    const [j2, p2] = await race(slow(`select public.reject_referral(${r2}, 'not_eligible')::text`), fast(`select public.pay_referral(${r2})::text`))
+    const s2 = state(r2)
+    out += `\n${/not pending/.test(p2) && s2 === 'rejected|0|referral_rejected_referred,referral_rejected_referrer' && !/ERROR/.test(j2) ? 'PASS' : 'FAIL'}  reject and pay at the same moment: rejection wins, payment refused, no credit (${s2})`
+
+    const r3 = newReferral('race3@test.local')
+    const [pa, pb] = await race(slow(`select public.pay_referral(${r3})::text`), fast(`select public.pay_referral(${r3})::text`))
+    const s3 = state(r3)
+    out += `\n${/Already paid/.test(pb) && s3.startsWith('paid|2|') && !/ERROR/.test(pa) ? 'PASS' : 'FAIL'}  two payments at the same moment: one payout, the other refused (${s3})`
+    record('referral programme: attribution, rejection, payment, ledger, consent, permissions, concurrency', out)
+  }
+
+  // 15. Referral programme upgrade from Production state, then rollback:
+  //     existing customers and referrals untouched; rollback keeps records.
+  {
+    const db = freshDb()
+    apply(db, migrationsBefore('20261125000000'))
+    psql(db, suite('referral_upgrade_a_snapshot.sql'), { stopOnError: true })
+    apply(db, [migration('20261125000000')])
+    let out = psqlAll(db, suite('referral_upgrade_b_after.sql'))
+    apply(db, [join(rollbackDir, '20261125000000_referral_programme_rollback.sql')])
+    out += psqlAll(db, suite('referral_upgrade_c_after_rollback.sql'))
+    // Either guard may stop it first (the status constraint or the columns
+    // already present); what matters is that it stops before any change.
+    let refused = false
+    try { apply(db, [migration('20261125000000')]) } catch (err) {
+      refused = /not the expected \(pending, paid\) constraint|already exist|applied before/.test(err.message)
+    }
+    const recreated = psql(db, `select to_regprocedure('public.reject_referral(bigint, text, text)') is not null;`, { stopOnError: true, tuplesOnly: true }).trim()
+    out += `\n${refused && recreated === 'f' ? 'PASS' : 'FAIL'}  re-applying after rollback is refused by a guard before any change (nothing half-applied)`
+    record('referral programme upgrade from Production state, then rollback', out)
+  }
+
+  // 16. Referral payout freeze (20261126000000): frozen by default, direct
+  //     RPC and direct table writes refused, audited enabling, payment when
+  //     enabled, disabling again, delivery release, campaign audit trail;
+  //     plus real concurrent sessions around the switch.
+  {
+    const db = freshDb()
+    apply(db, allMigrations())
+    let out = psqlAll(db, suite('referral_payout_freeze.sql'))
+    const q1 = (sql) => psql(db, sql, { stopOnError: true, tuplesOnly: true }).trim()
+    const admin = q1(`select id from public.profiles where role = 'admin' and email = 'admin@test.local';`)
+    const newReferral = (email) => q1(`select public.t_signup('${email}', public.t_code((select id from public.profiles where email = 'rita@test.local')), true);
+      select r.id from public.referrals r join public.profiles p on p.id = r.referred_id where p.email = '${email}';`).split(/\s+/).pop()
+    const race = async (a, b) => {
+      const first = psqlCapture(db, a)
+      await new Promise((r) => setTimeout(r, 500))
+      const started = Date.now()
+      const second = psqlCapture(db, b)
+      const secondOut = await second
+      const waitedMs = Date.now() - started
+      return [await first, secondOut, waitedMs]
+    }
+    const payStmt = (id) => `select public.pay_referral(${id})::text`.replace(/'/g, "''")
+    const slowPay = (id) => `begin; select public.t_as('${admin}', '${payStmt(id)}'); select pg_sleep(2); commit;`
+    const fastPay = (id) => `select public.t_as('${admin}', '${payStmt(id)}');`
+    const credits = (id) => q1(`select r.status || '|' || (select count(*) from public.transactions t where t.type = 'admin_credit'
+      and t.user_id in (r.referrer_id, r.referred_id) and t.created_at >= r.created_at) from public.referrals r where r.id = ${id};`)
+    const sw = () => q1(`select payouts_enabled from public.referral_payout_controls;`)
+
+    // a) Payment in progress, then an operator turns payouts OFF: the switch
+    //    change waits for the payment to commit; the next payment is refused.
+    q1(ENABLE_PAYOUTS)
+    const a1 = newReferral('freeze-a1@test.local')
+    const [payA, offA, waitedA] = await race(slowPay(a1), `select public.set_referral_payouts_enabled(false, 'ops', 'freeze during payment');`)
+    const a2 = newReferral('freeze-a2@test.local')
+    const after2 = psql(db, fastPay(a2))
+    out += `\n${!/ERROR/.test(payA) && !/ERROR/.test(offA) && waitedA >= 1300 && credits(a1) === 'paid|2' && sw() === 'f'
+      && /Referral payouts are disabled/.test(after2) && credits(a2) === 'pending|0' ? 'PASS' : 'FAIL'}  payout in progress when payouts are turned off: the switch waited ${waitedA} ms for it, it completed once (${credits(a1)}), the next payment was refused (${credits(a2)})`
+
+    // b) Operator turning payouts ON (uncommitted) while an admin pays: the
+    //    payment waits for the switch and uses the committed value.
+    const b1 = newReferral('freeze-b1@test.local')
+    const enableSlow = `begin; select public.set_referral_payouts_enabled(true, 'ops', 'enable', 'ENABLE REFERRAL PAYOUTS'); select pg_sleep(2); commit;`
+    const [onB, payB, waitedB] = await race(enableSlow, fastPay(b1))
+    out += `\n${!/ERROR/.test(onB) && !/ERROR/.test(payB) && waitedB >= 1300 && credits(b1) === 'paid|2' ? 'PASS' : 'FAIL'}  payment during an uncommitted enable: waited ${waitedB} ms, then paid once with the committed switch (${credits(b1)})`
+
+    // c) Operator turning payouts OFF but rolling back: the waiting payment
+    //    sees payouts still ON and pays once.
+    const c1 = newReferral('freeze-c1@test.local')
+    const offRolledBack = `begin; select public.set_referral_payouts_enabled(false, 'ops', 'abandoned'); select pg_sleep(2); rollback;`
+    const [, payC, waitedC] = await race(offRolledBack, fastPay(c1))
+    out += `\n${!/ERROR/.test(payC) && waitedC >= 1300 && credits(c1) === 'paid|2' && sw() === 't' ? 'PASS' : 'FAIL'}  disable rolled back while a payment waited (${waitedC} ms): payouts stayed on, paid once (${credits(c1)})`
+
+    // d) Operator turning payouts OFF (committed) while an admin pays: refused.
+    const d1 = newReferral('freeze-d1@test.local')
+    const offSlow = `begin; select public.set_referral_payouts_enabled(false, 'ops', 'freeze'); select pg_sleep(2); commit;`
+    const [, payD, waitedD] = await race(offSlow, fastPay(d1))
+    out += `\n${/Referral payouts are disabled/.test(payD) && waitedD >= 1300 && credits(d1) === 'pending|0' ? 'PASS' : 'FAIL'}  payment during a committed disable: waited ${waitedD} ms, then refused, nothing credited (${credits(d1)})`
+
+    // e) Enabled: two admins pay the same referral at the same moment.
+    q1(ENABLE_PAYOUTS)
+    const e1 = newReferral('freeze-e1@test.local')
+    const [payE1, payE2] = await race(slowPay(e1), fastPay(e1))
+    out += `\n${!/ERROR/.test(payE1) && /Already paid/.test(payE2) && credits(e1) === 'paid|2' ? 'PASS' : 'FAIL'}  enabled, two simultaneous payments: one payout, the other refused as already paid (${credits(e1)})`
+
+    // f) Enabled: pay and reject at the same moment, both orders.
+    const f1 = newReferral('freeze-f1@test.local')
+    const rejectStmt = (id) => `select public.reject_referral(${id}, 'other')::text`.replace(/'/g, "''")
+    const [, rejF] = await race(slowPay(f1), `select public.t_as('${admin}', '${rejectStmt(f1)}');`)
+    const f2 = newReferral('freeze-f2@test.local')
+    const [, payF2] = await race(`begin; select public.t_as('${admin}', '${rejectStmt(f2)}'); select pg_sleep(2); commit;`, fastPay(f2))
+    out += `\n${/Already paid/.test(rejF) && credits(f1) === 'paid|2' && /not pending/.test(payF2) && credits(f2) === 'rejected|0' ? 'PASS' : 'FAIL'}  pay/reject races: whichever locks first wins; no double outcome (${credits(f1)}; ${credits(f2)})`
+
+    // g) The audit trail of all those switch changes is complete and ordered.
+    const log = q1(`select string_agg(payouts_enabled::text, ',' order by id) from public.referral_payout_control_events;`)
+    out += `\n${log === 'false,true,false,true,false,true,false,true' ? 'PASS' : 'FAIL'}  every committed switch change logged, the rolled-back one not (${log})`
+    record('referral payout freeze: default off, direct RPC/table writes refused, audited enabling, concurrency', out)
+  }
+
+  // 17. Payout freeze upgrade on the referral-programme state, then rollback:
+  //     no existing record changes; rollback restores the exact earlier
+  //     functions and keeps the new records; re-applying is refused.
+  {
+    const db = freshDb()
+    apply(db, migrationsBefore('20261126000000'))
+    psql(db, suite('freeze_upgrade_a_snapshot.sql'), { stopOnError: true })
+    apply(db, [migration('20261126000000')])
+    let out = psqlAll(db, suite('freeze_upgrade_b_after.sql'))
+    apply(db, [join(rollbackDir, '20261126000000_referral_payout_freeze_rollback.sql')])
+    out += psqlAll(db, suite('freeze_upgrade_c_after_rollback.sql'))
+    let refused = false
+    try { apply(db, [migration('20261126000000')]) } catch (err) { refused = /applied before/.test(err.message) }
+    const recreated = psql(db, `select to_regprocedure('public.set_referral_payouts_enabled(boolean, text, text, text)') is not null;`, { stopOnError: true, tuplesOnly: true }).trim()
+    out += `\n${refused && recreated === 'f' ? 'PASS' : 'FAIL'}  re-applying after rollback is refused by its guard before any change`
+
+    // Out-of-order application is refused before any change.
+    const early = freshDb()
+    apply(early, migrationsBefore('20261125000000'))
+    let order = false
+    try { apply(early, [migration('20261126000000')]) } catch (err) { order = /Apply 20261125000000_referral_programme.sql first/.test(err.message) }
+    const made = psql(early, `select to_regclass('public.referral_payout_controls') is not null;`, { stopOnError: true, tuplesOnly: true }).trim()
+    out += `\n${order && made === 'f' ? 'PASS' : 'FAIL'}  applying it before 20261125000000 is refused, nothing created`
+
+    // A changed pay_referral is refused (the reviewed body is replaced exactly).
+    const drift = freshDb()
+    apply(drift, migrationsBefore('20261126000000'))
+    psql(drift, `update pg_proc set prosrc = prosrc || ' ' where oid = 'public.pay_referral(bigint)'::regprocedure;`, { stopOnError: true })
+    let driftRefused = false
+    try { apply(drift, [migration('20261126000000')]) } catch (err) { driftRefused = /pay_referral\(bigint\) differs from the reviewed version/.test(err.message) }
+    out += `\n${driftRefused ? 'PASS' : 'FAIL'}  a pay_referral that differs from the reviewed version is refused`
+
+    // An unexpected trigger on referrals is refused.
+    const trig = freshDb()
+    apply(trig, migrationsBefore('20261126000000'))
+    psql(trig, `create function public.t_noop() returns trigger language plpgsql as 'begin return new; end';
+      create trigger zz_unknown before update on public.referrals for each row execute function public.t_noop();`, { stopOnError: true })
+    let trigRefused = false
+    try { apply(trig, [migration('20261126000000')]) } catch (err) { trigRefused = /Unexpected triggers on public.referrals: zz_unknown/.test(err.message) }
+    out += `\n${trigRefused ? 'PASS' : 'FAIL'}  an unreviewed trigger on referrals is refused`
+
+    // A failure part-way through rolls the whole migration back.
+    const half = freshDb()
+    apply(half, migrationsBefore('20261126000000'))
+    psql(half, `create table public.marketing_campaign_events (x int);`, { stopOnError: true })
+    let failed = false
+    try {
+      psql(half, `begin;\n${read(migration('20261126000000')).replace("to_regclass('public.marketing_campaign_events') is not null\n     or ", '')}\ncommit;`, { stopOnError: true })
+    } catch (err) { failed = /already exists/.test(err.message) }
+    const leftovers = psql(half, `select (to_regclass('public.referral_payout_controls') is not null)::text || '|' || md5(replace(prosrc, chr(13), ''))
+      from pg_proc where oid = 'public.pay_referral(bigint)'::regprocedure;`, { stopOnError: true, tuplesOnly: true }).trim()
+    out += `\n${failed && leftovers === 'false|1ffe439817eee8875eea7b31ab33dafc' ? 'PASS' : 'FAIL'}  an error late in the migration (single transaction) leaves nothing behind (${leftovers})`
+    record('payout freeze upgrade from referral-programme state, rollback, guards', out)
   }
 
   // 7. Concurrency on one investment: simultaneous gains claims, and

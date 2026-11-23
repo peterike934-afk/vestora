@@ -16,3 +16,9 @@ language sql as $$
   where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'v') and c.relname not like 't\_%'
 $$;
 create table public.t_perm_before as select * from public.t_perms();
+-- SECURITY DEFINER functions that already lack a fixed search_path before
+-- the migrations (pre-existing Production functions, e.g. handle_new_user).
+create table public.t_secdef_unpinned_before as
+  select p.oid::regprocedure::text as fn from pg_proc p
+  where p.pronamespace = 'public'::regnamespace and p.prosecdef and p.proname not like 't\_%'
+    and not exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%');
