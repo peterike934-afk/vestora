@@ -143,7 +143,7 @@ before(async () => {
   }
   if (!ready) throw new Error('database did not start')
   spawnSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-q', '-c', `create database ${DB};`])
-  for (const f of ['base_schema.sql', 'production_baseline.sql', 'referral_baseline.sql', 'production_auth_profiles.sql', 'supabase_default_privileges.sql']) sqlAdmin(readFileSync(join(dbDir, f), 'utf8'))
+  for (const f of ['base_schema.sql', 'production_baseline.sql', 'referral_baseline.sql', 'production_auth_profiles.sql', 'production_chat_baseline.sql', 'supabase_default_privileges.sql']) sqlAdmin(readFileSync(join(dbDir, f), 'utf8'))
   // Supabase grants the service role full access to these Production tables;
   // the minimal test baseline (created before default privileges) does not.
   sqlAdmin('grant all on public.transactions, public.wallets, public.profiles to service_role;')

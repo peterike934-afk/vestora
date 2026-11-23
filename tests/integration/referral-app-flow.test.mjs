@@ -174,7 +174,7 @@ before(async () => {
   }
   if (!ready) throw new Error('database did not start')
   spawnSync('docker', ['exec', '-i', container, 'psql', '-U', 'postgres', '-q', '-c', `create database ${DB};`])
-  for (const f of ['base_schema.sql', 'production_baseline.sql', 'referral_baseline.sql', 'production_auth_profiles.sql', 'supabase_default_privileges.sql']) {
+  for (const f of ['base_schema.sql', 'production_baseline.sql', 'referral_baseline.sql', 'production_auth_profiles.sql', 'production_chat_baseline.sql', 'supabase_default_privileges.sql']) {
     sqlAdmin(readFileSync(join(dbDir, f), 'utf8'))
   }
   const migrationsDir = join(root, 'supabase', 'migrations')

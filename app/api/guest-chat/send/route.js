@@ -1,68 +1,55 @@
-import { createClient } from '@supabase/supabase-js'
-import { translateText } from '@/lib/translate'
+import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  readJsonObject, authenticateGuest, validateMessage, clientAddress, withinLimits,
+  LIMITS, json, genericError, rateLimited, sessionRequired,
+} from '@/lib/guest-chat'
 
+// A website visitor sends a message in THEIR OWN thread (found from the
+// HttpOnly ownership cookie, never from the request body). Messages written
+// here are always sender 'guest': the admin replies from the admin
+// dashboard, where the database only accepts a signed-in admin.
 export async function POST(request) {
-  const { threadId, sender, body } = await request.json()
-  if (!threadId || !sender || !body?.trim()) {
-    return Response.json({ error: 'Missing required fields.' }, { status: 400 })
-  }
-  if (!['guest', 'admin'].includes(sender)) {
-    return Response.json({ error: 'Invalid sender.' }, { status: 400 })
-  }
+  const parsed = await readJsonObject(request)
+  if (parsed.error) return parsed.error
+  const { body: payload } = parsed
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
-
-  let translatedBody = null
-  let translatedLocale = null
-
-  if (sender === 'admin') {
-    const { data: thread } = await supabase
-      .from('guest_threads')
-      .select('locale')
-      .eq('id', threadId)
-      .single()
-
-    const targetLocale = thread?.locale || 'en'
-    const translated = await translateText(body.trim(), targetLocale)
-    if (translated) {
-      translatedBody = translated
-      translatedLocale = targetLocale
-    }
+  // Older widgets send sender: 'guest'. Anything else is an attempt to
+  // write as someone else and is refused outright.
+  if (payload.sender !== undefined && payload.sender !== 'guest') {
+    return json({ error: 'Visitors can only send visitor messages.' }, 403)
   }
 
-  const { data: message, error } = await supabase
+  const service = createAdminClient()
+  const ip = clientAddress(request)
+  if (!(await withinLimits(service, [[LIMITS.sendPerIpMinute, ip]]))) return rateLimited()
+
+  const guest = await authenticateGuest(request, service)
+  if (!guest) return sessionRequired()
+  // A thread ID in the body (older widgets) must be the visitor's own.
+  if (payload.threadId !== undefined && String(payload.threadId).toLowerCase() !== guest.threadId) {
+    return json({ error: 'You can only send messages in your own conversation.' }, 403)
+  }
+
+  // Invalid messages count against the network limit above, but not
+  // against the visitor's own conversation allowance below.
+  const message = validateMessage(payload.body)
+  if (message.error) return json({ error: message.error }, 400)
+
+  if (!(await withinLimits(service, [
+    [LIMITS.sendPerThreadMinute, guest.threadId],
+    [LIMITS.sendPerThreadDay, guest.threadId],
+  ]))) return rateLimited()
+
+  // The thread summary and the admin's unread counter are updated by the
+  // database trigger in the same transaction (20261128000000).
+  const { data, error } = await service
     .from('guest_messages')
-    .insert({
-      thread_id: threadId,
-      sender,
-      body: body.trim(),
-      translated_body: translatedBody,
-      translated_locale: translatedLocale,
-    })
-    .select()
+    .insert({ thread_id: guest.threadId, sender: 'guest', body: message.value })
+    .select('id, sender, body, translated_body, created_at')
     .single()
-
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-
-  const unreadField = sender === 'guest' ? 'unread_count' : 'guest_unread_count'
-  const { data: current } = await supabase
-    .from('guest_threads')
-    .select(unreadField)
-    .eq('id', threadId)
-    .single()
-
-  await supabase
-    .from('guest_threads')
-    .update({
-      last_message: body.trim(),
-      last_sender: sender,
-      last_created_at: new Date().toISOString(),
-      [unreadField]: (current?.[unreadField] || 0) + 1,
-    })
-    .eq('id', threadId)
-
-  return Response.json({ message })
+  if (error) {
+    console.error('guest chat send failed:', error.message)
+    return genericError()
+  }
+  return json({ message: data })
 }

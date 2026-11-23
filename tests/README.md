@@ -3,7 +3,7 @@
 ```
 npm run test:unit         # pure JavaScript (referral routes, email sender and templates, unsubscribe tokens, campaign gate; withdrawal preview, transaction labels and translations on the Production pages)
 npm run test:db           # financial database tests in a disposable Docker Postgres
-npm run test:integration  # referral-programme flow and withdrawal/deposit controls flow: real routes against all migrations on disposable Postgres 17 (Docker)
+npm run test:integration  # referral-programme flow, withdrawal/deposit controls flow and support chat flow: real routes against all migrations on disposable Postgres 17 (Docker)
 npm test                  # unit + database
 ```
 
@@ -15,6 +15,18 @@ replaced by in-memory stand-ins (`tests/helpers/stubs`), and the tests replace `
 source, Stripe, on-chain deposit check, audit and email modules with recorders
 (through `VESTORA_TEST_MODULE_OVERRIDES`, read by `alias-hooks.mjs`). No key is
 loaded, no blockchain, bank or Stripe call is possible, and `fetch` throws.
+
+`guest-chat-flow.test.mjs` runs the real `/api/guest-chat` routes and the real
+admin/customer chat functions in `lib/queries.js`. Every Supabase client is a
+stand-in that runs the same query in the database as the role the real client
+uses (service role for the routes, `anon` for a visitor holding the public key,
+`authenticated` with a user ID for a customer or admin session), so grants and
+row-level security are the real ones. It covers visitor ownership (HttpOnly
+cookie secret, thread IDs alone refused), admin impersonation, other visitors'
+threads, message immutability, rate limits (per thread, per address, IPv6 /64,
+spoofed forwarding headers), input validation, legacy-thread claims, the
+registered customer chat, and direct database access with the public key.
+`tests/unit/guest-chat.test.mjs` covers the helpers in `lib/guest-chat.js`.
 
 ## Database tests (`tests/db`)
 
@@ -47,6 +59,13 @@ real customer data or funds.**
 | `freeze_upgrade_a_snapshot.sql` → `freeze_upgrade_b_after.sql` → `freeze_upgrade_c_after_rollback.sql` (plus guards in `run.mjs`) | Upgrade from the referral-programme state: 13 record tables and every other function unchanged; rollback restores `pay_referral` and `set_marketing_campaign_paused` exactly and keeps the switch log; refusal when applied before 25, on a changed `pay_referral`, on an unreviewed referrals trigger, and on re-application; a late error leaves nothing behind |
 | `financial_controls.sql` (plus freeze/claim races and two simultaneous claims in `run.mjs`) | Financial operation controls (20261127000000): withdrawal payouts and bank-deposit pulls OFF by default; switch changeable only by postgres with confirmation phrase, logged append-only; approval needs a valid matching funds hold (legacy withdrawals blocked for manual review, nothing changed); amount, method and crypto-detail validation; `request_withdrawal` stores no customer-typed crypto amount and validates addresses; customers can insert only pending crypto/wire deposit claims and no withdrawals |
 | `fc_upgrade_a_snapshot.sql` → `fc_upgrade_b_after.sql` → `fc_upgrade_c_after_rollback.sql` (plus guards in `run.mjs`) | Upgrade from the post-26 state: no record, other function or other policy changed; in-flight claim still finalises; rollback restores both functions, grants and the Production insert policy exactly and keeps the switch log; refusal before 26, on drifted functions, on an extra insert policy, on re-application; a late error leaves nothing behind |
+| `guest_chat_security.sql` (plus legacy-claim, message and rate-limit races in `run.mjs`) | Support chat security (20261128000000) for every API role: `anon` has no access to any chat table; customers see no visitor chats and cannot write as admin or into other threads; the admin reads all, writes only as `admin`, and can change only unread counters and read flags; nobody (not even the service role) can update or delete a guest message; customers can no longer rewrite the admin's replies; thread summary trigger; one-time legacy claim with the original email; rate-limit counter; length limits; exact policies, function ownership and grants |
+| `gcs_upgrade_a_snapshot.sql` → `gcs_upgrade_b_after.sql` → `gcs_upgrade_c_after_rollback.sql` (plus guards in `run.mjs`) | Upgrade from the post-27 state with existing chat history: the old weaknesses are reproduced first; no record changed (old threads get no secret, an over-length old message is kept); every financial switch still off; rollback restores table, sequence and column grants, policies, columns and constraints exactly; re-application works after rollback and is refused twice; refusal before 27, on an extra policy, an unreviewed trigger or RLS switched off; a late error leaves nothing behind |
+
+`production_chat_baseline.sql` holds the exact Production definitions of
+`guest_threads`, `guest_messages`, `messages` and the `message_threads` view
+(policies and grants included) from the schema-only dump of 2026-11-23.
+
 
 `referral_baseline.sql` holds the production `referrals` and `audit_logs`
 definitions and `log_admin_action` (behaviour and ACL as supplied; exact

@@ -81,6 +81,8 @@ function freshDb() {
   psql(name, read(join(here, 'referral_baseline.sql')), { stopOnError: true })
   // Production auth.users / profiles / settings fidelity for the referral programme.
   psql(name, read(join(here, 'production_auth_profiles.sql')), { stopOnError: true })
+  // Production support-chat tables, view, policies and grants (exact).
+  psql(name, read(join(here, 'production_chat_baseline.sql')), { stopOnError: true })
   // Supabase default grants for objects the migrations create.
   psql(name, read(join(here, 'supabase_default_privileges.sql')), { stopOnError: true })
   return name
@@ -746,6 +748,92 @@ async function main() {
       out += `\n${failed && left === 'false|8e37d7cc0cf29ce765e497cfd7b26b6e|1' ? 'PASS' : 'FAIL'}  an error late in the migration (single transaction) leaves everything as before (${left})`
     }
     record('financial controls upgrade from post-26 state, rollback, guards', out)
+  }
+
+  // 20. Support chat security (20261128000000), all migrations applied:
+  //     every API role against every chat table, legacy claims, rate limits.
+  {
+    const db = freshDb()
+    apply(db, allMigrations())
+    let out = psqlAll(db, suite('guest_chat_security.sql'))
+    // Two simultaneous claims of one legacy thread: exactly one wins.
+    psql(db, `insert into public.guest_threads (id, name, email) values ('44444444-4444-4444-8444-444444444444', 'L', 'l@example.test');`, { stopOnError: true })
+    const claimSql = (hash, sleep) => `begin; set local role service_role;
+      select 'CLAIM=' || public.guest_chat_claim_legacy_thread('44444444-4444-4444-8444-444444444444', 'l@example.test', repeat('${hash}', 64));
+      select pg_sleep(${sleep}); commit;`
+    const first = psqlCapture(db, claimSql('1', 2))
+    await new Promise((r) => setTimeout(r, 500))
+    const second = psqlCapture(db, claimSql('2', 0))
+    const both = (await first) + (await second)
+    const owner = psql(db, `select guest_token_hash from public.guest_threads where id = '44444444-4444-4444-8444-444444444444';`, { stopOnError: true, tuplesOnly: true }).trim()
+    out += `\n${(both.match(/CLAIM=true/g) || []).length === 1 && (both.match(/CLAIM=false/g) || []).length === 1 && owner === '1'.repeat(64) ? 'PASS' : 'FAIL'}  two simultaneous legacy claims: exactly one succeeds, the first secret is kept`
+    // Simultaneous messages: no lost unread counts (the old code read, then wrote).
+    psql(db, `insert into public.guest_threads (id, name, email, guest_token_hash) values ('55555555-5555-4555-8555-555555555555', 'C', 'c@example.test', repeat('5', 64));`, { stopOnError: true })
+    const sendSql = (sleep) => `begin; set local role service_role;
+      insert into public.guest_messages (thread_id, sender, body) values ('55555555-5555-4555-8555-555555555555', 'guest', 'hi');
+      select pg_sleep(${sleep}); commit;`
+    await Promise.all([psqlCapture(db, sendSql(1)), psqlCapture(db, sendSql(0)), psqlCapture(db, sendSql(0.5))])
+    const unread = psql(db, `select unread_count from public.guest_threads where id = '55555555-5555-4555-8555-555555555555';`, { stopOnError: true, tuplesOnly: true }).trim()
+    out += `\n${unread === '3' ? 'PASS' : 'FAIL'}  three simultaneous visitor messages: admin unread counter is 3 (${unread})`
+    // The rate-limit counter under concurrency: 20 parallel hits, limit 5.
+    const hits = await Promise.all(Array.from({ length: 20 }, () => psqlCapture(db,
+      `set role service_role; select 'HIT=' || public.guest_chat_rate_limit_hit('t:parallel', 5, 3600);`)))
+    const allowed = hits.join('\n').match(/HIT=true/g)?.length ?? 0
+    out += `\n${allowed === 5 ? 'PASS' : 'FAIL'}  20 simultaneous requests against a limit of 5: exactly 5 allowed (${allowed})`
+    record('support chat security: roles, ownership, admin identity, immutability, rate limits', out)
+  }
+
+  // 21. Support chat upgrade from the post-20261127000000 state, then
+  //     rollback; ordering and drift guards; a late error leaves nothing.
+  {
+    const db = freshDb()
+    apply(db, migrationsBefore('20261128000000'))
+    let out = psqlAll(db, suite('gcs_upgrade_a_snapshot.sql'))
+    apply(db, [migration('20261128000000')])
+    out += psqlAll(db, suite('gcs_upgrade_b_after.sql'))
+    apply(db, [join(rollbackDir, '20261128000000_guest_chat_security_rollback.sql')])
+    out += psqlAll(db, suite('gcs_upgrade_c_after_rollback.sql'))
+    apply(db, [migration('20261128000000')])
+    const again = psql(db, `select (select count(*) from public.guest_threads where guest_token_hash is null)::text || '|' || (to_regprocedure('public.guest_chat_rate_limit_hit(text, integer, integer)') is not null)::text;`, { stopOnError: true, tuplesOnly: true }).trim()
+    out += `\n${again === '2|true' ? 'PASS' : 'FAIL'}  re-applying after a rollback works and keeps every thread (${again})`
+    let refused = false
+    try { apply(db, [migration('20261128000000')]) } catch (err) { refused = /applied before/.test(err.message) }
+    out += `\n${refused ? 'PASS' : 'FAIL'}  applying twice is refused by its guard`
+
+    const guard = (label, setup, re) => {
+      const d = freshDb()
+      apply(d, migrationsBefore('20261128000000'))
+      if (setup) psql(d, setup, { stopOnError: true })
+      let ok = false
+      try { apply(d, [migration('20261128000000')]) } catch (err) { ok = re.test(err.message) }
+      const made = psql(d, `select (to_regclass('public.guest_chat_rate_limits') is not null)::text;`, { stopOnError: true, tuplesOnly: true }).trim()
+      out += `\n${ok && made === 'false' ? 'PASS' : 'FAIL'}  ${label}: refused, nothing created`
+    }
+    {
+      const d = freshDb()
+      apply(d, migrationsBefore('20261127000000'))
+      let ok = false
+      try { apply(d, [migration('20261128000000')]) } catch (err) { ok = /Apply 20261127000000_financial_operation_controls.sql first/.test(err.message) }
+      out += `\n${ok ? 'PASS' : 'FAIL'}  applied before 20261127000000: refused`
+    }
+    guard('an extra permissive policy on guest_messages', `create policy t_extra on public.guest_messages for select to anon using (true);`, /Unexpected RLS policies on the chat tables/)
+    guard('an extra policy on messages', `create policy t_extra on public.messages for delete to authenticated using (true);`, /Unexpected RLS policies on the chat tables/)
+    guard('an unreviewed trigger on guest_messages', `create function public.t_noop() returns trigger language plpgsql as 'begin return new; end';
+      create trigger t_noop before insert on public.guest_messages for each row execute function public.t_noop();`, /Unexpected triggers on the chat tables/)
+    guard('row level security switched off on messages', `alter table public.messages disable row level security;`, /row level security enabled/)
+    {
+      const d = freshDb()
+      apply(d, migrationsBefore('20261128000000'))
+      let failed = false
+      try {
+        psql(d, `begin;\n${read(migration('20261128000000')).replace('create table public.guest_chat_rate_limits (', 'create table public.no_such_schema.guest_chat_rate_limits (')}\ncommit;`, { stopOnError: true })
+      } catch (err) { failed = /cross-database references|does not exist|improper qualified name/.test(err.message) }
+      const left = psql(d, `select (select count(*) from pg_policy where polname like 'admins manage guest%')::text || '|'
+        || (select count(*) from information_schema.columns where table_name = 'guest_threads' and column_name = 'guest_token_hash')::text || '|'
+        || has_table_privilege('anon', 'public.guest_messages', 'insert')::text;`, { stopOnError: true, tuplesOnly: true }).trim()
+      out += `\n${failed && left === '2|0|true' ? 'PASS' : 'FAIL'}  an error late in the migration (single transaction) leaves everything as before (${left})`
+    }
+    record('support chat upgrade from post-27 state, rollback, guards', out)
   }
 
   // 7. Concurrency on one investment: simultaneous gains claims, and
