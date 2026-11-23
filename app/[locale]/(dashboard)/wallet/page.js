@@ -31,7 +31,10 @@ function txnMeta(type, t) {
   switch (type) {
     case 'deposit': return { icon: '↓', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.deposit') };
     case 'withdrawal': return { icon: '↑', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.withdrawal') };
-    case 'investment_withdrawal': return { icon: '↑', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.investmentWithdrawal') };
+    // Principal (and any interest) paid from an investment into the wallet.
+    case 'investment_withdrawal': return { icon: '↓', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.investmentWithdrawal') };
+    case 'early_withdrawal_fee': return { icon: '−', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.earlyWithdrawalFee') };
+    case 'early_withdrawal_fee_refund': return { icon: '+', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.earlyWithdrawalFeeRefund') };
     case 'investment_interest_claim': return { icon: '+', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.gainsClaim') };
     case 'admin_credit': return { icon: '+', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.adminCredit') };
     case 'admin_debit': return { icon: '−', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.adminDebit') };
@@ -103,7 +106,7 @@ export default function Wallet() {
         ) : (
           transactions.map((tx, i) => {
             const meta = txnMeta(tx.type, t);
-            const isNegative = tx.type === 'withdrawal' || tx.type === 'admin_debit' || tx.type === 'investment_withdrawal';
+            const isNegative = tx.type === 'withdrawal' || tx.type === 'admin_debit' || tx.type === 'early_withdrawal_fee';
             const isRejected = tx.status === 'rejected';
             return (
               <div

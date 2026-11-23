@@ -135,7 +135,7 @@
   "greeting": "صباح الخير",
   "greetingWithName": "صباح الخير، {name}",
   "subtitle": "إليك ما يحدث في حسابك اليوم",
-  "txnTypes": { "deposit": "إيداع", "withdrawal": "سحب", "adminCredit": "إضافة إدارية", "adminDebit": "خصم إداري" },
+  "txnTypes": { "deposit": "إيداع", "withdrawal": "سحب", "adminCredit": "إضافة إدارية", "adminDebit": "خصم إداري", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund" },
   "common": { "loading": "جارٍ التحميل…" },
   "platformStatus": { "title": "حالة المنصة", "viewStatusPage": "عرض صفحة الحالة", "checkingSystems": "جارٍ فحص الأنظمة…" },
   "topPerformers": {
@@ -407,7 +407,7 @@
     "investmentWithdrawal": "سحب استثماري",
     "gainsClaim": "مطالبة بالأرباح",
     "adminCredit": "إضافة إدارية",
-    "adminDebit": "خصم إداري"
+    "adminDebit": "خصم إداري", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund"
   }
 },
 "Referrals": {

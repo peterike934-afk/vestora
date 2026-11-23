@@ -83,6 +83,10 @@ function txnIconMeta(type, t) {
       return { icon: '+', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.adminCredit') };
     case 'admin_debit':
       return { icon: '−', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.adminDebit') };
+    case 'early_withdrawal_fee':
+      return { icon: '−', color: 'var(--red)', bg: 'var(--red-dim)', label: t('txnTypes.earlyWithdrawalFee') };
+    case 'early_withdrawal_fee_refund':
+      return { icon: '+', color: 'var(--green)', bg: 'var(--green-dim)', label: t('txnTypes.earlyWithdrawalFeeRefund') };
     default:
       return { icon: '•', color: 'var(--text2)', bg: 'var(--bg3)', label: type };
   }
@@ -486,7 +490,7 @@ export default function Dashboard() {
           ) : (
           transactions.map((tx, i) => {
   const meta = txnIconMeta(tx.type, t);
-  const isNegative = tx.type === 'withdrawal' || tx.type === 'admin_debit';
+  const isNegative = tx.type === 'withdrawal' || tx.type === 'admin_debit' || tx.type === 'early_withdrawal_fee';
   const isResolved = tx.status === 'verified';
   const amountColor = isResolved ? meta.color : 'var(--text3)';
   const statusSuffix = tx.status === 'pending' ? ` (${t('recentTransactions.pending')})` : tx.status === 'rejected' ? ` (${t('recentTransactions.rejected')})` : '';

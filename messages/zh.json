@@ -134,7 +134,7 @@
   "greeting": "早上好",
   "greetingWithName": "早上好，{name}",
   "subtitle": "以下是您账户今天的动态",
-  "txnTypes": { "deposit": "存款", "withdrawal": "提款", "adminCredit": "管理员入账", "adminDebit": "管理员扣款" },
+  "txnTypes": { "deposit": "存款", "withdrawal": "提款", "adminCredit": "管理员入账", "adminDebit": "管理员扣款", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund" },
   "common": { "loading": "加载中…" },
   "platformStatus": { "title": "平台状态", "viewStatusPage": "查看状态页面", "checkingSystems": "正在检查系统…" },
   "topPerformers": {
@@ -406,7 +406,7 @@
     "investmentWithdrawal": "投资提取",
     "gainsClaim": "收益领取",
     "adminCredit": "管理员入账",
-    "adminDebit": "管理员扣款"
+    "adminDebit": "管理员扣款", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund"
   }
 },
 "Referrals": {

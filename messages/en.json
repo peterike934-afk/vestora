@@ -138,7 +138,7 @@
     "deposit": "Deposit",
     "withdrawal": "Withdrawal",
     "adminCredit": "Admin credit",
-    "adminDebit": "Admin debit"
+    "adminDebit": "Admin debit", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund"
   },
   "common": { "loading": "Loading…" },
   "platformStatus": {
@@ -445,7 +445,7 @@
     "investmentWithdrawal": "Investment withdrawal",
     "gainsClaim": "Gains claim",
     "adminCredit": "Admin credit",
-    "adminDebit": "Admin debit"
+    "adminDebit": "Admin debit", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund"
   }
 },
 "Referrals": {
