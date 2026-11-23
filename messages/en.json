@@ -354,6 +354,11 @@
     "saved": "Saved ✓",
     "saveChanges": "Save changes"
   },
+  "marketing": {
+    "title": "Promotional emails",
+    "description": "Occasional emails about offers such as the referral programme. Separate from account alerts. You can withdraw at any time.",
+    "saveFailed": "Couldn’t update your promotional email preference. Please try again."
+  },
   "security": {
     "title": "Security",
     "emailNotifications": "Email notifications",
@@ -450,20 +455,41 @@
 },
 "Referrals": {
   "title": "Referrals",
-  "subtitle": "Invite friends — you get {referrerBonus}, they get {referredBonus}",
+  "subtitle": "Invite friends to Vestora. Current referral rewards are {referrerBonus} for you and {referredBonus} for your friend, paid only after review.",
+  "rewardConditions": "Rewards apply only to genuine new customers who sign up with your link and verify their email. Every referral is reviewed before payment, and a referral may not be approved.",
+  "shareInstructions": "Share your link. Your friend must sign up using it — a referral can’t be added after signup.",
   "programInactive": "The referral program isn't active right now.",
   "yourCode": "Your referral code",
   "copied": "Copied!",
   "copyLink": "Copy link",
   "loading": "Loading…",
   "totalReferred": "Total referred",
-  "pending": "Pending",
+  "pending": "Pending review",
   "earnedSoFar": "Earned so far",
   "yourReferrals": "Your referrals",
   "noReferralsYet": "No referrals yet — share your link to get started.",
   "newInvestor": "New investor",
-  "table": { "name": "Name", "bonus": "Bonus", "status": "Status", "date": "Date" },
-  "status": { "paid": "paid", "pending": "pending" }
+  "table": { "name": "Name", "role": "Role", "bonus": "Bonus", "status": "Status", "date": "Date" },
+  "role": { "referrer": "You referred", "referred": "Referred you" },
+  "status": { "paid": "paid", "pending": "pending review", "rejected": "not approved" },
+  "reason": {
+    "not_eligible": "The referral did not meet the programme’s eligibility requirements.",
+    "duplicate_account": "The new account could not be accepted as a new customer for the referral programme.",
+    "terms_not_met": "The referral programme terms were not met.",
+    "other": "The referral could not be approved."
+  }
+},
+"ReferralAnnouncement": {
+  "title": "Invite friends to Vestora",
+  "body": "When a friend signs up with your referral link and verifies their email, you may receive {referrerBonus} and they may receive {referredBonus}, paid after our team reviews the referral.",
+  "viewReferrals": "Get your referral link",
+  "termsLink": "Referral terms",
+  "optIn": "Email me about offers",
+  "optInExplainer": "Optional. We only send promotional emails if you opt in, and you can withdraw at any time in Settings or from any promotional email.",
+  "optInDone": "Thanks — you can change this any time in Settings.",
+  "optInFailed": "Couldn’t save your preference. Please try again.",
+  "saving": "Saving…",
+  "dismiss": "Dismiss"
 },
 "Markets": {
   "title": "Markets",

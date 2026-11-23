@@ -7,6 +7,7 @@ import { Inbox } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
 import { useMoneyFormatter, useDateFormatter } from '@/lib/formatting'
+import ReferralAnnouncement from '@/components/ReferralAnnouncement'
 import {
   getWallet, getTransactions, getUserInvestments,
   getServiceStatuses, getActiveIncidents, subscribeToStatusChanges,
@@ -373,6 +374,8 @@ export default function Dashboard() {
         <h1 style={s.title}>{firstName ? t('greetingWithName', { name: firstName }) : t('greeting')}</h1>
         <p style={s.sub}>{t('subtitle')}</p>
       </div>
+
+      <ReferralAnnouncement userId={user?.id} />
 
       <div style={s.statsGrid}>
         {stats.map(st => (

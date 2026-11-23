@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test:unit": "node --test \"tests/unit/**/*.test.mjs\"",
     "test:db": "node tests/db/run.mjs",
+    "test:integration": "node --test --test-concurrency=1 \"tests/integration/**/*.test.mjs\"",
     "test": "npm run test:unit && npm run test:db"
   },
   "dependencies": {

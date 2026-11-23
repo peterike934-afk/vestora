@@ -326,6 +326,11 @@
     "disableFailed": "禁用双重验证失败"
   },
   "profile": { "title": "个人资料", "fullName": "全名", "email": "电子邮箱", "saving": "保存中…", "saved": "已保存 ✓", "saveChanges": "保存更改" },
+  "marketing": {
+    "title": "推广邮件",
+    "description": "不定期发送关于推荐计划等优惠的邮件。与账户提醒分开，您可随时撤回同意。",
+    "saveFailed": "无法更新您的推广邮件偏好，请重试。"
+  },
   "security": {
     "title": "安全设置",
     "emailNotifications": "邮件通知",
@@ -411,20 +416,41 @@
 },
 "Referrals": {
   "title": "推荐计划",
-  "subtitle": "邀请好友——您将获得 {referrerBonus}，他们将获得 {referredBonus}",
+  "subtitle": "邀请好友加入 Vestora。当前推荐奖励为：您 {referrerBonus}，好友 {referredBonus}，仅在审核后发放。",
+  "rewardConditions": "奖励仅适用于通过您的链接注册并验证邮箱的真实新客户。每笔推荐在发放前都会经过审核，且可能不予批准。",
+  "shareInstructions": "分享您的链接。好友必须通过该链接注册——注册后无法再补加推荐。",
   "programInactive": "推荐计划目前未开放。",
   "yourCode": "您的推荐码",
   "copied": "已复制！",
   "copyLink": "复制链接",
   "loading": "加载中…",
   "totalReferred": "累计推荐人数",
-  "pending": "待处理",
+  "pending": "审核中",
   "earnedSoFar": "已获得收益",
   "yourReferrals": "您的推荐记录",
   "noReferralsYet": "暂无推荐记录——分享您的链接以开始。",
   "newInvestor": "新投资者",
-  "table": { "name": "姓名", "bonus": "奖励", "status": "状态", "date": "日期" },
-  "status": { "paid": "已支付", "pending": "待处理" }
+  "table": { "name": "姓名", "role": "角色", "bonus": "奖励", "status": "状态", "date": "日期" },
+  "role": { "referrer": "您推荐的", "referred": "推荐您的" },
+  "status": { "paid": "已支付", "pending": "审核中", "rejected": "未批准" },
+  "reason": {
+    "not_eligible": "该推荐不符合计划的资格要求。",
+    "duplicate_account": "该新账户无法被认定为推荐计划的新客户。",
+    "terms_not_met": "未满足推荐计划条款。",
+    "other": "该推荐未能获批。"
+  }
+},
+"ReferralAnnouncement": {
+  "title": "邀请好友加入 Vestora",
+  "body": "当好友通过您的推荐链接注册并验证邮箱后，您可能获得 {referrerBonus}，好友可能获得 {referredBonus}，在我们的团队审核推荐后发放。",
+  "viewReferrals": "获取推荐链接",
+  "termsLink": "推荐条款",
+  "optIn": "通过邮件接收优惠信息",
+  "optInExplainer": "可选。只有在您同意后我们才会发送推广邮件，您可随时在设置中或通过任意推广邮件撤回同意。",
+  "optInDone": "谢谢——您可随时在设置中更改此项。",
+  "optInFailed": "无法保存您的偏好，请重试。",
+  "saving": "保存中…",
+  "dismiss": "关闭"
 },
 "Markets": {
   "title": "市场",
