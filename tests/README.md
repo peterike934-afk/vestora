@@ -3,13 +3,18 @@
 ```
 npm run test:unit         # pure JavaScript (referral routes, email sender and templates, unsubscribe tokens, campaign gate; withdrawal preview, transaction labels and translations on the Production pages)
 npm run test:db           # financial database tests in a disposable Docker Postgres
-npm run test:integration  # referral-programme application flow: real routes + sender against all migrations on disposable Postgres 17 (Docker)
+npm run test:integration  # referral-programme flow and withdrawal/deposit controls flow: real routes against all migrations on disposable Postgres 17 (Docker)
 npm test                  # unit + database
 ```
 
 Referral-programme tests never send email or touch the network: `tests/helpers/alias-hooks.mjs`
 loads the real source files with `resend`, `next/server` and the Supabase client factories
 replaced by in-memory stand-ins (`tests/helpers/stubs`), and the tests replace `fetch`.
+
+`withdrawal-controls-flow.test.mjs` additionally replaces the crypto wallet, price
+source, Stripe, on-chain deposit check, audit and email modules with recorders
+(through `VESTORA_TEST_MODULE_OVERRIDES`, read by `alias-hooks.mjs`). No key is
+loaded, no blockchain, bank or Stripe call is possible, and `fetch` throws.
 
 ## Database tests (`tests/db`)
 
@@ -40,6 +45,8 @@ real customer data or funds.**
 | `referral_upgrade_a_snapshot.sql` → `referral_upgrade_b_after.sql` → `referral_upgrade_c_after_rollback.sql` | Production-state upgrade to 20261125000000: no existing record changed, no consent invented; rollback keeps records; re-applying is refused |
 | `referral_payout_freeze.sql` (plus switch/payment races in `run.mjs`) | Payout freeze (20261126000000): OFF by default; direct RPC by an admin refused; direct INSERT/UPDATE/DELETE on referrals refused for admin and service role even under an "admins write anything" policy; switch changeable only by postgres with operator, reason and confirmation, logged append-only; payment works exactly once when enabled; disabling waits for in-flight payments; `pay_referral` equals 20261124000000 plus only the check; recipient-lookup release; campaign audit trail |
 | `freeze_upgrade_a_snapshot.sql` → `freeze_upgrade_b_after.sql` → `freeze_upgrade_c_after_rollback.sql` (plus guards in `run.mjs`) | Upgrade from the referral-programme state: 13 record tables and every other function unchanged; rollback restores `pay_referral` and `set_marketing_campaign_paused` exactly and keeps the switch log; refusal when applied before 25, on a changed `pay_referral`, on an unreviewed referrals trigger, and on re-application; a late error leaves nothing behind |
+| `financial_controls.sql` (plus freeze/claim races and two simultaneous claims in `run.mjs`) | Financial operation controls (20261127000000): withdrawal payouts and bank-deposit pulls OFF by default; switch changeable only by postgres with confirmation phrase, logged append-only; approval needs a valid matching funds hold (legacy withdrawals blocked for manual review, nothing changed); amount, method and crypto-detail validation; `request_withdrawal` stores no customer-typed crypto amount and validates addresses; customers can insert only pending crypto/wire deposit claims and no withdrawals |
+| `fc_upgrade_a_snapshot.sql` → `fc_upgrade_b_after.sql` → `fc_upgrade_c_after_rollback.sql` (plus guards in `run.mjs`) | Upgrade from the post-26 state: no record, other function or other policy changed; in-flight claim still finalises; rollback restores both functions, grants and the Production insert policy exactly and keeps the switch log; refusal before 26, on drifted functions, on an extra insert policy, on re-application; a late error leaves nothing behind |
 
 `referral_baseline.sql` holds the production `referrals` and `audit_logs`
 definitions and `log_admin_action` (behaviour and ACL as supplied; exact

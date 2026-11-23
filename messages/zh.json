@@ -203,7 +203,8 @@
     "crypto": "您的存款申请正在核实中。链上交易确认后，您的余额将更新。",
     "makeAnother": "再次存款"
   },
-  "methods": { "crypto": "加密货币", "bank": "银行转账", "wire": "电汇" },
+  "methods": { "crypto": "加密货币", "bank": "银行扣款", "wire": "银行转账" },
+  "bankPull": { "badge": "即将推出", "comingSoon": "即将推出 — 我们正在努力开发中。此支付方式即将上线。" },
   "crypto": {
     "currency": "货币",
     "sendTo": "发送到此地址",
@@ -242,7 +243,7 @@
     "accountNumber": "账号",
     "amountSent": "汇款金额（美元）",
     "sentFrom": "汇款人（您账户上的姓名）",
-    "sentFromPlaceholder": "例如：王小明",
+    "sentFromPlaceholder": "例如：王小明", "reference": "银行参考号或确认号（可选）", "referencePlaceholder": "例如：您的银行应用中显示的参考号",
     "steps": {
       "1": "从您自己的银行向显示的账户发起电汇",
       "2": "输入金额及汇款人姓名",
@@ -348,7 +349,7 @@
   "subtitle": "将资金移出您的钱包",
   "availableToWithdraw": "可提取金额",
   "methods": { "crypto": "加密货币", "bank": "银行转账", "wire": "电汇" },
-  "crypto": { "currency": "货币", "amountToWithdraw": "提取金额（{currency}）", "usdEquivalent": "美元等值", "destinationAddress": "目标 {currency} 地址" },
+  "crypto": { "currency": "货币", "amountToWithdraw": "提取金额（{currency}）", "usdEquivalent": "美元等值", "amountUsd": "提现金额（美元）", "amountCalculated": "我们将按提现获批时的市场价格计算并发送等值的 {currency}。", "destinationAddress": "目标 {currency} 地址" },
   "feePreview": "手续费（{feePercent}%）：{fee} · 从余额扣除：{amount}",
   "noteOptional": "备注（可选）",
   "notePlaceholder": "这是用于什么的？",
@@ -377,7 +378,7 @@
     "title": "已申请提取",
     "bank": "您的提取申请正在审核中。审核通过后，资金将发送到您连接的银行账户。",
     "wire": "您的电汇提取申请正在审核中。审核通过后，资金将发送到您提供的银行账户。",
-    "crypto": "您的提取申请正在审核中。审核通过后，{amount} {currency} 将发送到您提供的地址。",
+    "crypto": "您的提取申请正在审核中。审核通过后，{amount} {currency} 将发送到您提供的地址。", "cryptoCalculated": "您的 {amount} 提现申请正在审核中。获批后，我们将按市场价格把等值的 {currency} 发送到您提供的地址。",
     "makeAnother": "再次申请提取"
   },
   "errors": {

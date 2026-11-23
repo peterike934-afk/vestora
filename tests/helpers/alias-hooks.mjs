@@ -19,7 +19,20 @@ const OVERRIDES = {
 }
 const rootUrl = pathToFileURL(root).href
 
+// Optional per-test overrides: VESTORA_TEST_MODULE_OVERRIDES is a JSON map of
+// specifier -> file URL, set before register(). Used to replace payment
+// modules (wallet, Stripe, prices) with recorders in integration tests.
+let extraOverrides = null
+function testOverrides() {
+  if (extraOverrides === null) {
+    try { extraOverrides = JSON.parse(process.env.VESTORA_TEST_MODULE_OVERRIDES || '{}') } catch { extraOverrides = {} }
+  }
+  return extraOverrides
+}
+
 export async function resolve(specifier, context, next) {
+  const extra = testOverrides()[specifier]
+  if (extra) return { url: extra, shortCircuit: true }
   if (OVERRIDES[specifier]) return { url: new URL(OVERRIDES[specifier], stubs).href, shortCircuit: true }
   if (specifier.startsWith('@/')) {
     const base = join(root, specifier.slice(2))
@@ -27,6 +40,15 @@ export async function resolve(specifier, context, next) {
       if (existsSync(candidate) && statSync(candidate).isFile()) return { url: pathToFileURL(candidate).href, shortCircuit: true }
     }
     throw new Error(`alias-hooks: cannot resolve ${specifier}`)
+  }
+  // Extension-less relative imports between the app's own files ("./wallet-btc"),
+  // which Next resolves but Node's ESM loader does not.
+  if ((specifier.startsWith('./') || specifier.startsWith('../')) && context.parentURL?.startsWith(rootUrl)
+      && !context.parentURL.includes('/node_modules/') && !/\.[cm]?[jt]sx?$/.test(specifier)) {
+    const base = fileURLToPath(new URL(specifier, context.parentURL))
+    for (const candidate of [`${base}.js`, `${base}.mjs`, `${base}.jsx`]) {
+      if (existsSync(candidate) && statSync(candidate).isFile()) return { url: pathToFileURL(candidate).href, shortCircuit: true }
+    }
   }
   return next(specifier, context)
 }

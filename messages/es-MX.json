@@ -203,7 +203,8 @@
     "crypto": "Tu depósito está pendiente de verificación. Cuando confirmemos la transacción en la cadena, tu saldo se actualizará.",
     "makeAnother": "Hacer otro depósito"
   },
-  "methods": { "crypto": "Cripto", "bank": "Transferencia bancaria", "wire": "Transferencia SWIFT" },
+  "methods": { "crypto": "Cripto", "bank": "Débito bancario", "wire": "Transferencia bancaria" },
+  "bankPull": { "badge": "Próximamente", "comingSoon": "Próximamente — Estamos trabajando en ello. Este método de pago estará disponible pronto." },
   "crypto": {
     "currency": "Moneda",
     "sendTo": "Envía a esta dirección",
@@ -242,7 +243,7 @@
     "accountNumber": "Número de cuenta",
     "amountSent": "Monto enviado (USD)",
     "sentFrom": "Enviado desde (nombre en tu cuenta)",
-    "sentFromPlaceholder": "ej. Juana Pérez",
+    "sentFromPlaceholder": "ej. Juana Pérez", "reference": "Referencia bancaria o número de confirmación (opcional)", "referencePlaceholder": "p. ej., la referencia que aparece en tu app bancaria",
     "steps": {
       "1": "Envía una transferencia a la cuenta mostrada, desde tu propio banco",
       "2": "Ingresa el monto y el nombre desde el que se envió",
@@ -348,7 +349,7 @@
   "subtitle": "Saca dinero de tu billetera",
   "availableToWithdraw": "Disponible para retirar",
   "methods": { "crypto": "Cripto", "bank": "Transferencia bancaria", "wire": "Transferencia SWIFT" },
-  "crypto": { "currency": "Moneda", "amountToWithdraw": "Monto a retirar ({currency})", "usdEquivalent": "Equivalente en USD", "destinationAddress": "Dirección de destino {currency}" },
+  "crypto": { "currency": "Moneda", "amountToWithdraw": "Monto a retirar ({currency})", "usdEquivalent": "Equivalente en USD", "amountUsd": "Monto a retirar (USD)", "amountCalculated": "Enviaremos el equivalente en {currency}, calculado al precio de mercado cuando se apruebe tu retiro.", "destinationAddress": "Dirección de destino {currency}" },
   "feePreview": "Comisión ({feePercent}%): {fee} · Deducido del saldo: {amount}",
   "noteOptional": "Nota (opcional)",
   "notePlaceholder": "¿Para qué es esto?",
@@ -377,7 +378,7 @@
     "title": "Retiro solicitado",
     "bank": "Tu retiro está pendiente de revisión. Una vez aprobado, los fondos se enviarán a tu cuenta bancaria conectada.",
     "wire": "Tu retiro por transferencia está pendiente de revisión. Una vez aprobado, los fondos se enviarán a la cuenta bancaria que proporcionaste.",
-    "crypto": "Tu retiro está pendiente de revisión. Una vez aprobado, se enviarán {amount} {currency} a la dirección que proporcionaste.",
+    "crypto": "Tu retiro está pendiente de revisión. Una vez aprobado, se enviarán {amount} {currency} a la dirección que proporcionaste.", "cryptoCalculated": "Tu retiro de {amount} está pendiente de revisión. Una vez aprobado, enviaremos el equivalente en {currency} al precio de mercado a la dirección que indicaste.",
     "makeAnother": "Hacer otro retiro"
   },
   "errors": {

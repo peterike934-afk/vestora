@@ -73,9 +73,14 @@ create table public.transactions (
   principal_portion numeric,
   forfeited_interest numeric,
   fee_charged numeric,
-  payment_method text,
+  payment_method text default 'crypto',  -- as in Production
   crypto_currency text,
   crypto_amount numeric,
+  -- Production columns used by deposit verification (and by the
+  -- 20261127000000 insert policy).
+  tx_hash text,
+  onchain_verification jsonb,
+  onchain_checked_at timestamptz,
   destination_address text,
   linked_bank_account_id uuid,
   stripe_payment_intent_id text,
@@ -102,9 +107,12 @@ grant execute on function public.is_admin() to authenticated;
 -- are created from the browser today).
 alter table public.transactions enable row level security;
 create policy own_select on public.transactions for select to authenticated using (user_id = auth.uid());
--- Production policy: users may insert only their own deposits and withdrawals.
-create policy own_insert on public.transactions for insert to authenticated
-  with check (user_id = auth.uid() and type = any (array['deposit', 'withdrawal']) and status = 'pending');
+-- Production policy, exactly as in Production (schema export 2026-11-23):
+-- users may insert their own deposits AND withdrawals, with ANY status and
+-- any other column. 20261127000000 replaces it with a pending-deposit-only
+-- policy.
+create policy "Users can submit their own deposit claims" on public.transactions
+  for insert with check (((auth.uid() = user_id) AND (type = ANY (ARRAY['deposit'::text, 'withdrawal'::text]))));
 grant select, insert on public.transactions to authenticated;
 alter table public.wallets enable row level security;
 create policy own_wallet on public.wallets for select to authenticated using (user_id = auth.uid());

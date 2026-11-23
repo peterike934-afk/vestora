@@ -203,7 +203,8 @@
     "crypto": "Sua solicitação de depósito está em verificação. Quando confirmarmos a transação na blockchain, seu saldo será atualizado.",
     "makeAnother": "Fazer outro depósito"
   },
-  "methods": { "crypto": "Cripto", "bank": "Transferência bancária", "wire": "Transferência internacional" },
+  "methods": { "crypto": "Cripto", "bank": "Débito bancário", "wire": "Transferência bancária" },
+  "bankPull": { "badge": "Em breve", "comingSoon": "Em breve — Estamos trabalhando nisso. Este método de pagamento estará disponível em breve." },
   "crypto": {
     "currency": "Moeda",
     "sendTo": "Envie para este endereço",
@@ -242,7 +243,7 @@
     "accountNumber": "Número da conta",
     "amountSent": "Valor enviado (USD)",
     "sentFrom": "Enviado por (nome na sua conta)",
-    "sentFromPlaceholder": "ex. João Silva",
+    "sentFromPlaceholder": "ex. João Silva", "reference": "Referência bancária ou número de confirmação (opcional)", "referencePlaceholder": "ex.: a referência exibida no app do seu banco",
     "steps": {
       "1": "Envie uma transferência para a conta mostrada, do seu próprio banco",
       "2": "Digite o valor e o nome de quem enviou",
@@ -348,7 +349,7 @@
   "subtitle": "Retire dinheiro da sua carteira",
   "availableToWithdraw": "Disponível para saque",
   "methods": { "crypto": "Cripto", "bank": "Transferência bancária", "wire": "Transferência internacional" },
-  "crypto": { "currency": "Moeda", "amountToWithdraw": "Valor a sacar ({currency})", "usdEquivalent": "Equivalente em USD", "destinationAddress": "Endereço de destino {currency}" },
+  "crypto": { "currency": "Moeda", "amountToWithdraw": "Valor a sacar ({currency})", "usdEquivalent": "Equivalente em USD", "amountUsd": "Valor a sacar (USD)", "amountCalculated": "Enviaremos o equivalente em {currency}, calculado pelo preço de mercado quando seu saque for aprovado.", "destinationAddress": "Endereço de destino {currency}" },
   "feePreview": "Taxa ({feePercent}%): {fee} · Deduzido do saldo: {amount}",
   "noteOptional": "Observação (opcional)",
   "notePlaceholder": "Para que é isso?",
@@ -377,7 +378,7 @@
     "title": "Saque solicitado",
     "bank": "Seu saque está em análise. Assim que aprovado, os fundos serão enviados para sua conta bancária conectada.",
     "wire": "Seu saque por transferência está em análise. Assim que aprovado, os fundos serão enviados para a conta bancária que você informou.",
-    "crypto": "Seu saque está em análise. Assim que aprovado, {amount} {currency} serão enviados para o endereço que você informou.",
+    "crypto": "Seu saque está em análise. Assim que aprovado, {amount} {currency} serão enviados para o endereço que você informou.", "cryptoCalculated": "Seu saque de {amount} está em análise. Após a aprovação, o equivalente em {currency} pelo preço de mercado será enviado para o endereço informado.",
     "makeAnother": "Fazer outro saque"
   },
   "errors": {

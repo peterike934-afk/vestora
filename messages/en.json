@@ -217,7 +217,8 @@
     "crypto": "Your deposit claim is pending verification. Once we confirm the transaction on-chain, your balance will be updated.",
     "makeAnother": "Make another deposit"
   },
-  "methods": { "crypto": "Crypto", "bank": "Bank transfer", "wire": "Wire transfer" },
+  "methods": { "crypto": "Crypto", "bank": "Bank Pull", "wire": "Bank Transfer" },
+  "bankPull": { "badge": "Coming soon", "comingSoon": "Coming Soon — We're working on it. This payment method will be available soon." },
   "crypto": {
     "currency": "Currency",
     "sendTo": "Send to this address",
@@ -256,7 +257,7 @@
     "accountNumber": "Account number",
     "amountSent": "Amount sent (USD)",
     "sentFrom": "Sent from (name on your account)",
-    "sentFromPlaceholder": "e.g. Jane Doe",
+    "sentFromPlaceholder": "e.g. Jane Doe", "reference": "Bank reference or confirmation number (optional)", "referencePlaceholder": "e.g. the reference shown in your banking app",
     "steps": {
       "1": "Send a wire to the account shown, from your own bank",
       "2": "Enter the amount and the name it was sent from",
@@ -379,7 +380,7 @@
   "crypto": {
     "currency": "Currency",
     "amountToWithdraw": "Amount to withdraw ({currency})",
-    "usdEquivalent": "USD equivalent",
+    "usdEquivalent": "USD equivalent", "amountUsd": "Amount to withdraw (USD)", "amountCalculated": "We'll send the {currency} equivalent, calculated at the market price when your withdrawal is approved.",
     "destinationAddress": "Destination {currency} address"
   },
   "feePreview": "Fee ({feePercent}%): {fee} · Deducted from balance: {amount}",
@@ -416,7 +417,7 @@
     "title": "Withdrawal requested",
     "bank": "Your withdrawal is pending review. Once approved, funds will be sent to your connected bank account.",
     "wire": "Your wire withdrawal is pending review. Once approved, funds will be sent to the bank account you provided.",
-    "crypto": "Your withdrawal is pending review. Once approved, {amount} {currency} will be sent to the address you provided.",
+    "crypto": "Your withdrawal is pending review. Once approved, {amount} {currency} will be sent to the address you provided.", "cryptoCalculated": "Your withdrawal of {amount} is pending review. Once approved, the {currency} equivalent at the market price will be sent to the address you provided.",
     "makeAnother": "Make another withdrawal"
   },
   "errors": {
