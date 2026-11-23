@@ -1,25 +1,21 @@
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { authenticateGuest, json, genericError, sessionRequired } from '@/lib/guest-chat'
 
+// Unread admin replies in the visitor's own thread (from the HttpOnly
+// ownership cookie; a threadId query parameter is ignored).
 export async function GET(request) {
-  const { searchParams } = new URL(request.url)
-  const threadId = searchParams.get('threadId')
+  const service = createAdminClient()
+  const guest = await authenticateGuest(request, service)
+  if (!guest) return sessionRequired()
 
-  if (!threadId) {
-    return Response.json({ error: 'threadId is required.' }, { status: 400 })
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
-
-  const { data, error } = await supabase
+  const { data, error } = await service
     .from('guest_threads')
     .select('guest_unread_count')
-    .eq('id', threadId)
+    .eq('id', guest.threadId)
     .single()
-
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-
-  return Response.json({ unreadCount: data?.guest_unread_count || 0 })
+  if (error) {
+    console.error('guest chat unread count failed:', error.message)
+    return genericError()
+  }
+  return json({ unreadCount: data?.guest_unread_count || 0 })
 }

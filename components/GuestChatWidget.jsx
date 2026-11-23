@@ -48,8 +48,14 @@ const s = {
   sendBtn: { width: "38px", height: "38px", borderRadius: "50%", background: "#1F6F4A", color: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 },
 };
 
+// The conversation is identified by an HttpOnly cookie set by
+// /api/guest-chat/start (see lib/guest-chat.js); this page never sees the
+// secret. THREAD_KEY only remembers that this browser has a conversation,
+// and lets a visitor whose chat started before the cookie existed continue
+// it once by confirming the email address they gave.
 const THREAD_KEY = "vestora_guest_thread_id";
 const NAME_KEY = "vestora_guest_name";
+const SESSION_REQUIRED = "GUEST_SESSION_REQUIRED";
 
 export default function GuestChatWidget() {
   const t = useTranslations("GuestChat");
@@ -66,6 +72,7 @@ export default function GuestChatWidget() {
   const [sending, setSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const bottomRef = useRef(null);
+  const legacyThreadRef = useRef(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(THREAD_KEY);
@@ -74,10 +81,22 @@ export default function GuestChatWidget() {
     if (savedNameVal) setSavedName(savedNameVal);
   }, []);
 
+  // This browser no longer holds (or never held) the conversation's cookie:
+  // show the start form. A thread remembered from before the cookie existed
+  // can be continued by confirming the same email (one time only).
+  function sessionLost(id) {
+    if (id) legacyThreadRef.current = id;
+    setThreadId(null);
+    setMessages([]);
+    setUnreadCount(0);
+    setName((current) => current || localStorage.getItem(NAME_KEY) || "");
+  }
+
   async function loadMessages(id) {
     try {
-      const res = await fetch(`/api/guest-chat/messages?threadId=${id}`);
+      const res = await fetch("/api/guest-chat/messages", { cache: "no-store" });
       const data = await res.json();
+      if (data.code === SESSION_REQUIRED) return sessionLost(id);
       if (data.messages) setMessages(data.messages);
       setUnreadCount(0);
     } catch (err) {
@@ -87,8 +106,9 @@ export default function GuestChatWidget() {
 
   async function checkUnread(id) {
     try {
-      const res = await fetch(`/api/guest-chat/unread-count?threadId=${id}`);
+      const res = await fetch("/api/guest-chat/unread-count", { cache: "no-store" });
       const data = await res.json();
+      if (data.code === SESSION_REQUIRED) return sessionLost(id);
       if (typeof data.unreadCount === "number") setUnreadCount(data.unreadCount);
     } catch (err) {
       console.error("Failed to check guest chat unread count:", err);
@@ -129,10 +149,11 @@ export default function GuestChatWidget() {
       const res = await fetch("/api/guest-chat/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, locale }),
+        body: JSON.stringify({ name, email, locale, legacyThreadId: legacyThreadRef.current || undefined }),
       });
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (!res.ok || data.error || !data.threadId) throw new Error(res.status === 400 && data.error ? data.error : "");
+      legacyThreadRef.current = null;
       localStorage.setItem(THREAD_KEY, data.threadId);
       localStorage.setItem(NAME_KEY, name.trim());
       setThreadId(data.threadId);
@@ -154,13 +175,21 @@ export default function GuestChatWidget() {
       const res = await fetch("/api/guest-chat/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ threadId, sender: "guest", body }),
+        body: JSON.stringify({ body }),
       });
       const data = await res.json();
-      if (data.message) {
+      if (data.code === SESSION_REQUIRED) {
+        sessionLost(threadId);
+      } else if (data.message) {
         setMessages((prev) => (prev.some(m => m.id === data.message.id) ? prev : [...prev, data.message]));
+      } else {
+        // Not sent (too long, too many messages, server error): give the
+        // text back so the visitor can try again.
+        setText((current) => current || body);
+        console.error("Guest message not sent:", data.error);
       }
     } catch (err) {
+      setText((current) => current || body);
       console.error("Failed to send guest message:", err);
     } finally {
       setSending(false);
@@ -168,6 +197,9 @@ export default function GuestChatWidget() {
   }
 
   function handleStartNewChat() {
+    fetch("/api/guest-chat/session", { method: "DELETE", headers: { "Content-Type": "application/json" } })
+      .catch((err) => console.error("Failed to end guest chat session:", err));
+    legacyThreadRef.current = null;
     localStorage.removeItem(THREAD_KEY);
     localStorage.removeItem(NAME_KEY);
     setThreadId(null);
@@ -214,11 +246,11 @@ export default function GuestChatWidget() {
         <div style={s.form}>
           <div>
             <label style={s.label}>{t("form.name")}</label>
-            <input style={s.input} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("form.namePlaceholder")} />
+            <input style={s.input} value={name} maxLength={100} onChange={(e) => setName(e.target.value)} placeholder={t("form.namePlaceholder")} />
           </div>
           <div>
             <label style={s.label}>{t("form.email")}</label>
-            <input style={s.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("form.emailPlaceholder")} />
+            <input style={s.input} type="email" value={email} maxLength={254} onChange={(e) => setEmail(e.target.value)} placeholder={t("form.emailPlaceholder")} />
           </div>
           {formError && <div style={s.formError}>{formError}</div>}
           <button style={s.startBtn} onClick={handleStart} disabled={starting}>
@@ -244,6 +276,7 @@ export default function GuestChatWidget() {
               style={s.textInput}
               placeholder={t("typeMessage")}
               value={text}
+              maxLength={2000}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
             />
