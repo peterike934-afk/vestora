@@ -40,13 +40,16 @@ function formatUsd(n) {
 // recorded in the admin audit log (no separate transaction is created).
 function CancelModal({ investment, onClose, onConfirm, submitting, error }) {
   const [reason, setReason] = useState('')
+  // Cancellation refunds only the principal still invested (principal
+  // already paid out by approved withdrawals is not refunded again).
+  const remainingPrincipal = investment.remaining_principal ?? (Number(investment.amount_usd) - Number(investment.withdrawn_principal || 0))
 
   return (
     <div style={s.modalOverlay} onClick={onClose}>
       <div style={s.modal} onClick={e => e.stopPropagation()}>
         <div style={s.modalTitle}>Cancel investment</div>
         <div style={s.modalSub}>
-          Refund {formatUsd(investment.amount_usd)} principal to {investment.full_name || investment.email}'s wallet. Any unclaimed interest is forfeited.
+          Refund {formatUsd(remainingPrincipal)} remaining principal to {investment.full_name || investment.email}'s wallet. Any unclaimed interest is forfeited.
         </div>
 
         {error && <div style={s.modalError}>{error}</div>}

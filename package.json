@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:unit": "node --test \"tests/unit/**/*.test.mjs\"",
+    "test:db": "node tests/db/run.mjs",
+    "test": "npm run test:unit && npm run test:db"
   },
   "dependencies": {
     "@bitcoinerlab/secp256k1": "^2.0.0",

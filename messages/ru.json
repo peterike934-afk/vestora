@@ -134,7 +134,7 @@
   "greeting": "Доброе утро",
   "greetingWithName": "Доброе утро, {name}",
   "subtitle": "Вот что происходит с вашим аккаунтом сегодня",
-  "txnTypes": { "deposit": "Депозит", "withdrawal": "Вывод", "adminCredit": "Начисление админом", "adminDebit": "Списание админом" },
+  "txnTypes": { "deposit": "Депозит", "withdrawal": "Вывод", "adminCredit": "Начисление админом", "adminDebit": "Списание админом", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund" },
   "common": { "loading": "Загрузка…" },
   "platformStatus": { "title": "Статус платформы", "viewStatusPage": "Смотреть страницу статуса", "checkingSystems": "Проверка систем…" },
   "topPerformers": {
@@ -406,7 +406,7 @@
     "investmentWithdrawal": "Вывод из инвестиции",
     "gainsClaim": "Получение прибыли",
     "adminCredit": "Начисление админом",
-    "adminDebit": "Списание админом"
+    "adminDebit": "Списание админом", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund"
   }
 },
 "Referrals": {

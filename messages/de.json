@@ -134,7 +134,7 @@
   "greeting": "Guten Morgen",
   "greetingWithName": "Guten Morgen, {name}",
   "subtitle": "Das passiert heute mit Ihrem Konto",
-  "txnTypes": { "deposit": "Einzahlung", "withdrawal": "Auszahlung", "adminCredit": "Admin-Gutschrift", "adminDebit": "Admin-Belastung" },
+  "txnTypes": { "deposit": "Einzahlung", "withdrawal": "Auszahlung", "adminCredit": "Admin-Gutschrift", "adminDebit": "Admin-Belastung", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund" },
   "common": { "loading": "Wird geladen…" },
   "platformStatus": { "title": "Plattformstatus", "viewStatusPage": "Statusseite ansehen", "checkingSystems": "Systeme werden geprüft…" },
   "topPerformers": {
@@ -406,7 +406,7 @@
     "investmentWithdrawal": "Investitionsauszahlung",
     "gainsClaim": "Gewinnbeanspruchung",
     "adminCredit": "Admin-Gutschrift",
-    "adminDebit": "Admin-Belastung"
+    "adminDebit": "Admin-Belastung", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund"
   }
 },
 "Referrals": {

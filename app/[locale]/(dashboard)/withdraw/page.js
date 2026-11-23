@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { useUser } from '@/contexts/UserContext'
 import { useSearchParams } from 'next/navigation'
 import { useMoneyFormatter } from '@/lib/formatting'
-import { getWallet, getTransactions, createTransaction, getSettings, getConnectOnboardingStatus } from '@/lib/queries'
+import { getWallet, getTransactions, requestWithdrawal, getSettings, getConnectOnboardingStatus } from '@/lib/queries'
 import AuthTransitionOverlay from '@/components/AuthTransitionOverlay'
 
 const s = {
@@ -78,6 +78,15 @@ export default function WithdrawPage() {
   const [showOverlay, setShowOverlay] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  // One ID per withdrawal attempt: a retry after a network error returns
+  // the original request instead of holding the funds twice.
+  const requestIdRef = useRef(null)
+
+  async function submitWithdrawal(fields) {
+    requestIdRef.current ||= crypto.randomUUID()
+    await requestWithdrawal({ requestId: requestIdRef.current, ...fields })
+    requestIdRef.current = null
+  }
 
   useEffect(() => {
     if (!user) return
@@ -168,9 +177,7 @@ export default function WithdrawPage() {
     setSubmitting(true)
     setShowOverlay(true)
     try {
-      await createTransaction({
-        userId: user.id,
-        type: 'withdrawal',
+      await submitWithdrawal({
         amountUsd: amt,
         paymentMethod: 'crypto',
         cryptoCurrency: currency,
@@ -209,9 +216,7 @@ export default function WithdrawPage() {
     setSubmitting(true)
     setShowOverlay(true)
     try {
-      await createTransaction({
-        userId: user.id,
-        type: 'withdrawal',
+      await submitWithdrawal({
         amountUsd: bankAmt,
         paymentMethod: 'bank',
         note: note || null,
@@ -251,9 +256,7 @@ export default function WithdrawPage() {
     setSubmitting(true)
     setShowOverlay(true)
     try {
-      await createTransaction({
-        userId: user.id,
-        type: 'withdrawal',
+      await submitWithdrawal({
         amountUsd: wireAmt,
         paymentMethod: 'wire',
         note: `Wire to: ${wireAccountName.trim()} — ${wireBankName.trim()}, routing ${wireRoutingNumber.trim()}, account ${wireAccountNumber.trim()}${note ? ` | ${note}` : ''}`,

@@ -134,7 +134,7 @@
   "greeting": "Bom dia",
   "greetingWithName": "Bom dia, {name}",
   "subtitle": "Veja o que está acontecendo com sua conta hoje",
-  "txnTypes": { "deposit": "Depósito", "withdrawal": "Saque", "adminCredit": "Crédito administrativo", "adminDebit": "Débito administrativo" },
+  "txnTypes": { "deposit": "Depósito", "withdrawal": "Saque", "adminCredit": "Crédito administrativo", "adminDebit": "Débito administrativo", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund" },
   "common": { "loading": "Carregando…" },
   "platformStatus": { "title": "Status da plataforma", "viewStatusPage": "Ver página de status", "checkingSystems": "Verificando sistemas…" },
   "topPerformers": {
@@ -406,7 +406,7 @@
     "investmentWithdrawal": "Saque de investimento",
     "gainsClaim": "Resgate de ganhos",
     "adminCredit": "Crédito administrativo",
-    "adminDebit": "Débito administrativo"
+    "adminDebit": "Débito administrativo", "earlyWithdrawalFee": "Early withdrawal fee", "earlyWithdrawalFeeRefund": "Early withdrawal fee refund"
   }
 },
 "Referrals": {

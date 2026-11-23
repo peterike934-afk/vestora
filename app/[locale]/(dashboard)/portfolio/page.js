@@ -57,7 +57,14 @@ function calculatePreview(inv, principalAmount) {
   let interestEarned = 0
   let fee = 0
   if (isMatured) {
-    interestEarned = amt * ((inv.apy_percent / 100) * inv.term_days / 365)
+    // Mirrors request_investment_withdrawal: interest already claimed on the
+    // remaining principal is allocated pro rata to the portion withdrawn, so
+    // it is never paid again with the principal.
+    const remaining = Number(inv.remaining_principal) || 0
+    const claimedOnRemaining = Math.max(Number(inv.claimed_interest || 0) - Number(inv.withdrawn_claimed_interest || 0), 0)
+    const claimedShare = remaining > 0 ? claimedOnRemaining * (amt / remaining) : 0
+    const fullTerm = amt * ((inv.apy_percent / 100) * inv.term_days / 365)
+    interestEarned = Math.floor(Math.max(fullTerm - claimedShare, 0) * 100) / 100
   } else {
     fee = Number(inv.early_withdrawal_fee_usd) || 0
   }
