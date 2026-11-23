@@ -1,14 +1,19 @@
 # Vestora tests
 
 ```
-npm run test:unit   # pure JavaScript (pay-referral route; withdrawal preview, transaction labels and translations on the Production pages)
-npm run test:db     # financial database tests in a disposable Docker Postgres
-npm test            # both
+npm run test:unit         # pure JavaScript (referral routes, email sender and templates, unsubscribe tokens, campaign gate; withdrawal preview, transaction labels and translations on the Production pages)
+npm run test:db           # financial database tests in a disposable Docker Postgres
+npm run test:integration  # referral-programme application flow: real routes + sender against all migrations on disposable Postgres 17 (Docker)
+npm test                  # unit + database
 ```
+
+Referral-programme tests never send email or touch the network: `tests/helpers/alias-hooks.mjs`
+loads the real source files with `resend`, `next/server` and the Supabase client factories
+replaced by in-memory stand-ins (`tests/helpers/stubs`), and the tests replace `fetch`.
 
 ## Database tests (`tests/db`)
 
-`run.mjs` starts a throwaway `postgres:16` container, builds
+`run.mjs` starts a throwaway `postgres:17` container (Production runs 17), builds
 `base_schema.sql` (a stand-in for the parts of the Supabase schema the
 migrations use; `public.investments` matches production exactly), applies
 every file in `supabase/migrations` in filename order, and runs the suites in
@@ -31,6 +36,10 @@ real customer data or funds.**
 | `chain_a_snapshot.sql` → `chain_mid_after_migrations.sql` → `chain_b_after_rollbacks.sql` (plus guards in `run.mjs`) | All three migrations in order, then the three rollbacks in reverse: ordering guards; existing profiles, wallets, transactions, referrals and audit logs unchanged by migrating and by rolling back; every financial function and the view restored exactly |
 | `permissions_a_snapshot.sql` → `permissions_b_after.sql` → `permissions_c_after_rollback.sql` | Under Supabase default grants (`supabase_default_privileges.sql`): the migrations grant exactly the intended access and change no existing permission; every SECURITY DEFINER function has a fixed search_path and owner postgres; the rollbacks restore every permission |
 | release scripts (in `run.mjs`) | `supabase/release` pre-flight passes on production state, blocks on each planted hazard and is read-only; verification passes after the migrations with an unchanged record snapshot |
+| `referral_programme.sql` (plus pay/reject and pay/pay races in `run.mjs`) | Referral programme (20261125000000) with payouts explicitly enabled: attribution at signup/verification only, self/duplicate referrals, live amounts, rejection with private notes, notification ledger, marketing consent, campaign queue/pause, permissions |
+| `referral_upgrade_a_snapshot.sql` → `referral_upgrade_b_after.sql` → `referral_upgrade_c_after_rollback.sql` | Production-state upgrade to 20261125000000: no existing record changed, no consent invented; rollback keeps records; re-applying is refused |
+| `referral_payout_freeze.sql` (plus switch/payment races in `run.mjs`) | Payout freeze (20261126000000): OFF by default; direct RPC by an admin refused; direct INSERT/UPDATE/DELETE on referrals refused for admin and service role even under an "admins write anything" policy; switch changeable only by postgres with operator, reason and confirmation, logged append-only; payment works exactly once when enabled; disabling waits for in-flight payments; `pay_referral` equals 20261124000000 plus only the check; recipient-lookup release; campaign audit trail |
+| `freeze_upgrade_a_snapshot.sql` → `freeze_upgrade_b_after.sql` → `freeze_upgrade_c_after_rollback.sql` (plus guards in `run.mjs`) | Upgrade from the referral-programme state: 13 record tables and every other function unchanged; rollback restores `pay_referral` and `set_marketing_campaign_paused` exactly and keeps the switch log; refusal when applied before 25, on a changed `pay_referral`, on an unreviewed referrals trigger, and on re-application; a late error leaves nothing behind |
 
 `referral_baseline.sql` holds the production `referrals` and `audit_logs`
 definitions and `log_admin_action` (behaviour and ACL as supplied; exact
